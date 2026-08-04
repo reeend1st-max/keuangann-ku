@@ -645,23 +645,17 @@ function TabunganView(p) {
   var tTarik = penarikan.reduce(function (a, s) { return a + s.nominal; }, 0);
   var saldo = tSetor - tTarik;
 
-  var LOCS = ["KROM", "JAGO", "BIBIT", "BCA", "SEABANK"];
-  var locTotals = LOCS.map(function (loc) {
-    var lStor = p.savings.filter(function (s) { return (s.lokasi || "KROM") === loc && s.tipe === "setoran"; }).reduce(function (a, s) { return a + s.nominal; }, 0);
-    var lTarik = p.savings.filter(function (s) { return (s.lokasi || "KROM") === loc && s.tipe === "penarikan"; }).reduce(function (a, s) { return a + s.nominal; }, 0);
-    return { name: loc, total: lStor - lTarik };
-  });
-
   return React.createElement(
     "div",
     { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
+    // 1. Banner Saldo Utama Tabungan
     React.createElement(
       "div",
       { style: { background: "linear-gradient(135deg, #1E3A8A, #0284C7)", borderRadius: 18, padding: "24px 28px", border: "1px solid " + T.border, marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, color: "#FFFFFF" } },
       React.createElement(
         "div",
         null,
-        React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 } }, "Total Saldo Tabungan Saat Ini"),
+        React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 } }, "Total Saldo Tabungan Keseluruhan"),
         React.createElement("div", { style: { fontSize: 36, fontWeight: 900, color: "#FFFFFF", marginTop: 4 } }, fmt(saldo)),
         React.createElement(
           "div",
@@ -678,20 +672,7 @@ function TabunganView(p) {
       )
     ),
 
-    // Rincian Saldo Per Lokasi / Platform
-    React.createElement(
-      "div",
-      { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 20 } },
-      locTotals.map(function (item) {
-        return React.createElement(
-          "div",
-          { key: item.name, style: { background: T.card, border: "1px solid " + T.border, borderRadius: 12, padding: "12px 14px", textAlign: "center" } },
-          React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 800 } }, "🏦 " + item.name),
-          React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: item.total >= 0 ? T.teal : T.coral, marginTop: 4 } }, fmt(item.total))
-        );
-      })
-    ),
-
+    // 2. Tabel Riwayat Mutasi Tabungan (Langsung di bawah Banner)
     React.createElement(
       "div",
       { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, overflow: "hidden" } },
@@ -714,7 +695,7 @@ function TabunganView(p) {
                   "div",
                   { style: { display: "flex", alignItems: "center", gap: 8 } },
                   React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: isStor ? T.sage : T.amber } }, isStor ? "💚 Setoran Tabungan" : "🟡 Penarikan Tabungan"),
-                  React.createElement("span", { style: { fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 10, background: T.panel, border: "1px solid " + T.border, color: T.teal } }, "🏦 " + loc)
+                  React.createElement("span", { style: { fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 8, background: T.panel, border: "1px solid " + T.border, color: T.teal } }, "🏦 " + loc)
                 ),
                 React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 4 } }, item.tanggal, item.catatan ? " · " + item.catatan : "")
               ),
