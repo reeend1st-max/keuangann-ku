@@ -6,16 +6,16 @@ var useState = React.useState;
 var useEffect = React.useEffect;
 var useCallback = React.useCallback;
 
-// ── Theme Design Tokens (Electric Midnight Blue & Cyan Theme) ─────────
+// ── Theme Design Tokens (Soft Light Slate & Cyan Theme — Non-glare) ─────────
 var T = {
-  bg: "#E0F2FE",
+  bg: "#F1F5F9",
   surface: "#F8FAFC",
   card: "#FFFFFF",
   panel: "#F8FAFC",
-  border: "#E2E8F0",
-  sidebar: "#F1F5F9",
+  border: "#CBD5E1",
+  sidebar: "#E2E8F0",
   sidebarText: "#0F172A",
-  sidebarSub: "#64748B",
+  sidebarSub: "#475569",
   teal: "#0284C7",
   tealDim: "rgba(2, 132, 199, 0.12)",
   sage: "#10B981",
@@ -30,7 +30,7 @@ var T = {
   violetDim: "rgba(139, 92, 246, 0.12)",
   text: "#0F172A",
   textSub: "#475569",
-  textDim: "#94A3B8",
+  textDim: "#64748B",
 };
 
 // ── Categories configuration ──────────────────────────────────────────────────
