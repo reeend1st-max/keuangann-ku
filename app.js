@@ -56,6 +56,19 @@ function fmt(num) {
   return "Rp " + new Intl.NumberFormat("id-ID").format(num || 0);
 }
 
+function formatRupiahInput(val) {
+  if (val === null || val === undefined || val === "") return "";
+  var raw = String(val).replace(/\D/g, "");
+  if (!raw) return "";
+  return new Intl.NumberFormat("id-ID").format(parseInt(raw, 10));
+}
+
+function parseRupiahInput(val) {
+  if (!val) return 0;
+  var raw = String(val).replace(/\D/g, "");
+  return parseInt(raw, 10) || 0;
+}
+
 function fmtS(num) {
   var n = num || 0;
   return "Rp " + new Intl.NumberFormat("id-ID").format(n);
@@ -390,7 +403,7 @@ function ExpenseForm(p) {
       setTanggal(p.initial.tanggal || todayStr());
       setKeperluan(p.initial.keperluan || "");
       setKategori(p.initial.kategori || "Makan & Minum");
-      setNominal(String(p.initial.nominal || ""));
+      setNominal(formatRupiahInput(p.initial.nominal || ""));
       setBayar(p.initial.bayar || "Transfer");
       setNw(p.initial.nw || "Need");
       setCatatan(p.initial.catatan || "");
@@ -405,7 +418,7 @@ function ExpenseForm(p) {
 
   function save() {
     setErr("");
-    var nom = parseInt(nominal, 10);
+    var nom = parseRupiahInput(nominal);
     if (!keperluan.trim()) return setErr("Keperluan pengeluaran wajib diisi.");
     if (!nom || nom <= 0) return setErr("Nominal pengeluaran harus lebih dari 0.");
     if (!tanggal) return setErr("Tanggal wajib diisi.");
@@ -437,7 +450,7 @@ function ExpenseForm(p) {
     { open: p.open, onClose: p.onClose, title: p.initial ? "✏️ Edit Pengeluaran" : "➕ Tambah Pengeluaran", width: 500 },
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
       React.createElement(DInput, { label: "Tanggal (DD/MM/YYYY)", value: tanggal, onChange: setTanggal }),
-      React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: function (v) { setNominal(v.replace(/\D/g, "")); }, type: "number", placeholder: "0" })
+      React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: function (v) { setNominal(formatRupiahInput(v)); }, placeholder: "0" })
     ),
     React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DInput, { label: "Keperluan / Deskripsi", value: keperluan, onChange: setKeperluan, placeholder: "Contoh: Makan siang, Beli baju...", autoFocus: true })),
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
@@ -469,7 +482,7 @@ function IncomeForm(p) {
     if (p.initial) {
       setTanggal(p.initial.tanggal || todayStr());
       setSumber(p.initial.sumber || "Gajian");
-      setNominal(String(p.initial.nominal || ""));
+      setNominal(formatRupiahInput(p.initial.nominal || ""));
       setMetode(p.initial.metode || "Transfer");
       setCatatan(p.initial.catatan || "");
     } else {
@@ -482,7 +495,7 @@ function IncomeForm(p) {
 
   function save() {
     setErr("");
-    var nom = parseInt(nominal, 10);
+    var nom = parseRupiahInput(nominal);
     if (!sumber.trim()) return setErr("Sumber pemasukan wajib diisi.");
     if (!nom || nom <= 0) return setErr("Nominal pemasukan harus lebih dari 0.");
     if (!tanggal) return setErr("Tanggal wajib diisi.");
@@ -512,7 +525,7 @@ function IncomeForm(p) {
     { open: p.open, onClose: p.onClose, title: p.initial ? "✏️ Edit Pemasukan" : "💵 Tambah Pemasukan", width: 480 },
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
       React.createElement(DInput, { label: "Tanggal (DD/MM/YYYY)", value: tanggal, onChange: setTanggal }),
-      React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: function (v) { setNominal(v.replace(/\D/g, "")); }, type: "number", placeholder: "0" })
+      React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: function (v) { setNominal(formatRupiahInput(v)); }, placeholder: "0" })
     ),
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
       React.createElement(DInput, { label: "Sumber Pemasukan", value: sumber, onChange: setSumber, placeholder: "Gajian, Lemburan, Bonus...", autoFocus: true }),
@@ -535,7 +548,7 @@ function SavingForm(p) {
 
   var _t = useState(p.initial ? p.initial.tipe : (p.defaultTipe || "setoran")), tipe = _t[0], setTipe = _t[1];
   var _lok = useState(p.initial ? (p.initial.lokasi || "KROM") : "KROM"), lokasi = _lok[0], setLokasi = _lok[1];
-  var _n = useState(p.initial ? String(p.initial.nominal) : ""), nominal = _n[0], setNominal = _n[1];
+  var _n = useState(p.initial ? formatRupiahInput(p.initial.nominal) : ""), nominal = _n[0], setNominal = _n[1];
   var _dt = useState(p.initial ? p.initial.tanggal : todayStr()), tanggal = _dt[0], setTanggal = _dt[1];
   var _c = useState(p.initial ? p.initial.catatan : ""), catatan = _c[0], setCatatan = _c[1];
   var _e = useState(""), err = _e[0], setErr = _e[1];
@@ -544,7 +557,7 @@ function SavingForm(p) {
     if (p.open) {
       setTipe(p.initial ? p.initial.tipe : (p.defaultTipe || "setoran"));
       setLokasi(p.initial ? (p.initial.lokasi || "KROM") : "KROM");
-      setNominal(p.initial ? String(p.initial.nominal) : "");
+      setNominal(p.initial ? formatRupiahInput(p.initial.nominal) : "");
       setTanggal(p.initial ? p.initial.tanggal : todayStr());
       setCatatan(p.initial ? p.initial.catatan : "");
       setErr("");
@@ -552,8 +565,8 @@ function SavingForm(p) {
   }, [p.open, p.initial, p.defaultTipe]);
 
   var save = function () {
-    var num = parseFloat(nominal.replace(/[^0-9]/g, ""));
-    if (isNaN(num) || num <= 0) return setErr("Masukkan nominal tabungan yang valid!");
+    var num = parseRupiahInput(nominal);
+    if (!num || num <= 0) return setErr("Masukkan nominal tabungan yang valid!");
     if (!tanggal.trim()) return setErr("Masukkan tanggal!");
 
     p.onSave({
@@ -611,7 +624,7 @@ function SavingForm(p) {
     React.createElement(
       "div",
       { style: { marginBottom: 12 } },
-      React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: setNominal, placeholder: "0", autoFocus: true })
+      React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: function (v) { setNominal(formatRupiahInput(v)); }, placeholder: "0", autoFocus: true })
     ),
     React.createElement(DInput, { label: "Catatan / Keterangan", value: catatan, onChange: setCatatan, placeholder: "Contoh: Tabungan Nikah, Dana Darurat..." }),
     err && React.createElement("div", { style: { color: T.coral, fontSize: 12, marginTop: 10, fontWeight: 600 } }, "⚠️ ", err),
