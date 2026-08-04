@@ -645,13 +645,32 @@ function TabunganView(p) {
   var tTarik = penarikan.reduce(function (a, s) { return a + s.nominal; }, 0);
   var saldo = tSetor - tTarik;
 
+  // Calculate allocation percentages per active platform
+  var ALL_LOCS = ["KROM", "JAGO", "BIBIT", "BCA", "SEABANK", "Lainnya"];
+  var LOC_COLORS = {
+    KROM: "#3B82F6",
+    JAGO: "#F59E0B",
+    BIBIT: "#10B981",
+    BCA: "#0284C7",
+    SEABANK: "#8B5CF6",
+    Lainnya: "#64748B"
+  };
+
+  var locAlloc = ALL_LOCS.map(function (loc) {
+    var s = p.savings.filter(function (x) { return (x.lokasi || "KROM") === loc && x.tipe === "setoran"; }).reduce(function (a, x) { return a + x.nominal; }, 0);
+    var t = p.savings.filter(function (x) { return (x.lokasi || "KROM") === loc && x.tipe === "penarikan"; }).reduce(function (a, x) { return a + x.nominal; }, 0);
+    return { name: loc, net: s - t };
+  }).filter(function (d) { return d.net > 0; });
+
+  var totalAllocNet = locAlloc.reduce(function (a, d) { return a + d.net; }, 0);
+
   return React.createElement(
     "div",
     { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
     // 1. Banner Saldo Utama Tabungan
     React.createElement(
       "div",
-      { style: { background: "linear-gradient(135deg, #1E3A8A, #0284C7)", borderRadius: 18, padding: "24px 28px", border: "1px solid " + T.border, marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, color: "#FFFFFF" } },
+      { style: { background: "linear-gradient(135deg, #1E3A8A, #0284C7)", borderRadius: 18, padding: "24px 28px", border: "1px solid " + T.border, marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, color: "#FFFFFF" } },
       React.createElement(
         "div",
         null,
@@ -672,7 +691,49 @@ function TabunganView(p) {
       )
     ),
 
-    // 2. Tabel Riwayat Mutasi Tabungan (Langsung di bawah Banner)
+    // 2. Widget Mini "Alokasi Tabungan (%)" (Ringkasan ~75px)
+    locAlloc.length > 0 && React.createElement(
+      "div",
+      { style: { background: T.card, border: "1px solid " + T.border, borderRadius: 14, padding: "12px 18px", marginBottom: 16 } },
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
+        React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: T.textSub, textTransform: "uppercase", letterSpacing: 0.8 } }, "📊 Alokasi Tabungan (%)"),
+        React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: T.teal } }, locAlloc.length + " Platform Aktif")
+      ),
+      // Stacked Progress Bar (14px)
+      React.createElement(
+        "div",
+        { style: { height: 14, background: T.panel, borderRadius: 7, overflow: "hidden", display: "flex", marginBottom: 10 } },
+        locAlloc.map(function (d) {
+          var pct = totalAllocNet > 0 ? (d.net / totalAllocNet) * 100 : 0;
+          return React.createElement("div", {
+            key: d.name,
+            title: d.name + ": " + Math.round(pct) + "% (" + fmt(d.net) + ")",
+            style: { height: "100%", width: pct + "%", background: LOC_COLORS[d.name] || "#0284C7", transition: "width .3s ease" }
+          });
+        })
+      ),
+      // Horizontal Chips
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" } },
+        locAlloc.map(function (d) {
+          var pct = totalAllocNet > 0 ? Math.round((d.net / totalAllocNet) * 100) : 0;
+          var col = LOC_COLORS[d.name] || "#0284C7";
+          return React.createElement(
+            "div",
+            { key: d.name, style: { display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, background: T.panel, border: "1px solid " + T.border, borderRadius: 8, padding: "3px 9px", color: T.text } },
+            React.createElement("span", { style: { width: 8, height: 8, borderRadius: "50%", background: col } }),
+            React.createElement("span", null, d.name + ": "),
+            React.createElement("span", { style: { color: col, fontWeight: 800 } }, pct + "%"),
+            React.createElement("span", { style: { color: T.textSub, fontSize: 10 } }, "(" + fmt(d.net) + ")")
+          );
+        })
+      )
+    ),
+
+    // 3. Tabel Riwayat Mutasi Tabungan
     React.createElement(
       "div",
       { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, overflow: "hidden" } },
