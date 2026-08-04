@@ -6,31 +6,31 @@ var useState = React.useState;
 var useEffect = React.useEffect;
 var useCallback = React.useCallback;
 
-// ── Theme Design Tokens (Sleek Dark Cyberpunk Theme) ─────────
+// ── Theme Design Tokens (Electric Midnight Blue & Cyan Theme) ─────────
 var T = {
-  bg: "#0A0E17",
-  surface: "#111827",
-  card: "#161F33",
-  panel: "#1E293B",
-  border: "#253650",
-  sidebar: "#0D1322",
-  sidebarText: "#E2E8F0",
-  sidebarSub: "#94A3B8",
-  teal: "#00C896",
-  tealDim: "rgba(0, 200, 150, 0.12)",
+  bg: "#E0F2FE",
+  surface: "#F8FAFC",
+  card: "#FFFFFF",
+  panel: "#F8FAFC",
+  border: "#E2E8F0",
+  sidebar: "#F1F5F9",
+  sidebarText: "#0F172A",
+  sidebarSub: "#64748B",
+  teal: "#0284C7",
+  tealDim: "rgba(2, 132, 199, 0.12)",
   sage: "#10B981",
   sageDim: "rgba(16, 185, 129, 0.12)",
-  coral: "#FF4D4D",
-  coralDim: "rgba(255, 77, 77, 0.12)",
-  amber: "#FFB020",
-  amberDim: "rgba(255, 176, 32, 0.12)",
-  sky: "#38BDF8",
-  skyDim: "rgba(56, 189, 248, 0.12)",
-  violet: "#A855F7",
-  violetDim: "rgba(168, 85, 247, 0.12)",
-  text: "#F8FAFC",
-  textSub: "#94A3B8",
-  textDim: "#64748B",
+  coral: "#EF4444",
+  coralDim: "rgba(239, 68, 68, 0.12)",
+  amber: "#F59E0B",
+  amberDim: "rgba(245, 158, 11, 0.12)",
+  sky: "#0284C7",
+  skyDim: "rgba(2, 132, 199, 0.12)",
+  violet: "#8B5CF6",
+  violetDim: "rgba(139, 92, 246, 0.12)",
+  text: "#0F172A",
+  textSub: "#475569",
+  textDim: "#94A3B8",
 };
 
 // ── Categories configuration ──────────────────────────────────────────────────
@@ -644,17 +644,17 @@ function TabunganView(p) {
     { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
     React.createElement(
       "div",
-      { style: { background: "linear-gradient(135deg,#06281e,#041812)", borderRadius: 18, padding: "24px 28px", border: "1px solid " + T.sage + "40", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 } },
+      { style: { background: "linear-gradient(135deg, #1E3A8A, #0284C7)", borderRadius: 18, padding: "24px 28px", border: "1px solid " + T.border, marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, color: "#FFFFFF" } },
       React.createElement(
         "div",
         null,
-        React.createElement("div", { style: { fontSize: 11, color: T.sage, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 } }, "Total Saldo Tabungan Saat Ini"),
-        React.createElement("div", { style: { fontSize: 36, fontWeight: 900, color: T.teal, marginTop: 4 } }, fmt(saldo)),
+        React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 } }, "Total Saldo Tabungan Saat Ini"),
+        React.createElement("div", { style: { fontSize: 36, fontWeight: 900, color: "#FFFFFF", marginTop: 4 } }, fmt(saldo)),
         React.createElement(
           "div",
-          { style: { display: "flex", gap: 20, marginTop: 12, fontSize: 12, color: T.textSub } },
-          React.createElement("span", null, "💚 Total Ditabung: ", React.createElement("strong", { style: { color: T.sage } }, fmt(tSetor))),
-          React.createElement("span", null, "🟡 Total Ditarik: ", React.createElement("strong", { style: { color: T.amber } }, fmt(tTarik)))
+          { style: { display: "flex", gap: 20, marginTop: 12, fontSize: 12, color: "rgba(255,255,255,0.9)" } },
+          React.createElement("span", null, "💚 Total Ditabung: ", React.createElement("strong", { style: { color: "#4ADE80" } }, fmt(tSetor))),
+          React.createElement("span", null, "🟡 Total Ditarik: ", React.createElement("strong", { style: { color: "#FBBF24" } }, fmt(tTarik)))
         )
       ),
       React.createElement(
@@ -757,12 +757,12 @@ function DashboardView(p) {
     // Top Main Balance Banner (SALDO KEUANGAN = Pemasukan - Pengeluaran)
     React.createElement(
       "div",
-      { style: { background: "#111827", borderRadius: 16, padding: "24px 28px", border: "1px solid " + T.border, marginBottom: 20 } },
-      React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 } }, "SALDO KEUANGAN"),
-      React.createElement("div", { style: { fontSize: 40, fontWeight: 900, letterSpacing: -1, color: saldo >= 0 ? T.teal : T.coral, marginBottom: 6 } }, (saldo < 0 ? "-" : "") + "Rp " + new Intl.NumberFormat("id-ID").format(Math.abs(saldo))),
-      React.createElement("div", { style: { fontSize: 12, color: T.amber, fontWeight: 700, marginBottom: 14 } }, pct + "% pemasukan sudah terpakai"),
-      React.createElement("div", { style: { height: 6, background: T.panel, borderRadius: 3, overflow: "hidden" } },
-        React.createElement("div", { style: { height: "100%", width: pct + "%", borderRadius: 3, background: T.amber } })
+      { style: { background: "linear-gradient(135deg, #1E3A8A, #0284C7)", borderRadius: 16, padding: "24px 28px", border: "1px solid " + T.border, marginBottom: 20, color: "#FFFFFF" } },
+      React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 } }, "SALDO KEUANGAN"),
+      React.createElement("div", { style: { fontSize: 40, fontWeight: 900, letterSpacing: -1, color: "#FFFFFF", marginBottom: 6 } }, (saldo < 0 ? "-" : "") + "Rp " + new Intl.NumberFormat("id-ID").format(Math.abs(saldo))),
+      React.createElement("div", { style: { fontSize: 12, color: "#FDE047", fontWeight: 700, marginBottom: 14 } }, pct + "% pemasukan sudah terpakai"),
+      React.createElement("div", { style: { height: 6, background: "rgba(255,255,255,0.2)", borderRadius: 3, overflow: "hidden" } },
+        React.createElement("div", { style: { height: "100%", width: pct + "%", borderRadius: 3, background: "#FDE047" } })
       )
     ),
 
@@ -1124,9 +1124,9 @@ function Sidebar(p) {
             key: item.id,
             onClick: function () { p.onView(item.id); },
             style: {
-              width: "100%", padding: "10px 14px", borderRadius: 10, marginBottom: 4, border: active ? "1px solid " + T.teal + "55" : "none",
-              background: active ? T.tealDim : "transparent",
-              color: active ? T.teal : T.sidebarSub, fontSize: 13, fontWeight: 700, cursor: "pointer",
+              width: "100%", padding: "10px 14px", borderRadius: 10, marginBottom: 4, border: active ? "1px solid #0284C7" : "none",
+              background: active ? "#0284C7" : "transparent",
+              color: active ? "#FFFFFF" : T.sidebarSub, fontSize: 13, fontWeight: 700, cursor: "pointer",
               display: "flex", alignItems: "center", gap: 12, textAlign: "left",
               transition: "all .12s ease",
             },
