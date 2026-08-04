@@ -9,8 +9,8 @@
   function getConfig() {
     var c = window.__SUPABASE_CONFIG__ || {};
     var env = window.ENV || {};
-    var url = c.url || env.SUPABASE_URL || "https://nwrhhclyjuhrmcazigrr.supabase.co";
-    var anonKey = c.anonKey || env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmhoY2x5anVocm1jYXppZ3JyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzNTA1MTgsImV4cCI6MjA1NTkyNjUxOH0.1NUpJzT2eA47_cndvAStJjYt9p48i9x2KIn1dDqg80Q";
+    var url = c.url || env.SUPABASE_URL || "https://pqitifokokwsavruonhg.supabase.co";
+    var anonKey = c.anonKey || env.SUPABASE_ANON_KEY || "sb_publishable_le077LMIDMx5VA1UqHR4Wg_5e5ZR7w5";
     return { url: url, anonKey: anonKey };
   }
 
