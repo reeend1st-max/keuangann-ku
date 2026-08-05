@@ -46,19 +46,19 @@ if (window.caches) {
 <body style="background:#F1F5F9;margin:0;color:#0F172A;">
 <div id="root"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./vendor/react.production.min.js"></script>
+<script src="./vendor/react-dom.production.min.js"></script>
+<script src="./vendor/supabase.js"></script>
 
 <script>
-if (!window.React) document.write('<script src="./vendor/react.production.min.js"><\/script>');
-if (!window.ReactDOM) document.write('<script src="./vendor/react-dom.production.min.js"><\/script>');
-if (!window.supabase) document.write('<script src="./vendor/supabase.js"><\/script>');
+if (!window.React) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"><\/script>');
+if (!window.ReactDOM) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"><\/script>');
+if (!window.supabase) document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
 </script>
 
-<script src="./config.js?v=20260805_V400"></script>
-<script src="./api.js?v=20260805_V400"></script>
-<script src="./app.js?v=20260805_V400"></script>
+<script src="./config.js?v=20260805_V600"></script>
+<script src="./api.js?v=20260805_V600"></script>
+<script src="./app.js?v=20260805_V600"></script>
 
 <script>
 // Wait for everything to be ready then render
