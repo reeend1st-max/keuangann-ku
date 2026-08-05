@@ -1,8 +1,5 @@
 {
   "buildCommand": "node scripts/generate-config.js",
-  "alias": [
-    "keuanganku-app.vercel.app"
-  ],
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
