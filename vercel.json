@@ -1,11 +1,13 @@
 {
-  "redirects": [
-    {
-      "source": "/",
-      "destination": "https://reeend1st-max.github.io/keuangan-ku/",
-      "permanent": false
-    }
-  ],
+  "buildCommand": "node scripts/generate-config.js",
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
+  ]
 }
