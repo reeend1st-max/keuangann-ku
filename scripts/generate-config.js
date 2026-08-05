@@ -39,7 +39,7 @@ function safeCopy(srcFile, destFile) {
   }
 }
 
-// 2. Sync all root files to public directory
+// 2. Sync all root files to all public & sub-paths
 safeCopy(path.join(rootDir, "index.html"), path.join(publicDir, "index.html"));
 safeCopy(path.join(rootDir, "app.js"), path.join(publicJsDir, "app.js"));
 safeCopy(path.join(rootDir, "app.js"), path.join(publicDir, "app.js"));
