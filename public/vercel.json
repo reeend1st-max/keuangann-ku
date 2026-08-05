@@ -1,13 +1,15 @@
 {
   "buildCommand": "node scripts/generate-config.js",
+  "alias": [
+    "keuangan-app.vercel.app"
+  ],
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate, max-age=0" },
-        { "key": "Clear-Site-Data", "value": "\"cache\", \"storage\"" }
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate, max-age=0" }
       ]
     }
   ]
