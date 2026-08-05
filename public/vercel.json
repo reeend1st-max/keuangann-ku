@@ -1,13 +1,11 @@
 {
-  "buildCommand": "node scripts/generate-config.js",
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "headers": [
+  "redirects": [
     {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
+      "source": "/",
+      "destination": "https://reeend1st-max.github.io/keuangan-ku/",
+      "permanent": false
     }
-  ]
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false
 }
