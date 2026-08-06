@@ -102,11 +102,21 @@ function mkKey(year, month) {
 
 function parseD(str) {
   if (!str) return 0;
-  var parts = str.split("/");
+  var parts = String(str).split("/");
   if (parts.length === 3) {
-    return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+    return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10)).getTime();
   }
-  return new Date(str).getTime();
+  var d = new Date(str);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+function sortNewestFirst(items) {
+  return [].concat(items || []).sort(function (a, b) {
+    var da = parseD(a ? a.tanggal : "");
+    var db = parseD(b ? b.tanggal : "");
+    if (db !== da) return db - da;
+    return String((b && b.id) || "").localeCompare(String((a && a.id) || ""));
+  });
 }
 
 function todayStr() {
@@ -910,7 +920,7 @@ function TabunganView(p) {
       ),
       p.savings.length === 0
         ? React.createElement("div", { style: { padding: 32, textAlign: "center", color: T.textSub } }, "Belum ada transaksi tabungan.")
-        : [].concat(p.savings).sort(function (a, b) { return parseD(b.tanggal) - parseD(a.tanggal); }).map(function (item) {
+        : sortNewestFirst(p.savings).map(function (item) {
             var isStor = item.tipe === "setoran";
             var loc = item.lokasi || "KROM";
             return React.createElement(
@@ -929,12 +939,12 @@ function TabunganView(p) {
               ),
               React.createElement(
                 "div",
-                { style: { display: "flex", alignItems: "center", gap: 12 } },
+                { style: { display: "flex", alignItems: "center", gap: 14 } },
                 React.createElement("div", { style: { fontSize: 15, fontWeight: 800, color: isStor ? T.sage : T.amber } }, (isStor ? "+" : "-") + fmt(item.nominal)),
                 React.createElement(
                   "div",
                   { style: { display: "flex", gap: 4 } },
-                  React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.card, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
+                  React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.panel, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
                   React.createElement("button", { onClick: function () { p.onDelete(item.id); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
                 )
               )
@@ -955,8 +965,8 @@ function DashboardView(p) {
   var totalPenarikan = p.savings.filter(function (s) { return s.tipe === "penarikan"; }).reduce(function (a, s) { return a + s.nominal; }, 0);
   var saldoTab = totalSetoran - totalPenarikan;
 
-  var incRows = [].concat(p.income).sort(function (a, b) { return parseD(b.tanggal) - parseD(a.tanggal); }).slice(0, 3);
-  var expRows = [].concat(p.expenses).sort(function (a, b) { return parseD(b.tanggal) - parseD(a.tanggal); }).slice(0, 3);
+  var incRows = sortNewestFirst(p.income).slice(0, 3);
+  var expRows = sortNewestFirst(p.expenses).slice(0, 3);
 
   function Card(cp) {
     return React.createElement(
@@ -1062,7 +1072,7 @@ function DashboardView(p) {
 
 // ── Pemasukan View ────────────────────────────────────────────────────────────
 function PemasukanView(p) {
-  var rows = [].concat(p.income).sort(function (a, b) { return parseD(b.tanggal) - parseD(a.tanggal); });
+  var rows = sortNewestFirst(p.income);
   var total = rows.reduce(function (s, i) { return s + i.nominal; }, 0);
   var mc = { Transfer: T.teal, "E-Wallet": T.violet, Cash: T.amber, QRIS: T.sky, Debit: T.sage, Kredit: T.coral };
   var grouped = groupByMonth(rows);
@@ -1152,12 +1162,13 @@ function PengeluaranView(p) {
   }).reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
 
   var usedCats = [].concat([], all.map(function (e) { return e.kategori; })).filter(function (v, i, a) { return a.indexOf(v) === i; });
-  var rows = [].concat(all).filter(function (e) {
+  var filtered = [].concat(all).filter(function (e) {
     if (fCat !== "Semua" && e.kategori !== fCat) return false;
     if (fNW !== "Semua" && e.nw !== fNW) return false;
     if (search && e.keperluan.toLowerCase().indexOf(search.toLowerCase()) < 0) return false;
     return true;
-  }).sort(function (a, b) { return parseD(b.tanggal) - parseD(a.tanggal); });
+  });
+  var rows = sortNewestFirst(filtered);
 
   var grouped = groupByMonth(rows);
 
