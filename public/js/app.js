@@ -47,7 +47,17 @@ var CATS = {
   "Lain-lain": { emoji: "📦", color: T.textSub },
 };
 
+var customCatsState = {};
+try {
+  var storedCC = localStorage.getItem("keuangan_custom_categories");
+  if (storedCC) customCatsState = JSON.parse(storedCC);
+} catch (e) {}
+window.customCats = customCatsState || {};
+
 function getCat(name) {
+  if (window.customCats && window.customCats[name]) {
+    return window.customCats[name];
+  }
   return CATS[name] || { emoji: "📌", color: T.textSub };
 }
 
@@ -399,6 +409,87 @@ function NameOnboardingModal(p) {
   );
 }
 
+// ── Add Category Modal ────────────────────────────────────────────────────────
+function AddCategoryModal(p) {
+  var _name = useState(""), name = _name[0], setName = _name[1];
+  var _emoji = useState("🐾"), emoji = _emoji[0], setEmoji = _emoji[1];
+  var _color = useState("#0284C7"), color = _color[0], setColor = _color[1];
+  var _err = useState(""), err = _err[0], setErr = _err[1];
+
+  if (!p.open) return null;
+
+  var emojiOptions = ["🐾", "🎮", "🚴", "📚", "✈️", "🎁", "☕", "💊", "🍿", "🚗", "💼", "⭐"];
+  var colorOptions = ["#0284C7", "#10B981", "#F59E0B", "#EC4899", "#8B5CF6", "#EF4444", "#3B82F6", "#64748B"];
+
+  function save() {
+    if (!name.trim()) return setErr("Nama kategori wajib diisi.");
+    var cleanName = name.trim();
+    var custom = window.customCats || {};
+    custom[cleanName] = { emoji: emoji, color: color };
+    window.customCats = custom;
+    try {
+      localStorage.setItem("keuangan_custom_categories", JSON.stringify(custom));
+    } catch (e) {}
+    p.onSave(cleanName);
+    setName(""); setEmoji("🐾"); setColor("#0284C7"); setErr("");
+    p.onClose();
+  }
+
+  return React.createElement(
+    Modal,
+    { open: p.open, onClose: p.onClose, title: "➕ Tambah Kategori Baru", width: 420 },
+    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 14 } },
+      React.createElement(DInput, { label: "Nama Kategori", value: name, onChange: setName, placeholder: "Contoh: Peliharaan, Hobi, Liburan...", autoFocus: true }),
+      React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 6 } },
+        React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Pilih Emoji Ikon"),
+        React.createElement(
+          "div",
+          { style: { display: "flex", flexWrap: "wrap", gap: 8, background: T.panel, padding: 10, borderRadius: 10, border: "1.5px solid " + T.border } },
+          emojiOptions.map(function (em) {
+            var active = emoji === em;
+            return React.createElement(
+              "button",
+              {
+                key: em, type: "button", onClick: function () { setEmoji(em); },
+                style: { fontSize: 20, padding: "6px 10px", borderRadius: 8, border: active ? "2px solid " + T.teal : "1px solid transparent", background: active ? T.tealDim : "transparent", cursor: "pointer" }
+              },
+              em
+            );
+          })
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 6 } },
+        React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Pilih Warna Badge"),
+        React.createElement(
+          "div",
+          { style: { display: "flex", gap: 10, background: T.panel, padding: 10, borderRadius: 10, border: "1.5px solid " + T.border } },
+          colorOptions.map(function (col) {
+            var active = color === col;
+            return React.createElement(
+              "button",
+              {
+                key: col, type: "button", onClick: function () { setColor(col); },
+                style: { width: 28, height: 28, borderRadius: "50%", background: col, border: active ? "3px solid #FFFFFF" : "none", boxShadow: active ? "0 0 0 2px " + col : "none", cursor: "pointer" }
+              }
+            );
+          })
+        )
+      ),
+      err && React.createElement("div", { style: { color: T.coral, fontSize: 12, fontWeight: 600 } }, "⚠️ ", err),
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10, paddingTop: 14, borderTop: "1px solid " + T.border } },
+        React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
+        React.createElement(Btn, { color: T.teal, onClick: save }, "➕ Simpan Kategori")
+      )
+    )
+  );
+}
+
 // ── Expense Form ──────────────────────────────────────────────────────────────
 function ExpenseForm(p) {
   var _t = useState(todayStr()), tanggal = _t[0], setTanggal = _t[1];
@@ -409,6 +500,7 @@ function ExpenseForm(p) {
   var _nw = useState("Need"), nw = _nw[0], setNw = _nw[1];
   var _c = useState(""), catatan = _c[0], setCatatan = _c[1];
   var _err = useState(""), err = _err[0], setErr = _err[1];
+  var _sac = useState(false), showAddCat = _sac[0], setShowAddCat = _sac[1];
 
   useEffect(function () {
     if (p.initial) {
@@ -427,6 +519,8 @@ function ExpenseForm(p) {
   }, [p.initial, p.open]);
 
   if (!p.open) return null;
+
+  var allCatKeys = Object.keys(CATS).concat(Object.keys(window.customCats || {})).filter(function (v, i, a) { return a.indexOf(v) === i; });
 
   function save() {
     setErr("");
@@ -458,26 +552,57 @@ function ExpenseForm(p) {
   }
 
   return React.createElement(
-    Modal,
-    { open: p.open, onClose: p.onClose, title: p.initial ? "✏️ Edit Pengeluaran" : "➕ Tambah Pengeluaran", width: 500 },
-    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
-      React.createElement(DInput, { label: "Tanggal (DD/MM/YYYY)", value: tanggal, onChange: setTanggal }),
-      React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: function (v) { setNominal(formatRupiahInput(v)); }, placeholder: "0" })
-    ),
-    React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DInput, { label: "Keperluan / Deskripsi", value: keperluan, onChange: setKeperluan, placeholder: "Contoh: Makan siang, Beli baju...", autoFocus: true })),
-    React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
-      React.createElement(DSelect, { label: "Kategori", value: kategori, onChange: setKategori, options: Object.keys(CATS) }),
-      React.createElement(DToggle, { label: "Kebutuhan / Keinginan", value: nw, onChange: setNw, options: ["Need", "Want"], colors: [T.sky, T.violet] })
-    ),
-    React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DSelect, { label: "Metode Pembayaran", value: bayar, onChange: setBayar, options: ["Transfer", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })),
-    React.createElement(DInput, { label: "Catatan Tambahan (opsional)", value: catatan, onChange: setCatatan, placeholder: "Keterangan tambahan..." }),
-    err && React.createElement("div", { style: { color: T.coral, fontSize: 12, marginTop: 10, fontWeight: 600 } }, "⚠️ ", err),
+    React.Fragment,
+    null,
     React.createElement(
-      "div",
-      { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid " + T.border } },
-      React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
-      React.createElement(Btn, { color: T.coral, onClick: save }, "💾 ", p.initial ? "Simpan Perubahan" : "Tambah Pengeluaran")
-    )
+      Modal,
+      { open: p.open, onClose: p.onClose, title: p.initial ? "✏️ Edit Pengeluaran" : "➕ Tambah Pengeluaran", width: 500 },
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
+        React.createElement(DInput, { label: "Tanggal (DD/MM/YYYY)", value: tanggal, onChange: setTanggal }),
+        React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: function (v) { setNominal(formatRupiahInput(v)); }, placeholder: "0" })
+      ),
+      React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DInput, { label: "Keperluan / Deskripsi", value: keperluan, onChange: setKeperluan, placeholder: "Contoh: Makan siang, Beli baju...", autoFocus: true })),
+      React.createElement(
+        "div",
+        { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
+        React.createElement(
+          "div",
+          { style: { display: "flex", flexDirection: "column", gap: 5 } },
+          React.createElement(
+            "div",
+            { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
+            React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Kategori"),
+            React.createElement(
+              "button",
+              {
+                type: "button", onClick: function () { setShowAddCat(true); },
+                style: { background: "none", border: "none", color: T.teal, fontSize: 11, fontWeight: 800, cursor: "pointer", padding: 0 }
+              },
+              "+ Kategori Baru"
+            )
+          ),
+          React.createElement(DSelect, { value: kategori, onChange: setKategori, options: allCatKeys })
+        ),
+        React.createElement(DToggle, { label: "Kebutuhan / Keinginan", value: nw, onChange: setNw, options: ["Need", "Want"], colors: [T.sky, T.violet] })
+      ),
+      React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DSelect, { label: "Metode Pembayaran", value: bayar, onChange: setBayar, options: ["Transfer", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })),
+      React.createElement(DInput, { label: "Catatan Tambahan (opsional)", value: catatan, onChange: setCatatan, placeholder: "Keterangan tambahan..." }),
+      err && React.createElement("div", { style: { color: T.coral, fontSize: 12, marginTop: 10, fontWeight: 600 } }, "⚠️ ", err),
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid " + T.border } },
+        React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
+        React.createElement(Btn, { color: T.coral, onClick: save }, "💾 ", p.initial ? "Simpan Perubahan" : "Tambah Pengeluaran")
+      )
+    ),
+    React.createElement(AddCategoryModal, {
+      open: showAddCat,
+      onClose: function () { setShowAddCat(false); },
+      onSave: function (newCatName) {
+        setKategori(newCatName);
+        if (p.showToast) p.showToast("Kategori '" + newCatName + "' berhasil ditambahkan!", "success");
+      }
+    })
   );
 }
 
