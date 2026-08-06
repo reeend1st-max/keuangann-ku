@@ -51,8 +51,17 @@ function getCat(name) {
   return CATS[name] || { emoji: "📌", color: T.textSub };
 }
 
-// ── Helper Utilities ──────────────────────────────────────────────────────────
-function fmt(num) {
+// Privacy Mode Global State & Helpers
+var privacyModeState = false;
+try {
+  privacyModeState = localStorage.getItem("keuangan_privacy_mode") === "true";
+} catch (e) {}
+window.privacyMode = privacyModeState;
+
+function fmt(num, forceShow) {
+  if (window.privacyMode && !forceShow) {
+    return "Rp ••••••••";
+  }
   return "Rp " + new Intl.NumberFormat("id-ID").format(num || 0);
 }
 
@@ -69,7 +78,10 @@ function parseRupiahInput(val) {
   return parseInt(raw, 10) || 0;
 }
 
-function fmtS(num) {
+function fmtS(num, forceShow) {
+  if (window.privacyMode && !forceShow) {
+    return "Rp ••••••••";
+  }
   var n = num || 0;
   return "Rp " + new Intl.NumberFormat("id-ID").format(n);
 }
@@ -1289,7 +1301,9 @@ function KalenderPengeluaranView(p) {
               } else {
                 badgeBg = "#FFE4E6"; badgeColor = "#E11D48";
               }
-              if (dayTotal >= 1000000) {
+              if (window.privacyMode) {
+                labelText = "Rp •••";
+              } else if (dayTotal >= 1000000) {
                 labelText = "Rp " + (dayTotal / 1000000).toFixed(1) + "jt";
               } else if (dayTotal >= 1000) {
                 labelText = "Rp " + Math.round(dayTotal / 1000) + "rb";
@@ -1453,7 +1467,18 @@ function App() {
   var _esv = useState(null), editingSav = _esv[0], setEditSav = _esv[1];
   var _dst = useState("setoran"), defaultSavTipe = _dst[0], setDST = _dst[1];
   var _dt = useState(null), deleteTarget = _dt[0], setDT = _dt[1];
+  var _pm = useState(window.privacyMode || false), privacyMode = _pm[0], setPrivacyMode = _pm[1];
   var tk = useToast();
+
+  var togglePrivacyMode = function () {
+    var next = !privacyMode;
+    window.privacyMode = next;
+    setPrivacyMode(next);
+    try {
+      localStorage.setItem("keuangan_privacy_mode", next ? "true" : "false");
+    } catch (e) {}
+    tk.show(next ? "Mode Privasi Aktif (Nominal Disamarkan)" : "Mode Privasi Nonaktif", "info");
+  };
 
   useEffect(function () {
     window.Api.getSession().then(function (u) {
@@ -1563,6 +1588,21 @@ function App() {
           React.createElement(
             "div",
             { className: "top-toolbar-actions", style: { display: "flex", gap: 8, alignItems: "center" } },
+            React.createElement(
+              Btn,
+              {
+                color: privacyMode ? T.teal : T.textSub,
+                style: {
+                  background: privacyMode ? "#E0F2FE" : T.surface,
+                  border: "1px solid " + (privacyMode ? T.teal : T.border),
+                  color: privacyMode ? T.teal : T.textSub,
+                  fontWeight: 800
+                },
+                onClick: togglePrivacyMode,
+                title: privacyMode ? "Nonaktifkan Mode Privasi" : "Aktifkan Mode Privasi"
+              },
+              privacyMode ? "🙈 Privasi On" : "👁️ Privasi Off"
+            ),
             React.createElement(Btn, { color: T.sage, onClick: function () { setEditInc(null); setSIF(true); } }, "+ Pemasukan"),
             React.createElement(Btn, { color: T.coral, onClick: function () { setEditExp(null); setSEF(true); } }, "+ Pengeluaran"),
             React.createElement(Btn, { color: T.coralDim, style: { border: "1px solid " + T.coral + "55", color: T.coral }, onClick: handleLogout }, "🚪 Keluar")
