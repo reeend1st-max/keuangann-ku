@@ -1231,17 +1231,6 @@ function KalenderPengeluaranView(p) {
         null,
         React.createElement("h2", { style: { margin: 0, fontSize: 22, fontWeight: 900, color: T.text } }, "📅 Kalender Pengeluaran Harian"),
         React.createElement("div", { style: { fontSize: 13, color: T.textSub, marginTop: 4 } }, "Lacak intensitas belanja bulanan dalam sekali pandang")
-      ),
-      React.createElement(
-        "div",
-        { style: { background: "linear-gradient(135deg, #1E3A8A 0%, #0284C7 100%)", borderRadius: 14, padding: "10px 18px", color: "#FFFFFF", display: "flex", alignItems: "center", gap: 10, boxShadow: "0 4px 12px rgba(2, 132, 199, 0.2)" } },
-        React.createElement("span", { style: { fontSize: 20 } }, "🔥"),
-        React.createElement(
-          "div",
-          null,
-          React.createElement("div", { style: { fontSize: 13, fontWeight: 800, letterSpacing: 0.3 } }, streakCount + " Hari Hemat Streak!"),
-          React.createElement("div", { style: { fontSize: 10, opacity: 0.9 } }, "Pengeluaran ≤ Rp 50rb di bulan " + monthsList[selMonth - 1])
-        )
       )
     ),
     React.createElement(
