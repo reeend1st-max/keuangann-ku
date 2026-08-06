@@ -1137,12 +1137,236 @@ function AnalisisTahunanView(p) {
   );
 }
 
+// ── Kalender Pengeluaran View ──────────────────────────────────────────────────
+function KalenderPengeluaranView(p) {
+  var now = new Date();
+  var _sy = useState(now.getFullYear()), selYear = _sy[0], setSelYear = _sy[1];
+  var _sm = useState(now.getMonth() + 1), selMonth = _sm[0], setSelMonth = _sm[1];
+  var _sd = useState(null), selDateStr = _sd[0], setSelDateStr = _sd[1];
+
+  var monthsList = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+
+  function toKey(y, m, d) {
+    return y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  }
+
+  var dailyMap = {};
+  (p.expenses || []).forEach(function (e) {
+    if (!e.date) return;
+    var parts = e.date.split("/");
+    if (parts.length === 3) {
+      var d = parseInt(parts[0], 10);
+      var m = parseInt(parts[1], 10);
+      var y = parseInt(parts[2], 10);
+      if (y === selYear && m === selMonth) {
+        var k = toKey(y, m, d);
+        if (!dailyMap[k]) dailyMap[k] = { total: 0, items: [] };
+        dailyMap[k].total += e.nominal;
+        dailyMap[k].items.push(e);
+      }
+    }
+  });
+
+  var totalDaysInMonth = new Date(selYear, selMonth, 0).getDate();
+  var streakCount = 0;
+  for (var i = 1; i <= totalDaysInMonth; i++) {
+    var k = toKey(selYear, selMonth, i);
+    var dayTotal = (dailyMap[k] && dailyMap[k].total) || 0;
+    if (dayTotal <= 50000) {
+      streakCount++;
+    }
+  }
+
+  var daysHeader = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  var firstDayIndex = new Date(selYear, selMonth - 1, 1).getDay();
+
+  var prevMonth = function () {
+    if (selMonth === 1) { setSelMonth(12); setSelYear(selYear - 1); }
+    else { setSelMonth(selMonth - 1); }
+    setSelDateStr(null);
+  };
+  var nextMonth = function () {
+    if (selMonth === 12) { setSelMonth(1); setSelYear(selYear + 1); }
+    else { setSelMonth(selMonth + 1); }
+    setSelDateStr(null);
+  };
+
+  var selectedDayData = selDateStr ? dailyMap[selDateStr] : null;
+
+  return React.createElement(
+    "div",
+    { style: { padding: "24px 28px", overflowY: "auto", height: "100%", display: "flex", flexDirection: "column", gap: 20 } },
+    React.createElement(
+      "div",
+      { style: { display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 } },
+      React.createElement(
+        "div",
+        null,
+        React.createElement("h2", { style: { margin: 0, fontSize: 22, fontWeight: 900, color: T.text } }, "📅 Kalender Pengeluaran Harian"),
+        React.createElement("div", { style: { fontSize: 13, color: T.textSub, marginTop: 4 } }, "Lacak intensitas belanja bulanan dalam sekali pandang")
+      ),
+      React.createElement(
+        "div",
+        { style: { background: "linear-gradient(135deg, #1E3A8A 0%, #0284C7 100%)", borderRadius: 14, padding: "10px 18px", color: "#FFFFFF", display: "flex", alignItems: "center", gap: 10, boxShadow: "0 4px 12px rgba(2, 132, 199, 0.2)" } },
+        React.createElement("span", { style: { fontSize: 20 } }, "🔥"),
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 13, fontWeight: 800, letterSpacing: 0.3 } }, streakCount + " Hari Hemat Streak!"),
+          React.createElement("div", { style: { fontSize: 10, opacity: 0.9 } }, "Pengeluaran ≤ Rp 50rb di bulan " + monthsList[selMonth - 1])
+        )
+      )
+    ),
+    React.createElement(
+      "div",
+      { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" } },
+      React.createElement(
+        "button",
+        { onClick: prevMonth, style: { background: T.surface, border: "1px solid " + T.border, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", color: T.text } },
+        "◀ Bulan Lalu"
+      ),
+      React.createElement(
+        "div",
+        { style: { fontSize: 16, fontWeight: 800, color: T.teal } },
+        monthsList[selMonth - 1] + " " + selYear
+      ),
+      React.createElement(
+        "button",
+        { onClick: nextMonth, style: { background: T.surface, border: "1px solid " + T.border, borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", color: T.text } },
+        "Bulan Depan ▶"
+      )
+    ),
+    React.createElement(
+      "div",
+      { style: { display: "flex", gap: 20, flex: 1, minHeight: 0, flexWrap: "wrap" } },
+      React.createElement(
+        "div",
+        { style: { flex: "1 1 500px", background: T.card, borderRadius: 18, border: "1px solid " + T.border, padding: 20, display: "flex", flexDirection: "column" } },
+        React.createElement(
+          "div",
+          { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontWeight: 800, fontSize: 12, color: T.textSub, marginBottom: 10, paddingBottom: 10, borderBottom: "1px solid " + T.border } },
+          daysHeader.map(function (d, idx) {
+            return React.createElement("div", { key: "dh-" + idx, style: { color: idx === 0 ? T.coral : T.textSub } }, d);
+          })
+        ),
+        React.createElement(
+          "div",
+          { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, flex: 1 } },
+          Array.from({ length: firstDayIndex }).map(function (_, i) {
+            return React.createElement("div", { key: "empty-" + i, style: { background: "transparent" } });
+          }),
+          Array.from({ length: totalDaysInMonth }).map(function (_, i) {
+            var dayNum = i + 1;
+            var dateKey = toKey(selYear, selMonth, dayNum);
+            var isSelected = selDateStr === dateKey;
+            var dayData = dailyMap[dateKey];
+            var dayTotal = dayData ? dayData.total : 0;
+            var badgeBg = "transparent";
+            var badgeColor = T.textDim;
+            var labelText = "";
+
+            if (dayTotal > 0) {
+              if (dayTotal <= 50000) {
+                badgeBg = "#D1FAE5"; badgeColor = "#047857";
+              } else if (dayTotal <= 150000) {
+                badgeBg = "#E0F2FE"; badgeColor = "#0284C7";
+              } else {
+                badgeBg = "#FFE4E6"; badgeColor = "#E11D48";
+              }
+              if (dayTotal >= 1000000) {
+                labelText = "Rp " + (dayTotal / 1000000).toFixed(1) + "jt";
+              } else if (dayTotal >= 1000) {
+                labelText = "Rp " + Math.round(dayTotal / 1000) + "rb";
+              } else {
+                labelText = "Rp " + dayTotal;
+              }
+            }
+
+            return React.createElement(
+              "div",
+              {
+                key: "day-" + dayNum,
+                onClick: function () { setSelDateStr(dateKey); },
+                style: {
+                  background: isSelected ? "#E0F2FE" : T.surface,
+                  border: isSelected ? "2px solid #0284C7" : "1px solid " + T.border,
+                  borderRadius: 12, padding: "8px 6px",
+                  display: "flex", flexDirection: "column", justifyContent: "space-between",
+                  minHeight: 64, cursor: "pointer", transition: "all 0.15s ease",
+                  boxShadow: isSelected ? "0 2px 8px rgba(2, 132, 199, 0.2)" : "none"
+                }
+              },
+              React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: (new Date(selYear, selMonth - 1, dayNum).getDay() === 0) ? T.coral : T.text } }, dayNum),
+              labelText ? React.createElement(
+                "div",
+                { style: { background: badgeBg, color: badgeColor, fontSize: 10, fontWeight: 800, padding: "3px 6px", borderRadius: 6, marginTop: 4, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } },
+                labelText
+              ) : React.createElement("div", { style: { fontSize: 9, color: T.textDim, marginTop: 6 } }, "-")
+            );
+          })
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { flex: "1 1 300px", background: T.card, borderRadius: 18, border: "1px solid " + T.border, padding: 20, display: "flex", flexDirection: "column" } },
+        React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.teal, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 } }, "📌 Rincian Transaksi"),
+        selDateStr ? (function () {
+          var parts = selDateStr.split("-");
+          var displayD = parts[2] + " " + monthsList[parseInt(parts[1], 10) - 1] + " " + parts[0];
+          return React.createElement(
+            "div",
+            { style: { display: "flex", flexDirection: "column", gap: 14, flex: 1 } },
+            React.createElement(
+              "div",
+              { style: { background: T.surface, padding: "12px 16px", borderRadius: 12, border: "1px solid " + T.border } },
+              React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700 } }, displayD),
+              React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: T.coral, marginTop: 4 } }, fmt(selectedDayData ? selectedDayData.total : 0))
+            ),
+            selectedDayData && selectedDayData.items && selectedDayData.items.length > 0 ? React.createElement(
+              "div",
+              { style: { display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", flex: 1 } },
+              selectedDayData.items.map(function (item, idx) {
+                var catInfo = getCat(item.kategori);
+                return React.createElement(
+                  "div",
+                  { key: "item-" + idx, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: T.surface, borderRadius: 10, border: "1px solid " + T.border } },
+                  React.createElement(
+                    "div",
+                    { style: { display: "flex", alignItems: "center", gap: 10 } },
+                    React.createElement("span", { style: { fontSize: 18 } }, catInfo.emoji),
+                    React.createElement(
+                      "div",
+                      null,
+                      React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: T.text } }, item.deskripsi || item.kategori),
+                      React.createElement("div", { style: { fontSize: 10, color: T.textSub } }, item.kategori)
+                    )
+                  ),
+                  React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: T.coral } }, fmt(item.nominal))
+                );
+              })
+            ) : React.createElement("div", { style: { padding: "20px 0", textAlign: "center", color: T.textSub, fontSize: 13 } }, "Tidak ada pengeluaran di tanggal ini 🎉")
+          );
+        })() : React.createElement(
+          "div",
+          { style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", color: T.textSub, gap: 10, textAlign: "center" } },
+          React.createElement("span", { style: { fontSize: 32 } }, "👆"),
+          React.createElement("div", { style: { fontSize: 13, fontWeight: 600 } }, "Klik salah satu tanggal pada kalender untuk melihat rincian belanjaan.")
+        )
+      )
+    )
+  );
+}
+
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function Sidebar(p) {
   var nav = [
     { id: "dashboard", icon: "🏠", label: "Ringkasan" },
     { id: "pemasukan", icon: "👛", label: "Pemasukan" },
     { id: "pengeluaran", icon: "🧾", label: "Pengeluaran" },
+    { id: "kalender-harian", icon: "📅", label: "Kalender Harian" },
     { id: "tabungan", icon: "🏛️", label: "Tabungan" },
     { id: "analisis-bulanan", icon: "🌖", label: "Analisis Bulanan" },
     { id: "analisis-tahunan", icon: "📊", label: "Analisis Tahunan" },
@@ -1320,7 +1544,7 @@ function App() {
           React.createElement(
             "div",
             { style: { display: "flex", alignItems: "center", gap: 10 } },
-            React.createElement("span", { style: { fontSize: 16 } }, view === "dashboard" ? "🏠" : view === "pemasukan" ? "👛" : view === "pengeluaran" ? "🧾" : view === "tabungan" ? "🏛️" : view === "analisis-bulanan" ? "🌖" : "📊"),
+            React.createElement("span", { style: { fontSize: 16 } }, view === "dashboard" ? "🏠" : view === "pemasukan" ? "👛" : view === "pengeluaran" ? "🧾" : view === "kalender-harian" ? "📅" : view === "tabungan" ? "🏛️" : view === "analisis-bulanan" ? "🌖" : "📊"),
             React.createElement("span", { style: { fontSize: 12, color: T.textSub, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 } }, view === "dashboard" ? "RINGKASAN" : view.replace("-", " ").toUpperCase())
           ),
           React.createElement(
@@ -1335,6 +1559,7 @@ function App() {
           if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings });
           if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
           if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id) { setDT({ type: "expense", id: id }); } });
+          if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings });
           if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); } });
           if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income });
           if (view === "analisis-tahunan") return React.createElement(AnalisisTahunanView, { key: "view-amt", expenses: expenses, income: income });
