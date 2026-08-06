@@ -174,10 +174,13 @@ function Toast(p) {
 // ── Reusable UI Components ────────────────────────────────────────────────────
 function Chip(p) {
   var col = p.color || T.teal;
+  var displayLabel = p.label;
+  if (displayLabel === "Need") displayLabel = "🎯 Kebutuhan";
+  if (displayLabel === "Want") displayLabel = "✨ Keinginan";
   return React.createElement(
     "span",
     { style: { background: col + "20", color: col, border: "1px solid " + col + "40", padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700 } },
-    p.label
+    displayLabel
   );
 }
 
@@ -242,15 +245,17 @@ function DToggle(p) {
       "div",
       { style: { display: "flex", background: T.panel, borderRadius: 9, padding: 3, border: "1.5px solid " + T.border } },
       p.options.map(function (opt, idx) {
-        var active = p.value === opt;
+        var val = typeof opt === "string" ? opt : opt.value;
+        var lbl = typeof opt === "string" ? opt : opt.label;
+        var active = p.value === val;
         var activeColor = p.colors ? p.colors[idx] : T.teal;
         return React.createElement(
           "button",
           {
-            key: opt, type: "button", onClick: function () { p.onChange(opt); },
+            key: val, type: "button", onClick: function () { p.onChange(val); },
             style: { flex: 1, padding: "7px 10px", borderRadius: 7, border: "none", background: active ? activeColor : "transparent", color: active ? "#0A0E17" : T.textSub, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all .12s ease" },
           },
-          opt
+          lbl
         );
       })
     )
@@ -599,7 +604,16 @@ function ExpenseForm(p) {
             options: allCatKeys.concat(["➕ Tambah Kategori Baru..."])
           })
         ),
-        React.createElement(DToggle, { label: "Kebutuhan / Keinginan", value: nw, onChange: setNw, options: ["Need", "Want"], colors: [T.sky, T.violet] })
+        React.createElement(DToggle, {
+          label: "Kebutuhan / Keinginan",
+          value: nw,
+          onChange: setNw,
+          options: [
+            { label: "🎯 Kebutuhan", value: "Need" },
+            { label: "✨ Keinginan", value: "Want" }
+          ],
+          colors: [T.sky, T.violet]
+        })
       ),
       React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DSelect, { label: "Metode Pembayaran", value: bayar, onChange: setBayar, options: ["Transfer", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })),
       React.createElement(DInput, { label: "Catatan Tambahan (opsional)", value: catatan, onChange: setCatatan, placeholder: "Keterangan tambahan..." }),
@@ -1206,7 +1220,7 @@ function PengeluaranView(p) {
             "div",
             { style: { display: "flex", gap: 5, overflowX: "auto", paddingBottom: 2, flex: 1 } },
             ["Semua"].concat(usedCats).map(function (c) { var cfg = getCat(c); return pill(c === "Semua" ? "Semua" : cfg.emoji + " " + c, fCat === c, cfg.color || T.teal, function () { sFCat(c); }); }),
-            ["Semua", "Need", "Want"].map(function (n) { return pill(n === "Need" ? "🔵 Need" : n === "Want" ? "💜 Want" : "Semua NW", fNW === n, n === "Need" ? T.sky : n === "Want" ? T.violet : T.textSub, function () { sFNW(n); }); })
+            ["Semua", "Need", "Want"].map(function (n) { return pill(n === "Need" ? "🎯 Kebutuhan" : n === "Want" ? "✨ Keinginan" : "Semua K/K", fNW === n, n === "Need" ? T.sky : n === "Want" ? T.violet : T.textSub, function () { sFNW(n); }); })
           )
         ),
         React.createElement(Btn, { color: T.coral, onClick: p.onAdd }, "➕ Tambah Pengeluaran")
