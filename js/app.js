@@ -280,13 +280,19 @@ function ConfirmModal(p) {
   if (!p.open) return null;
   return React.createElement(
     Modal,
-    { open: p.open, onClose: p.onCancel, title: "Konfirmasi Hapus", width: 380 },
-    React.createElement("p", { style: { fontSize: 13, color: T.textSub, lineHeight: 1.6 } }, p.message),
+    { open: p.open, onClose: p.onCancel, title: "⚠️ Konfirmasi Hapus", width: 400 },
+    React.createElement(
+      "div",
+      { style: { fontSize: 13, color: T.text, lineHeight: 1.6 } },
+      p.label
+        ? React.createElement("div", null, "Yakin ingin menghapus ", React.createElement("strong", { style: { color: T.coral } }, p.label), "? Data tidak dapat dikembalikan.")
+        : (p.message || "Yakin ingin menghapus transaksi ini?")
+    ),
     React.createElement(
       "div",
       { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 } },
       React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onCancel }, "Batal"),
-      React.createElement(Btn, { color: T.coral, onClick: p.onConfirm }, "Ya, Hapus")
+      React.createElement(Btn, { color: T.coral, onClick: p.onConfirm }, "🗑️ Ya, Hapus")
     )
   );
 }
@@ -1117,8 +1123,20 @@ function PengeluaranView(p) {
   var _fn = useState("Semua"), fNW = _fn[0], sFNW = _fn[1];
   var _fs = useState(""), search = _fs[0], sSearch = _fs[1];
 
-  var all = p.expenses;
-  var total = all.reduce(function (s, e) { return s + e.nominal; }, 0);
+  var all = p.expenses || [];
+  var total = all.reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
+
+  var now = new Date();
+  var curY = now.getFullYear();
+  var curM = now.getMonth();
+  var thisMonthExp = all.filter(function (e) {
+    var parts = (e.tanggal || "").split("/");
+    if (parts.length === 3) {
+      return parseInt(parts[2], 10) === curY && (parseInt(parts[1], 10) - 1) === curM;
+    }
+    return false;
+  }).reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
+
   var usedCats = [].concat([], all.map(function (e) { return e.kategori; })).filter(function (v, i, a) { return a.indexOf(v) === i; });
   var rows = [].concat(all).filter(function (e) {
     if (fCat !== "Semua" && e.kategori !== fCat) return false;
@@ -1130,7 +1148,19 @@ function PengeluaranView(p) {
   var grouped = groupByMonth(rows);
 
   function pill(label, active, col, fn) {
-    return React.createElement("button", { key: label, onClick: fn, style: { padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, border: "1.5px solid " + (active ? col : T.border), background: active ? col + "22" : "transparent", color: active ? col : T.textSub, cursor: "pointer", whiteSpace: "nowrap" } }, label);
+    return React.createElement(
+      "button",
+      {
+        key: label, onClick: fn,
+        style: {
+          padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
+          border: "1.5px solid " + (active ? col : T.border),
+          background: active ? col + "22" : "transparent",
+          color: active ? col : T.textSub, cursor: "pointer", whiteSpace: "nowrap"
+        }
+      },
+      label
+    );
   }
 
   return React.createElement(
@@ -1138,27 +1168,48 @@ function PengeluaranView(p) {
     { style: { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" } },
     React.createElement(
       "div",
-      { style: { padding: "24px 32px 16px", borderBottom: "1px solid " + T.border, flexShrink: 0 } },
+      { style: { padding: "20px 32px 16px", borderBottom: "1px solid " + T.border, flexShrink: 0, display: "flex", flexDirection: "column", gap: 14 } },
+      
+      // Top 3 Stat Cards Row
       React.createElement(
         "div",
-        { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 } },
-        React.createElement("div", null, React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Pengeluaran Utama"), React.createElement("div", { style: { fontSize: 28, fontWeight: 900, color: T.coral, marginTop: 4 } }, fmt(total)), React.createElement("div", { style: { fontSize: 13, color: T.textSub, marginTop: 4 } }, all.length + " total transaksi")),
-        React.createElement(Btn, { color: T.coral, onClick: p.onAdd }, "➕ Tambah Pengeluaran")
-      ),
-      React.createElement(
-        "div",
-        { style: { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" } },
-        React.createElement("input", { value: search, onChange: function (e) { sSearch(e.target.value); }, placeholder: "🔍 Cari...", style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 8, padding: "8px 12px", color: T.text, fontSize: 13, outline: "none", width: 200 } }),
+        { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 } },
         React.createElement(
           "div",
-          { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
-          ["Semua"].concat(usedCats).map(function (c) { var cfg = getCat(c); return pill(c === "Semua" ? "Semua" : cfg.emoji + " " + c, fCat === c, cfg.color || T.teal, function () { sFCat(c); }); })
+          { style: { background: T.card, borderRadius: 14, border: "1px solid " + T.border, padding: "12px 18px" } },
+          React.createElement("div", { style: { fontSize: 10, color: T.coral, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 } }, "🔴 TOTAL PENGELUARAN"),
+          React.createElement("div", { style: { fontSize: 24, fontWeight: 900, color: T.coral, marginTop: 2 } }, fmt(total))
         ),
         React.createElement(
           "div",
-          { style: { display: "flex", gap: 6 } },
-          ["Semua", "Need", "Want"].map(function (n) { return pill(n === "Need" ? "🔵 Need" : n === "Want" ? "💜 Want" : "Semua", fNW === n, n === "Need" ? T.sky : n === "Want" ? T.violet : T.textSub, function () { sFNW(n); }); })
+          { style: { background: T.card, borderRadius: 14, border: "1px solid " + T.border, padding: "12px 18px" } },
+          React.createElement("div", { style: { fontSize: 10, color: T.teal, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 } }, "🔵 TOTAL TRANSAKSI"),
+          React.createElement("div", { style: { fontSize: 24, fontWeight: 900, color: T.teal, marginTop: 2 } }, all.length + " Transaksi")
+        ),
+        React.createElement(
+          "div",
+          { style: { background: T.card, borderRadius: 14, border: "1px solid " + T.border, padding: "12px 18px" } },
+          React.createElement("div", { style: { fontSize: 10, color: T.violet, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 } }, "📊 BULAN INI (" + MONTH_NAMES[curM].toUpperCase() + ")"),
+          React.createElement("div", { style: { fontSize: 24, fontWeight: 900, color: T.violet, marginTop: 2 } }, fmt(thisMonthExp))
         )
+      ),
+
+      // Action Bar: Search & Compact Scrollable Category Filters
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" } },
+        React.createElement(
+          "div",
+          { style: { display: "flex", gap: 8, alignItems: "center", flex: 1, minWidth: 260 } },
+          React.createElement("input", { value: search, onChange: function (e) { sSearch(e.target.value); }, placeholder: "🔍 Cari pengeluaran...", style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 8, padding: "7px 12px", color: T.text, fontSize: 12, outline: "none", width: 180 } }),
+          React.createElement(
+            "div",
+            { style: { display: "flex", gap: 5, overflowX: "auto", paddingBottom: 2, flex: 1 } },
+            ["Semua"].concat(usedCats).map(function (c) { var cfg = getCat(c); return pill(c === "Semua" ? "Semua" : cfg.emoji + " " + c, fCat === c, cfg.color || T.teal, function () { sFCat(c); }); }),
+            ["Semua", "Need", "Want"].map(function (n) { return pill(n === "Need" ? "🔵 Need" : n === "Want" ? "💜 Want" : "Semua NW", fNW === n, n === "Need" ? T.sky : n === "Want" ? T.violet : T.textSub, function () { sFNW(n); }); })
+          )
+        ),
+        React.createElement(Btn, { color: T.coral, onClick: p.onAdd }, "➕ Tambah Pengeluaran")
       )
     ),
     rows.length === 0
@@ -1177,10 +1228,9 @@ function PengeluaranView(p) {
             return React.createElement(
               "div",
               { key: g.key },
-              // Sekat Pergantian Bulan
               React.createElement(
                 "div",
-                { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 32px", background: "linear-gradient(90deg, #FF5C7C22, transparent)", borderTop: "1.5px solid " + T.coral + "40", borderBottom: "1.5px solid " + T.coral + "40" } },
+                { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 32px", background: "linear-gradient(90deg, #EF444415, transparent)", borderTop: "1.5px solid " + T.coral + "30", borderBottom: "1.5px solid " + T.coral + "30" } },
                 React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.coral, display: "flex", alignItems: "center", gap: 8 } },
                   React.createElement("span", { style: { fontSize: 16 } }, "📅"),
                   React.createElement("span", null, mLabel),
@@ -1203,7 +1253,7 @@ function PengeluaranView(p) {
                     "div",
                     { style: { display: "flex", gap: 4 } },
                     React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.card, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
-                    React.createElement("button", { onClick: function () { p.onDelete(item.id); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
+                    React.createElement("button", { onClick: function () { p.onDelete(item.id, item); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
                   )
                 );
               })
@@ -1746,7 +1796,7 @@ function App() {
         (function () {
           if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings });
           if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
-          if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id) { setDT({ type: "expense", id: id }); } });
+          if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id, item) { var lbl = item ? (item.keperluan + " (" + fmt(item.nominal) + ")") : ""; setDT({ type: "expense", id: id, label: lbl }); } });
           if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings });
           if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); } });
           if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income });
@@ -1758,7 +1808,7 @@ function App() {
     React.createElement(ExpenseForm, { key: "modal-exp", open: showExpForm, onClose: function () { setSEF(false); setEditExp(null); }, onSave: saveExpense, initial: editingExp, showToast: tk.show }),
     React.createElement(IncomeForm, { key: "modal-inc", open: showIncForm, onClose: function () { setSIF(false); setEditInc(null); }, onSave: saveIncome, initial: editingInc, showToast: tk.show }),
     React.createElement(SavingForm, { key: "modal-sav", open: showSavForm, onClose: function () { setSSF(false); setEditSav(null); }, onSave: saveSaving, initial: editingSav, defaultTipe: defaultSavTipe, showToast: tk.show }),
-    React.createElement(ConfirmModal, { key: "modal-del", open: !!deleteTarget, message: "Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.", onConfirm: confirmDelete, onCancel: function () { setDT(null); } }),
+    React.createElement(ConfirmModal, { key: "modal-del", open: !!deleteTarget, label: deleteTarget ? deleteTarget.label : "", message: "Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.", onConfirm: confirmDelete, onCancel: function () { setDT(null); } }),
     React.createElement(NameOnboardingModal, { key: "modal-name", open: user && (!user.name || !user.name.trim()), onSave: function (u) { setUser(u); tk.show("Nama akun berhasil disimpan!"); } }),
     React.createElement(Toast, { key: "toast-msg", toast: tk.toast })
   );
