@@ -1155,18 +1155,42 @@ function KalenderPengeluaranView(p) {
 
   var dailyMap = {};
   (p.expenses || []).forEach(function (e) {
-    if (!e.date) return;
-    var parts = e.date.split("/");
-    if (parts.length === 3) {
-      var d = parseInt(parts[0], 10);
-      var m = parseInt(parts[1], 10);
-      var y = parseInt(parts[2], 10);
-      if (y === selYear && m === selMonth) {
-        var k = toKey(y, m, d);
-        if (!dailyMap[k]) dailyMap[k] = { total: 0, items: [] };
-        dailyMap[k].total += e.nominal;
-        dailyMap[k].items.push(e);
+    var rawDate = e.tanggal || e.date;
+    if (!rawDate) return;
+    var d, m, y;
+    if (typeof rawDate === "string") {
+      if (rawDate.indexOf("/") !== -1) {
+        var parts = rawDate.split("/");
+        if (parts.length === 3) {
+          d = parseInt(parts[0], 10);
+          m = parseInt(parts[1], 10);
+          y = parseInt(parts[2], 10);
+        }
+      } else if (rawDate.indexOf("-") !== -1) {
+        var parts = rawDate.split("-");
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            y = parseInt(parts[0], 10);
+            m = parseInt(parts[1], 10);
+            d = parseInt(parts[2], 10);
+          } else {
+            d = parseInt(parts[0], 10);
+            m = parseInt(parts[1], 10);
+            y = parseInt(parts[2], 10);
+          }
+        }
       }
+    } else if (rawDate instanceof Date) {
+      d = rawDate.getDate();
+      m = rawDate.getMonth() + 1;
+      y = rawDate.getFullYear();
+    }
+
+    if (y === selYear && m === selMonth && d && m && y) {
+      var k = toKey(y, m, d);
+      if (!dailyMap[k]) dailyMap[k] = { total: 0, items: [] };
+      dailyMap[k].total += (e.nominal || 0);
+      dailyMap[k].items.push(e);
     }
   });
 
@@ -1340,7 +1364,7 @@ function KalenderPengeluaranView(p) {
                     React.createElement(
                       "div",
                       null,
-                      React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: T.text } }, item.deskripsi || item.kategori),
+                      React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: T.text } }, item.keperluan || item.deskripsi || item.kategori),
                       React.createElement("div", { style: { fontSize: 10, color: T.textSub } }, item.kategori)
                     )
                   ),
