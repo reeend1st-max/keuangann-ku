@@ -581,7 +581,17 @@ function ExpenseForm(p) {
               "+ Kategori Baru"
             )
           ),
-          React.createElement(DSelect, { value: kategori, onChange: setKategori, options: allCatKeys })
+          React.createElement(DSelect, {
+            value: kategori,
+            onChange: function (val) {
+              if (val === "➕ Tambah Kategori Baru...") {
+                setShowAddCat(true);
+              } else {
+                setKategori(val);
+              }
+            },
+            options: allCatKeys.concat(["➕ Tambah Kategori Baru..."])
+          })
         ),
         React.createElement(DToggle, { label: "Kebutuhan / Keinginan", value: nw, onChange: setNw, options: ["Need", "Want"], colors: [T.sky, T.violet] })
       ),
