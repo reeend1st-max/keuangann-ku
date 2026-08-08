@@ -38,7 +38,7 @@ var CATS = {
   "Makan & Minum": { emoji: "🍔", color: T.amber },
   "Belanja Bulanan": { emoji: "🛒", color: "#3B82F6" },
   "Skincare": { emoji: "✨", color: T.violet },
-  "Fashion": { emoji: "👕", color: "#EC4899" },
+  "Pakaian & Outfit": { emoji: "👕", color: "#EC4899" },
   "Tagihan": { emoji: "📄", color: T.coral },
   "Transportasi": { emoji: "🚗", color: T.sky },
   "Hiburan": { emoji: "🎬", color: "#6366F1" },
