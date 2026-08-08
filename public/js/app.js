@@ -1782,7 +1782,11 @@ function KalenderPengeluaranView(p) {
 
                 return React.createElement(
                   "div",
-                  { key: "item-" + idx, style: { display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", background: T.surface, borderRadius: 12, border: "1px solid " + T.border } },
+                  {
+                    key: "item-" + idx,
+                    onClick: function () { if (p.onEdit) p.onEdit(item); },
+                    style: { display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", background: T.surface, borderRadius: 12, border: "1px solid " + T.border, cursor: "pointer", transition: "all 0.15s ease" }
+                  },
                   
                   // Item Title, Category & Nominal
                   React.createElement(
@@ -1802,7 +1806,7 @@ function KalenderPengeluaranView(p) {
                     React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: T.coral } }, fmt(item.nominal))
                   ),
 
-  // Item Memo / Description Box
+                  // Item Memo / Description Box
                   memoLines.length > 0 ? React.createElement(
                     "div",
                     { style: { background: T.panel, border: "1px solid " + T.border, borderRadius: 8, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3, marginTop: 2 } },
@@ -1813,9 +1817,9 @@ function KalenderPengeluaranView(p) {
                   ) : React.createElement(
                     "button",
                     {
-                      onClick: function (e) { e.stopPropagation(); p.onEdit(item); },
+                      onClick: function (e) { e.stopPropagation(); if (p.onEdit) p.onEdit(item); },
                       title: "Tambah Memo Rincian",
-                      style: { background: T.panel, border: "1px dashed " + T.border, color: T.textSub, width: 22, height: 22, borderRadius: 6, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", marginTop: 2 }
+                      style: { background: T.panel, border: "1px dashed " + T.border, color: T.textSub, width: 26, height: 26, borderRadius: 6, fontSize: 14, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", marginTop: 2 }
                     },
                     "+"
                   )
@@ -2059,7 +2063,7 @@ function App() {
           if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings });
           if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
           if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id, item) { var lbl = item ? (item.keperluan + " (" + fmt(item.nominal) + ")") : ""; setDT({ type: "expense", id: id, label: lbl }); } });
-          if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings });
+          if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings, onEdit: function (item) { setEditExp(item); setSEF(true); }, onSave: saveExpense });
           if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); } });
           if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income });
           if (view === "analisis-tahunan") return React.createElement(AnalisisTahunanView, { key: "view-amt", expenses: expenses, income: income });
