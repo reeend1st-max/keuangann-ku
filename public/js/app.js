@@ -566,6 +566,104 @@ function AddCategoryModal(p) {
   );
 }
 
+// ── Memo Detail Modal ────────────────────────────────────────────────────────
+function MemoDetailModal(p) {
+  if (!p.open || !p.item) return null;
+  var item = p.item;
+  var _memoText = useState(""), memoText = _memoText[0], setMemoText = _memoText[1];
+  var _isEditing = useState(false), isEditing = _isEditing[0], setIsEditing = _isEditing[1];
+
+  useEffect(function () {
+    if (item) {
+      setMemoText(item.memo_detail || item.catatan || "");
+    }
+  }, [item, p.open]);
+
+  function saveMemo() {
+    if (p.onSaveMemo) {
+      p.onSaveMemo(item.id, memoText);
+    }
+    setIsEditing(false);
+  }
+
+  var rawText = (memoText || "").trim();
+  var lines = rawText ? rawText.split("\n").filter(function (l) { return l.trim().length > 0; }) : [];
+
+  return React.createElement(
+    Modal,
+    { open: p.open, onClose: p.onClose, title: "📌 Memo Rincian Transaksi", width: 460 },
+    React.createElement(
+      "div",
+      { style: { display: "flex", flexDirection: "column", gap: 14 } },
+      React.createElement(
+        "div",
+        { style: { background: T.tealDim, border: "1.5px solid " + T.teal + "40", padding: "14px 16px", borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center" } },
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700 } }, item.tanggal + " · " + item.kategori),
+          React.createElement("div", { style: { fontSize: 15, fontWeight: 900, color: T.text, marginTop: 2 } }, item.keperluan)
+        ),
+        React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: T.coral } }, "-" + fmt(item.nominal))
+      ),
+
+      isEditing ? React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 8 } },
+        React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Edit Memo Rincian Barang (1 barang per baris)"),
+        React.createElement("textarea", {
+          value: memoText,
+          onChange: function (e) { setMemoText(e.target.value); },
+          rows: 6,
+          placeholder: "Contoh:\n- Sabun Dettol 3pcs (Rp 45.000)\n- Shampoo Pantene (Rp 55.000)\n- Odol & Sikat (Rp 30.000)",
+          style: {
+            width: "100%", background: T.panel, border: "1.5px solid " + T.border, borderRadius: 10, padding: 12,
+            color: T.text, fontSize: 13, fontFamily: "inherit", resize: "vertical", outline: "none", boxSizing: "border-box"
+          }
+        }),
+        React.createElement(
+          "div",
+          { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 } },
+          React.createElement(Btn, { outline: true, color: T.textSub, onClick: function () { setIsEditing(false); } }, "Batal"),
+          React.createElement(Btn, { color: T.teal, onClick: saveMemo }, "💾 Simpan Memo")
+        )
+      ) : React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 10 } },
+        React.createElement(
+          "div",
+          { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+          React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "📋 Rincian Barang Spesifik"),
+          React.createElement("button", { onClick: function () { setIsEditing(true); }, style: { background: "none", border: "none", color: T.teal, fontSize: 12, fontWeight: 800, cursor: "pointer" } }, "✏️ Edit Rincian")
+        ),
+        lines.length > 0 ? React.createElement(
+          "div",
+          { style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 12, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" } },
+          lines.map(function (line, idx) {
+            return React.createElement(
+              "div",
+              { key: idx, style: { display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, padding: "4px 0", borderBottom: idx < lines.length - 1 ? "1px solid " + T.border + "60" : "none" } },
+              React.createElement("span", { style: { color: T.teal, fontWeight: 800 } }, "•"),
+              React.createElement("span", { style: { flex: 1 } }, line)
+            );
+          })
+        ) : React.createElement(
+          "div",
+          { style: { background: T.panel, border: "1.5px dashed " + T.border, borderRadius: 12, padding: 24, textAlign: "center", color: T.textSub, fontSize: 13 } },
+          "Belum ada rincian barang spesifik.",
+          React.createElement("div", { style: { marginTop: 8 } }, React.createElement(Btn, { color: T.teal, onClick: function () { setIsEditing(true); } }, "+ Tambah Rincian Barang"))
+        )
+      ),
+
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "flex-end", marginTop: 10, paddingTop: 14, borderTop: "1px solid " + T.border } },
+        React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Tutup")
+      )
+    )
+  );
+}
+
 // ── Expense Form ──────────────────────────────────────────────────────────────
 function ExpenseForm(p) {
   var _t = useState(todayStr()), tanggal = _t[0], setTanggal = _t[1];
@@ -575,6 +673,7 @@ function ExpenseForm(p) {
   var _bay = useState("Transfer"), bayar = _bay[0], setBayar = _bay[1];
   var _nw = useState("Need"), nw = _nw[0], setNw = _nw[1];
   var _c = useState(""), catatan = _c[0], setCatatan = _c[1];
+  var _md = useState(""), memoDetail = _md[0], setMemoDetail = _md[1];
   var _err = useState(""), err = _err[0], setErr = _err[1];
   var _sac = useState(false), showAddCat = _sac[0], setShowAddCat = _sac[1];
 
@@ -587,9 +686,10 @@ function ExpenseForm(p) {
       setBayar(p.initial.bayar || "Transfer");
       setNw(p.initial.nw || "Need");
       setCatatan(p.initial.catatan || "");
+      setMemoDetail(p.initial.memo_detail || p.initial.memo || "");
     } else {
       setTanggal(todayStr()); setKeperluan(""); setKategori("Makan & Minum");
-      setNominal(""); setBayar("Transfer"); setNw("Need"); setCatatan("");
+      setNominal(""); setBayar("Transfer"); setNw("Need"); setCatatan(""); setMemoDetail("");
     }
     setErr("");
   }, [p.initial, p.open]);
@@ -622,6 +722,7 @@ function ExpenseForm(p) {
       bayar: bayar,
       nw: nw,
       catatan: catatan,
+      memo_detail: memoDetail,
     };
     p.onSave(item);
     p.onClose();
@@ -681,11 +782,29 @@ function ExpenseForm(p) {
         })
       ),
       React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DSelect, { label: "Metode Pembayaran", value: bayar, onChange: setBayar, options: ["Transfer", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })),
-      React.createElement(DInput, { label: "Catatan Tambahan (opsional)", value: catatan, onChange: setCatatan, placeholder: "Keterangan tambahan..." }),
+      React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DInput, { label: "Catatan Ringkas (opsional)", value: catatan, onChange: setCatatan, placeholder: "Keterangan singkat..." })),
+      
+      // Memo Detail Text Area
+      React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 } },
+        React.createElement("label", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 4 } }, "📌 Memo / Rincian Barang Spesifik (opsional)"),
+        React.createElement("textarea", {
+          value: memoDetail,
+          onChange: function (e) { setMemoDetail(e.target.value); },
+          rows: 3,
+          placeholder: "Tulis rincian barang di sini (misal: Sabun Dettol 45k, Shampoo 55k, Odol 30k...)",
+          style: {
+            width: "100%", background: T.panel, border: "1.5px solid " + T.border, borderRadius: 10, padding: 10,
+            color: T.text, fontSize: 12, fontFamily: "inherit", resize: "vertical", outline: "none", boxSizing: "border-box"
+          }
+        })
+      ),
+
       err && React.createElement("div", { style: { color: T.coral, fontSize: 12, marginTop: 10, fontWeight: 600 } }, "⚠️ ", err),
       React.createElement(
         "div",
-        { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20, paddingTop: 16, borderTop: "1px solid " + T.border } },
+        { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16, paddingTop: 14, borderTop: "1px solid " + T.border } },
         React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
         React.createElement(Btn, { color: T.coral, onClick: save }, "💾 ", p.initial ? "Simpan Perubahan" : "Tambah Pengeluaran")
       )
@@ -1201,6 +1320,7 @@ function PengeluaranView(p) {
   var _fc = useState("Semua"), fCat = _fc[0], sFCat = _fc[1];
   var _fn = useState("Semua"), fNW = _fn[0], sFNW = _fn[1];
   var _fs = useState(""), search = _fs[0], sSearch = _fs[1];
+  var _mmi = useState(null), memoModalItem = _mmi[0], setMemoModalItem = _mmi[1];
 
   var all = p.expenses || [];
   var total = all.reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
@@ -1320,11 +1440,24 @@ function PengeluaranView(p) {
               ),
               g.items.map(function (item, i) {
                 var cfg = getCat(item.kategori);
+                var hasMemo = !!(item.memo_detail || item.catatan);
                 return React.createElement(
                   "div",
                   { key: item.id, style: { display: "grid", gridTemplateColumns: "120px 1fr 150px 100px 160px 80px 60px", padding: "12px 32px", alignItems: "center", borderBottom: "1px solid " + T.border, background: i % 2 === 0 ? "transparent" : T.panel } },
                   React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontFamily: "monospace" } }, item.tanggal),
-                  React.createElement("div", null, React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: T.text } }, item.keperluan), item.catatan && React.createElement("div", { style: { fontSize: 11, color: T.textDim } }, item.catatan)),
+                  React.createElement(
+                    "div", null,
+                    React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: T.text } }, item.keperluan),
+                    item.catatan && React.createElement("div", { style: { fontSize: 11, color: T.textDim } }, item.catatan),
+                    hasMemo ? React.createElement(
+                      "button",
+                      {
+                        onClick: function (ev) { ev.stopPropagation(); setMemoModalItem(item); },
+                        style: { background: T.tealDim, border: "1px solid " + T.teal + "50", color: T.teal, padding: "2px 7px", borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: "pointer", marginTop: 4, display: "inline-flex", alignItems: "center", gap: 3 }
+                      },
+                      "📌 Memo Rincian"
+                    ) : null
+                  ),
                   React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, React.createElement("span", null, cfg.emoji), React.createElement("span", { style: { fontSize: 12, color: T.text } }, item.kategori === "Fashion" ? "Pakaian & Outfit" : item.kategori)),
                   React.createElement(Chip, { label: item.nw, color: item.nw === "Need" ? T.sky : T.violet }),
                   React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.coral } }, "-" + fmt(item.nominal)),
@@ -1339,7 +1472,20 @@ function PengeluaranView(p) {
               })
             );
           })
-        )
+        ),
+
+    React.createElement(MemoDetailModal, {
+      open: !!memoModalItem,
+      item: memoModalItem,
+      onClose: function () { setMemoModalItem(null); },
+      onSaveMemo: function (id, text) {
+        if (memoModalItem && p.onEdit) {
+          var updated = Object.assign({}, memoModalItem, { memo_detail: text });
+          p.onEdit(updated);
+        }
+        setMemoModalItem(null);
+      }
+    })
   );
 }
 
@@ -1622,21 +1768,35 @@ function KalenderPengeluaranView(p) {
               { style: { display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", flex: 1 } },
               selectedDayData.items.map(function (item, idx) {
                 var catInfo = getCat(item.kategori);
+                var rawMemo = (item.memo_detail || item.catatan || "").trim();
+                var memoLines = rawMemo ? rawMemo.split("\n").filter(function (l) { return l.trim().length > 0; }) : [];
                 return React.createElement(
                   "div",
-                  { key: "item-" + idx, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: T.surface, borderRadius: 10, border: "1px solid " + T.border } },
+                  { key: "item-" + idx, style: { display: "flex", flexDirection: "column", gap: 8, padding: "10px 14px", background: T.surface, borderRadius: 10, border: "1px solid " + T.border } },
                   React.createElement(
                     "div",
-                    { style: { display: "flex", alignItems: "center", gap: 10 } },
-                    React.createElement("span", { style: { fontSize: 18 } }, catInfo.emoji),
+                    { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
                     React.createElement(
                       "div",
-                      null,
-                      React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: T.text } }, item.keperluan || item.deskripsi || item.kategori),
-                      React.createElement("div", { style: { fontSize: 10, color: T.textSub } }, item.kategori)
-                    )
+                      { style: { display: "flex", alignItems: "center", gap: 10 } },
+                      React.createElement("span", { style: { fontSize: 18 } }, catInfo.emoji),
+                      React.createElement(
+                        "div",
+                        null,
+                        React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: T.text } }, item.keperluan || item.deskripsi || item.kategori),
+                        React.createElement("div", { style: { fontSize: 10, color: T.textSub } }, item.kategori)
+                      )
+                    ),
+                    React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: T.coral } }, fmt(item.nominal))
                   ),
-                  React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: T.coral } }, fmt(item.nominal))
+                  memoLines.length > 0 ? React.createElement(
+                    "div",
+                    { style: { background: T.panel, border: "1px solid " + T.border, borderRadius: 8, padding: "6px 10px", display: "flex", flexDirection: "column", gap: 3 } },
+                    React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: T.teal } }, "📌 Memo Rincian Barang:"),
+                    memoLines.map(function (line, li) {
+                      return React.createElement("div", { key: li, style: { fontSize: 11, color: T.text } }, "• " + line);
+                    })
+                  ) : null
                 );
               })
             ) : React.createElement("div", { style: { padding: "20px 0", textAlign: "center", color: T.textSub, fontSize: 13 } }, "Tidak ada pengeluaran di tanggal ini 🎉")
