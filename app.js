@@ -1730,75 +1730,51 @@ function KalenderPengeluaranView(p) {
                 onClick: function () { setSelDateStr(dateKey); },
                 style: {
                   background: isSelected ? "#E0F2FE" : T.surface,
-                  border: isSelected ? "2px solid #0284C7" : "1px solid " + T.border,
-                  borderRadius: 12, padding: "8px 6px",
-                  display: "flex", flexDirection: "column", justifyContent: "space-between",
-                  minHeight: 64, cursor: "pointer", transition: "all 0.15s ease",
-                  boxShadow: isSelected ? "0 2px 8px rgba(2, 132, 199, 0.2)" : "none"
-                }
-              },
-              React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: (new Date(selYear, selMonth - 1, dayNum).getDay() === 0) ? T.coral : T.text } }, dayNum),
-              labelText ? React.createElement(
-                "div",
-                { style: { background: badgeBg, color: badgeColor, fontSize: 10, fontWeight: 800, padding: "3px 6px", borderRadius: 6, marginTop: 4, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } },
-                labelText
-              ) : React.createElement("div", { style: { fontSize: 9, color: T.textDim, marginTop: 6 } }, "-")
-            );
-          })
-        )
-      ),
-      React.createElement(
-        "div",
-        { style: { flex: "1 1 300px", background: T.card, borderRadius: 18, border: "1px solid " + T.border, padding: 20, display: "flex", flexDirection: "column" } },
-        React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.teal, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 } }, "📌 Rincian Transaksi"),
-        selDateStr ? (function () {
-          var parts = selDateStr.split("-");
-          var displayD = parts[2] + " " + monthsList[parseInt(parts[1], 10) - 1] + " " + parts[0];
-          return React.createElement(
-            "div",
-            { style: { display: "flex", flexDirection: "column", gap: 14, flex: 1 } },
-            React.createElement(
-              "div",
-              { style: { background: T.surface, padding: "12px 16px", borderRadius: 12, border: "1px solid " + T.border } },
-              React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700 } }, displayD),
-              React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: T.coral, marginTop: 4 } }, fmt(selectedDayData ? selectedDayData.total : 0))
-            ),
-            selectedDayData && selectedDayData.items && selectedDayData.items.length > 0 ? React.createElement(
-              "div",
-              { style: { display: "flex", flexDirection: "column", gap: 10, overflowY: "auto", flex: 1 } },
-              selectedDayData.items.map(function (item, idx) {
+                  border: isSelected ? "2px solid               selectedDayData.items.map(function (item, idx) {
                 var catInfo = getCat(item.kategori);
+                var catDisplay = item.kategori === "Fashion" ? "Pakaian & Outfit" : item.kategori;
                 var rawMemo = (item.memo_detail || item.catatan || "").trim();
                 var memoLines = rawMemo ? rawMemo.split("\n").filter(function (l) { return l.trim().length > 0; }) : [];
+
                 return React.createElement(
                   "div",
-                  { key: "item-" + idx, style: { display: "flex", flexDirection: "column", gap: 8, padding: "10px 14px", background: T.surface, borderRadius: 10, border: "1px solid " + T.border } },
+                  { key: "item-" + idx, style: { display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", background: T.surface, borderRadius: 12, border: "1px solid " + T.border } },
+                  
+                  // Title, Category, and Nominal Row
                   React.createElement(
                     "div",
                     { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
                     React.createElement(
                       "div",
                       { style: { display: "flex", alignItems: "center", gap: 10 } },
-                      React.createElement("span", { style: { fontSize: 18 } }, catInfo.emoji),
+                      React.createElement("span", { style: { fontSize: 20 } }, catInfo.emoji),
                       React.createElement(
                         "div",
                         null,
                         React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: T.text } }, item.keperluan || item.deskripsi || item.kategori),
-                        React.createElement("div", { style: { fontSize: 10, color: T.textSub } }, item.kategori)
+                        React.createElement("div", { style: { fontSize: 10, color: T.textSub, marginTop: 1 } }, catDisplay)
                       )
                     ),
                     React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: T.coral } }, fmt(item.nominal))
                   ),
+
+                  // Memo / Description Preview Box
                   memoLines.length > 0 ? React.createElement(
                     "div",
-                    { style: { background: T.panel, border: "1px solid " + T.border, borderRadius: 8, padding: "6px 10px", display: "flex", flexDirection: "column", gap: 3 } },
-                    React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: T.teal } }, "📌 Memo Rincian Barang:"),
+                    { style: { background: T.panel, border: "1px solid " + T.border, borderRadius: 8, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3, marginTop: 2 } },
+                    React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: T.teal, display: "flex", alignItems: "center", gap: 4 } }, "📌 Memo / Deskripsi Rincian:"),
                     memoLines.map(function (line, li) {
-                      return React.createElement("div", { key: li, style: { fontSize: 11, color: T.text } }, "• " + line);
+                      return React.createElement("div", { key: li, style: { fontSize: 11, color: T.text, lineHeight: 1.4 } }, "• " + line);
                     })
-                  ) : null
+                  ) : React.createElement(
+                    "button",
+                    {
+                      onClick: function () { p.onEdit(item); },
+                      style: { background: T.panel, border: "1px dashed " + T.border, color: T.textSub, padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", alignSelf: "flex-start", marginTop: 2 }
+                    },
+                    "+ Tambah Memo Rincian"
+                  )
                 );
-              })
             ) : React.createElement("div", { style: { padding: "20px 0", textAlign: "center", color: T.textSub, fontSize: 13 } }, "Tidak ada pengeluaran di tanggal ini 🎉")
           );
         })() : React.createElement(
