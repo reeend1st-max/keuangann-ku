@@ -431,56 +431,108 @@ function NameOnboardingModal(p) {
 }
 
 // ── Add Category Modal ────────────────────────────────────────────────────────
+var EMOJI_CATEGORIES = [
+  { id: "populer", label: "🔥 Populer", emojis: ["🐾", "🎮", "🚴", "📚", "✈️", "🎁", "☕", "💊", "🍿", "🚗", "💼", "⭐", "🎨", "🎵", "🎧"] },
+  { id: "makanan", label: "🍔 Makanan", emojis: ["🍕", "🍔", "🍟", "🌭", "🍿", "🍩", "🍦", "🍰", "🧋", "☕", "🍺", "🍜", "🍣", "🍎", "🥑"] },
+  { id: "hobi", label: "🎮 Hobi", emojis: ["🎮", "🚴", "🏋️", "⚽", "🎸", "🎤", "🎧", "🎨", "📸", "🎬", "📚", "🧘", "🏕️", "🎲", "🎟️"] },
+  { id: "belanja", label: "🛍️ Belanja", emojis: ["🛒", "🛍️", "✨", "💄", "👗", "👕", "👠", "💍", "💈", "🧴", "🕶️", "📱", "💻", "🎁", "🐾"] },
+  { id: "rumah", label: "🏠 Rumah", emojis: ["🏠", "⚡", "💧", "📶", "📄", "🚗", "⛽", "🛵", "🔧", "🏥", "💊", "🏫", "🏦", "🚨", "📦"] }
+];
+
 function AddCategoryModal(p) {
   var _name = useState(""), name = _name[0], setName = _name[1];
   var _emoji = useState("🐾"), emoji = _emoji[0], setEmoji = _emoji[1];
   var _color = useState("#0284C7"), color = _color[0], setColor = _color[1];
+  var _tab = useState("populer"), activeTab = _tab[0], setActiveTab = _tab[1];
+  var _customEm = useState(""), customEm = _customEm[0], setCustomEm = _customEm[1];
   var _err = useState(""), err = _err[0], setErr = _err[1];
 
   if (!p.open) return null;
 
-  var emojiOptions = ["🐾", "🎮", "🚴", "📚", "✈️", "🎁", "☕", "💊", "🍿", "🚗", "💼", "⭐"];
   var colorOptions = ["#0284C7", "#10B981", "#F59E0B", "#EC4899", "#8B5CF6", "#EF4444", "#3B82F6", "#64748B"];
+  var curCategory = EMOJI_CATEGORIES.find(function (c) { return c.id === activeTab; }) || EMOJI_CATEGORIES[0];
 
   function save() {
     if (!name.trim()) return setErr("Nama kategori wajib diisi.");
     var cleanName = name.trim();
+    var selectedEmoji = (customEm && customEm.trim()) ? customEm.trim() : emoji;
     var custom = window.customCats || {};
-    custom[cleanName] = { emoji: emoji, color: color };
+    custom[cleanName] = { emoji: selectedEmoji, color: color };
     window.customCats = custom;
     try {
       localStorage.setItem("keuangan_custom_categories", JSON.stringify(custom));
     } catch (e) {}
     p.onSave(cleanName);
-    setName(""); setEmoji("🐾"); setColor("#0284C7"); setErr("");
+    setName(""); setEmoji("🐾"); setCustomEm(""); setColor("#0284C7"); setErr("");
     p.onClose();
   }
 
   return React.createElement(
     Modal,
-    { open: p.open, onClose: p.onClose, title: "➕ Tambah Kategori Baru", width: 420 },
+    { open: p.open, onClose: p.onClose, title: "➕ Tambah Kategori Baru", width: 440 },
     React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 14 } },
       React.createElement(DInput, { label: "Nama Kategori", value: name, onChange: setName, placeholder: "Contoh: Peliharaan, Hobi, Liburan...", autoFocus: true }),
       React.createElement(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: 6 } },
-        React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Pilih Emoji Ikon"),
         React.createElement(
           "div",
-          { style: { display: "flex", flexWrap: "wrap", gap: 8, background: T.panel, padding: 10, borderRadius: 10, border: "1.5px solid " + T.border } },
-          emojiOptions.map(function (em) {
-            var active = emoji === em;
+          { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
+          React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Pilih Emoji Ikon"),
+          React.createElement("span", { style: { fontSize: 13, fontWeight: 800, background: T.tealDim, color: T.teal, padding: "2px 8px", borderRadius: 6 } }, customEm.trim() ? customEm.trim() : emoji)
+        ),
+        
+        // Category Tabs
+        React.createElement(
+          "div",
+          { style: { display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4 } },
+          EMOJI_CATEGORIES.map(function (c) {
+            var active = activeTab === c.id;
             return React.createElement(
               "button",
               {
-                key: em, type: "button", onClick: function () { setEmoji(em); },
-                style: { fontSize: 20, padding: "6px 10px", borderRadius: 8, border: active ? "2px solid " + T.teal : "1px solid transparent", background: active ? T.tealDim : "transparent", cursor: "pointer" }
+                key: c.id, type: "button", onClick: function () { setActiveTab(c.id); },
+                style: {
+                  padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, border: "none",
+                  background: active ? T.teal : T.panel, color: active ? "#0A0E17" : T.textSub, cursor: "pointer", whiteSpace: "nowrap"
+                }
+              },
+              c.label
+            );
+          })
+        ),
+
+        // Emoji Grid Box
+        React.createElement(
+          "div",
+          { style: { display: "flex", flexWrap: "wrap", gap: 6, background: T.panel, padding: 10, borderRadius: 10, border: "1.5px solid " + T.border, maxHeight: 110, overflowY: "auto" } },
+          curCategory.emojis.map(function (em) {
+            var active = !customEm.trim() && emoji === em;
+            return React.createElement(
+              "button",
+              {
+                key: em, type: "button",
+                onClick: function () { setEmoji(em); setCustomEm(""); },
+                style: { fontSize: 20, padding: "4px 8px", borderRadius: 8, border: active ? "2px solid " + T.teal : "1px solid transparent", background: active ? T.tealDim : "transparent", cursor: "pointer" }
               },
               em
             );
           })
+        ),
+
+        // Custom Emoji Input Box
+        React.createElement(
+          "div",
+          { style: { marginTop: 4 } },
+          React.createElement(DInput, {
+            label: "Atau Ketik / Tempel Emoji Sendiri",
+            value: customEm,
+            onChange: function (v) { setCustomEm(v); },
+            placeholder: "Tempel emoji dari HP/Komputer kamu di sini (misal: 🦄)..."
+          })
         )
       ),
+
       React.createElement(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: 6 } },
@@ -500,6 +552,7 @@ function AddCategoryModal(p) {
           })
         )
       ),
+
       err && React.createElement("div", { style: { color: T.coral, fontSize: 12, fontWeight: 600 } }, "⚠️ ", err),
       React.createElement(
         "div",
