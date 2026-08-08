@@ -199,9 +199,17 @@
         var mRes = results[0], eRes = results[1], iRes = results[2], sRes = results[3];
         if (mRes.error || eRes.error || iRes.error || sRes.error) throw new Error("Supabase error");
 
+        var memoMap = this._getLocal("memo_details_map") || {};
+        var expensesList = coerceNominal(eRes.data).map(function (e) {
+          if (!e.memo_detail && memoMap[e.id]) {
+            e.memo_detail = memoMap[e.id];
+          }
+          return e;
+        });
+
         return {
           months: (mRes.data || []).map(function (x) { return { key: x.id, year: x.year, month: x.month, label: x.label }; }),
-          expenses: coerceNominal(eRes.data),
+          expenses: expensesList,
           income: coerceNominal(iRes.data),
           savings: coerceNominal(sRes.data),
         };
@@ -270,6 +278,14 @@
 
     // ── Expenses ─────────────────────────────────────────────────────────
     saveExpense: async function (item) {
+      var memoMap = this._getLocal("memo_details_map") || {};
+      if (item.memo_detail) {
+        memoMap[item.id] = item.memo_detail;
+      } else {
+        delete memoMap[item.id];
+      }
+      this._setLocal("memo_details_map", memoMap);
+
       var isGuest = !!localStorage.getItem("keuanganku_guest_user");
       if (isGuest) {
         var list = this._getLocal("expenses");
@@ -293,10 +309,16 @@
           bayar: item.bayar,
           nw: item.nw,
           catatan: item.catatan || "",
+          memo_detail: item.memo_detail || "",
         };
         var res = await sb.from("expenses").upsert(row).select().single();
+        if (res.error) {
+          delete row.memo_detail;
+          res = await sb.from("expenses").upsert(row).select().single();
+        }
         if (res.error) throw new Error(mapError(res.error));
         res.data.nominal = Number(res.data.nominal);
+        res.data.memo_detail = item.memo_detail || memoMap[item.id] || "";
         return res.data;
       } catch (e) {
         var list = this._getLocal("expenses");

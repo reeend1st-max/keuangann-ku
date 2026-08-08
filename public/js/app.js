@@ -1479,9 +1479,10 @@ function PengeluaranView(p) {
       item: memoModalItem,
       onClose: function () { setMemoModalItem(null); },
       onSaveMemo: function (id, text) {
-        if (memoModalItem && p.onEdit) {
+        if (memoModalItem) {
           var updated = Object.assign({}, memoModalItem, { memo_detail: text });
-          p.onEdit(updated);
+          if (p.onSave) p.onSave(updated);
+          else if (p.onEdit) p.onEdit(updated);
         }
         setMemoModalItem(null);
       }
@@ -1801,7 +1802,7 @@ function KalenderPengeluaranView(p) {
                     React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: T.coral } }, fmt(item.nominal))
                   ),
 
-                  // Item Memo / Description Box
+  // Item Memo / Description Box
                   memoLines.length > 0 ? React.createElement(
                     "div",
                     { style: { background: T.panel, border: "1px solid " + T.border, borderRadius: 8, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3, marginTop: 2 } },
@@ -1812,10 +1813,11 @@ function KalenderPengeluaranView(p) {
                   ) : React.createElement(
                     "button",
                     {
-                      onClick: function () { p.onEdit(item); },
-                      style: { background: T.panel, border: "1px dashed " + T.border, color: T.textSub, padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: "pointer", alignSelf: "flex-start", marginTop: 2 }
+                      onClick: function (e) { e.stopPropagation(); p.onEdit(item); },
+                      title: "Tambah Memo Rincian",
+                      style: { background: T.panel, border: "1px dashed " + T.border, color: T.textSub, width: 22, height: 22, borderRadius: 6, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", marginTop: 2 }
                     },
-                    "+ Tambah Memo Rincian"
+                    "+"
                   )
                 );
               })
