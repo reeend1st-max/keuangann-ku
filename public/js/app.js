@@ -1698,6 +1698,20 @@ function KalenderPengeluaranView(p) {
             var badgeColor = T.textDim;
             var labelText = "";
 
+            var dayMemoSummary = "";
+            if (dayData && dayData.items && dayData.items.length > 0) {
+              var summaries = dayData.items.map(function (it) {
+                var memoStr = (it.memo_detail || it.catatan || "").trim();
+                if (memoStr) {
+                  var firstLine = memoStr.split("\n")[0];
+                  return firstLine.length > 16 ? firstLine.substring(0, 16) + "…" : firstLine;
+                }
+                var reqStr = (it.keperluan || it.deskripsi || it.kategori || "").trim();
+                return reqStr.length > 16 ? reqStr.substring(0, 16) + "…" : reqStr;
+              });
+              dayMemoSummary = summaries.join(", ");
+            }
+
             if (dayTotal > 0) {
               if (dayTotal <= 50000) { badgeBg = "#D1FAE5"; badgeColor = "#047857"; }
               else if (dayTotal <= 150000) { badgeBg = "#E0F2FE"; badgeColor = "#0284C7"; }
@@ -1719,16 +1733,21 @@ function KalenderPengeluaranView(p) {
                   border: isSelected ? "2px solid " + T.teal : "1px solid " + T.border,
                   borderRadius: 12, padding: "8px 6px",
                   display: "flex", flexDirection: "column", justifyContent: "space-between",
-                  minHeight: 64, cursor: "pointer", transition: "all 0.15s ease",
+                  minHeight: 74, cursor: "pointer", transition: "all 0.15s ease",
                   boxShadow: isSelected ? "0 2px 8px rgba(2, 132, 199, 0.2)" : "none"
                 }
               },
               React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: (new Date(selYear, selMonth - 1, dayNum).getDay() === 0) ? T.coral : T.text } }, dayNum),
+              dayMemoSummary ? React.createElement(
+                "div",
+                { style: { fontSize: 9.5, color: T.textSub, marginTop: 4, marginBottom: 4, textAlign: "center", lineHeight: 1.2, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } },
+                "📌 " + dayMemoSummary
+              ) : null,
               labelText ? React.createElement(
                 "div",
-                { style: { background: badgeBg, color: badgeColor, fontSize: 10, fontWeight: 800, padding: "3px 6px", borderRadius: 6, marginTop: 4, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } },
+                { style: { background: badgeBg, color: badgeColor, fontSize: 10, fontWeight: 800, padding: "3px 6px", borderRadius: 6, marginTop: 2, textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } },
                 labelText
-              ) : React.createElement("div", { style: { fontSize: 9, color: T.textDim, marginTop: 6 } }, "-")
+              ) : React.createElement("div", { style: { fontSize: 9, color: T.textDim, marginTop: 4 } }, "-")
             );
           })
         )
