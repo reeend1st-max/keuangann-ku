@@ -174,13 +174,30 @@
       }
     },
 
+    _getMemoMap: function () {
+      try {
+        var str = localStorage.getItem("kq_memo_dict");
+        return str ? JSON.parse(str) : {};
+      } catch (e) { return {}; }
+    },
+    _setMemoMap: function (dict) {
+      try { localStorage.setItem("kq_memo_dict", JSON.stringify(dict || {})); } catch (e) {}
+    },
+
     // ── Bootstrap: load everything for the logged-in user ────────
     fetchAll: async function () {
       var isGuest = !!localStorage.getItem("keuanganku_guest_user");
       if (isGuest) {
+        var memoMap = this._getMemoMap();
+        var rawExp = this._getLocal("expenses");
+        var expensesList = rawExp.map(function (e) {
+          var m = e.memo_detail || memoMap[e.id] || e.catatan || "";
+          e.memo_detail = m;
+          return e;
+        });
         return {
           months: this._getLocal("months"),
-          expenses: this._getLocal("expenses"),
+          expenses: expensesList,
           income: this._getLocal("income"),
           savings: this._getLocal("savings"),
         };
@@ -199,11 +216,10 @@
         var mRes = results[0], eRes = results[1], iRes = results[2], sRes = results[3];
         if (mRes.error || eRes.error || iRes.error || sRes.error) throw new Error("Supabase error");
 
-        var memoMap = this._getLocal("memo_details_map") || {};
+        var memoMap = this._getMemoMap();
         var expensesList = coerceNominal(eRes.data).map(function (e) {
-          if (!e.memo_detail && memoMap[e.id]) {
-            e.memo_detail = memoMap[e.id];
-          }
+          var m = e.memo_detail || memoMap[e.id] || e.catatan || "";
+          e.memo_detail = m;
           return e;
         });
 
@@ -214,9 +230,16 @@
           savings: coerceNominal(sRes.data),
         };
       } catch (e) {
+        var memoMap = this._getMemoMap();
+        var rawExp = this._getLocal("expenses");
+        var expensesList = rawExp.map(function (e) {
+          var m = e.memo_detail || memoMap[e.id] || e.catatan || "";
+          e.memo_detail = m;
+          return e;
+        });
         return {
           months: this._getLocal("months"),
-          expenses: this._getLocal("expenses"),
+          expenses: expensesList,
           income: this._getLocal("income"),
           savings: this._getLocal("savings"),
         };
@@ -278,13 +301,15 @@
 
     // ── Expenses ─────────────────────────────────────────────────────────
     saveExpense: async function (item) {
-      var memoMap = this._getLocal("memo_details_map") || {};
-      if (item.memo_detail) {
-        memoMap[item.id] = item.memo_detail;
+      var memoText = (item.memo_detail || item.catatan || "").trim();
+      var memoMap = this._getMemoMap();
+      if (memoText) {
+        memoMap[item.id] = memoText;
       } else {
         delete memoMap[item.id];
       }
-      this._setLocal("memo_details_map", memoMap);
+      this._setMemoMap(memoMap);
+      item.memo_detail = memoText;
 
       var isGuest = !!localStorage.getItem("keuanganku_guest_user");
       if (isGuest) {
@@ -308,8 +333,8 @@
           nominal: item.nominal,
           bayar: item.bayar,
           nw: item.nw,
-          catatan: item.catatan || "",
-          memo_detail: item.memo_detail || "",
+          catatan: memoText || item.catatan || "",
+          memo_detail: memoText || "",
         };
         var res = await sb.from("expenses").upsert(row).select().single();
         if (res.error) {
@@ -318,7 +343,8 @@
         }
         if (res.error) throw new Error(mapError(res.error));
         res.data.nominal = Number(res.data.nominal);
-        res.data.memo_detail = item.memo_detail || memoMap[item.id] || "";
+        res.data.memo_detail = memoText || memoMap[item.id] || res.data.catatan || "";
+        res.data.catatan = res.data.catatan || memoText;
         return res.data;
       } catch (e) {
         var list = this._getLocal("expenses");
