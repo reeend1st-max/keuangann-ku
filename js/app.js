@@ -55,10 +55,12 @@ try {
 window.customCats = customCatsState || {};
 
 function getCat(name) {
-  if (window.customCats && window.customCats[name]) {
-    return window.customCats[name];
+  var key = name;
+  if (key === "Fashion") key = "Pakaian & Outfit";
+  if (window.customCats && window.customCats[key]) {
+    return window.customCats[key];
   }
-  return CATS[name] || { emoji: "📌", color: T.textSub };
+  return CATS[key] || { emoji: "📌", color: T.textSub };
 }
 
 // Privacy Mode Global State & Helpers
@@ -1323,7 +1325,7 @@ function PengeluaranView(p) {
                   { key: item.id, style: { display: "grid", gridTemplateColumns: "120px 1fr 150px 100px 160px 80px 60px", padding: "12px 32px", alignItems: "center", borderBottom: "1px solid " + T.border, background: i % 2 === 0 ? "transparent" : T.panel } },
                   React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontFamily: "monospace" } }, item.tanggal),
                   React.createElement("div", null, React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: T.text } }, item.keperluan), item.catatan && React.createElement("div", { style: { fontSize: 11, color: T.textDim } }, item.catatan)),
-                  React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, React.createElement("span", null, cfg.emoji), React.createElement("span", { style: { fontSize: 12, color: T.text } }, item.kategori)),
+                  React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, React.createElement("span", null, cfg.emoji), React.createElement("span", { style: { fontSize: 12, color: T.text } }, item.kategori === "Fashion" ? "Pakaian & Outfit" : item.kategori)),
                   React.createElement(Chip, { label: item.nw, color: item.nw === "Need" ? T.sky : T.violet }),
                   React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.coral } }, "-" + fmt(item.nominal)),
                   React.createElement(Chip, { label: item.bayar, color: T.textSub }),
