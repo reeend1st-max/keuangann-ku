@@ -674,6 +674,8 @@ function ExpenseForm(p) {
   var _nw = useState("Need"), nw = _nw[0], setNw = _nw[1];
   var _c = useState(""), catatan = _c[0], setCatatan = _c[1];
   var _md = useState(""), memoDetail = _md[0], setMemoDetail = _md[1];
+  var _err = useState(""), err = _err[0], setErr = _err[1];
+  var _sac = useState(false), showAddCat = _sac[0], setShowAddCat = _sac[1];
   var _isRpt = useState(false), isRepeatTmpl = _isRpt[0], setIsRepeatTmpl = _isRpt[1];
 
   useEffect(function () {
