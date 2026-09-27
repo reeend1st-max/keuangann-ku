@@ -1,0 +1,13 @@
+{
+  "name": "keuanganku",
+  "version": "2.0.0",
+  "description": "Personal Finance Tracker — Multi-user web app powered by Supabase (Auth + Postgres) and deployed on Vercel",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/generate-config.js",
+    "dev": "node scripts/generate-config.js && npx serve public"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

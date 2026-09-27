@@ -1,0 +1,11 @@
+node_modules/
+.vercel
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+
+# Generated at build time from environment variables — never commit real
+# Supabase credentials, even though the anon key is meant to be public.
+public/config.js
