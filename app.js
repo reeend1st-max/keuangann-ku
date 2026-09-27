@@ -1433,12 +1433,7 @@ function PengeluaranView(p) {
             ["Semua", "Need", "Want"].map(function (n) { return pill(n === "Need" ? "🎯 Kebutuhan" : n === "Want" ? "✨ Keinginan" : "Semua K/K", fNW === n, n === "Need" ? T.sky : n === "Want" ? T.violet : T.textSub, function () { sFNW(n); }); })
           )
         ),
-        React.createElement(
-          "div",
-          { style: { display: "flex", gap: 8, alignItems: "center" } },
-          React.createElement(Btn, { color: T.teal, outline: true, onClick: p.onOpenRepeat }, "🔁 Repeat Order"),
-          React.createElement(Btn, { color: T.coral, onClick: p.onAdd }, "➕ Tambah Pengeluaran")
-        )
+        React.createElement(Btn, { color: T.coral, onClick: p.onAdd }, "➕ Tambah Pengeluaran")
       )
     ),
     rows.length === 0
@@ -1459,13 +1454,13 @@ function PengeluaranView(p) {
               { key: g.key },
               React.createElement(
                 "div",
-                { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 32px", background: "linear-gradient(90deg, #EF444415, transparent)", borderTop: "1.5px solid " + T.coral + "30", borderBottom: "1.5px solid " + T.coral + "30" } },
+                { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 32px", background: "linear-gradient(90deg, " + T.coral + "15, transparent)", borderLeft: "4px solid " + T.coral, borderBottom: "1px solid " + T.border } },
                 React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.coral, display: "flex", alignItems: "center", gap: 8 } },
                   React.createElement("span", { style: { fontSize: 16 } }, "📅"),
                   React.createElement("span", null, mLabel),
                   React.createElement("span", { style: { fontSize: 11, color: T.textSub, fontWeight: 600 } }, "(" + g.items.length + " transaksi)")
                 ),
-                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.coral } }, "Total Pengeluaran " + mLabel + ": " + fmt(mTotal))
+                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.coral } }, "Total " + mLabel + ": " + fmt(mTotal))
               ),
               g.items.map(function (item, i) {
                 var cfg = getCat(item.kategori);
