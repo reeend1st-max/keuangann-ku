@@ -2026,11 +2026,94 @@ function QuickExecuteRepeatModal(p) {
   );
 }
 
+// ── Edit Repeat Template Modal ───────────────────────────────────────────────
+function EditRepeatTemplateModal(p) {
+  if (!p.open || !p.template) return null;
+  var tmpl = p.template;
+
+  var _k = useState(""), keperluan = _k[0], setKeperluan = _k[1];
+  var _nom = useState(""), nominal = _nom[0], setNominal = _nom[1];
+  var _cat = useState("Makan & Minum"), kategori = _cat[0], setKategori = _cat[1];
+  var _md = useState(""), memoDetail = _md[0], setMemoDetail = _md[1];
+
+  useEffect(function () {
+    if (tmpl) {
+      setKeperluan(tmpl.keperluan || "");
+      setNominal(formatRupiahInput(tmpl.nominal || 0));
+      setKategori(tmpl.kategori || "Makan & Minum");
+      setMemoDetail(tmpl.memo_detail || "");
+    }
+  }, [tmpl, p.open]);
+
+  function handleSave() {
+    var nom = parseRupiahInput(nominal);
+    if (!keperluan.trim() || !nom || nom <= 0) return;
+
+    var updated = {
+      id: tmpl.id,
+      keperluan: keperluan,
+      kategori: kategori,
+      nominal: nom,
+      bayar: tmpl.bayar || "Transfer",
+      nw: tmpl.nw || "Need",
+      memo_detail: memoDetail,
+    };
+
+    if (window.Api && window.Api.saveRepeatTemplate) {
+      window.Api.saveRepeatTemplate(updated);
+    }
+    if (p.onSaved) p.onSaved();
+    if (p.onClose) p.onClose();
+  }
+
+  var allCatKeys = Object.keys(CATS).concat(Object.keys(window.customCats || {})).filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+  return React.createElement(
+    Modal,
+    { open: p.open, onClose: p.onClose, title: "✏️ Edit Templat Repeat Order", width: 440 },
+    React.createElement(
+      "div",
+      { style: { display: "flex", flexDirection: "column", gap: 14 } },
+      React.createElement(DInput, { label: "Nama Templat / Keperluan", value: keperluan, onChange: setKeperluan }),
+      React.createElement(
+        "div",
+        { style: { background: T.surface, border: "1.5px solid " + T.teal + "50", padding: 14, borderRadius: 12, display: "flex", flexDirection: "column", gap: 6 } },
+        React.createElement("label", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase" } }, "✏️ Default Nominal Harga (Dapat Diubah Jika Harga Naik/Turun):"),
+        React.createElement("input", {
+          value: nominal,
+          onChange: function (e) { setNominal(formatRupiahInput(e.target.value)); },
+          style: { width: "100%", background: T.panel, border: "1.5px solid " + T.border, borderRadius: 8, padding: "8px 12px", fontSize: 18, fontWeight: 800, color: T.coral, outline: "none", boxSizing: "border-box" }
+        }),
+        React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontStyle: "italic" } }, "💡 Jika terjadi kenaikan atau penurunan harga permanen, perbarui nominal di atas.")
+      ),
+      React.createElement(DSelect, { label: "Kategori", value: kategori, onChange: setKategori, options: allCatKeys }),
+      React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 5 } },
+        React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "📌 Memo / Rincian Barang Spesifik"),
+        React.createElement("textarea", {
+          value: memoDetail,
+          onChange: function (e) { setMemoDetail(e.target.value); },
+          rows: 3,
+          style: { width: "100%", background: T.panel, border: "1.5px solid " + T.border, borderRadius: 8, padding: 8, color: T.text, fontSize: 12, outline: "none", boxSizing: "border-box" }
+        })
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10, paddingTop: 14, borderTop: "1px solid " + T.border } },
+        React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
+        React.createElement(Btn, { color: T.teal, onClick: handleSave }, "💾 Simpan Perubahan Templat")
+      )
+    )
+  );
+}
+
 // ── Repeat Order Modal (Template List) ────────────────────────────────────────
 function RepeatOrderModal(p) {
   if (!p.open) return null;
   var _tmpls = useState([]), templates = _tmpls[0], setTemplates = _tmpls[1];
   var _execTmpl = useState(null), execTmpl = _execTmpl[0], setExecTmpl = _execTmpl[1];
+  var _editTmpl = useState(null), editTmpl = _editTmpl[0], setEditTmpl = _editTmpl[1];
 
   function loadTemplates() {
     if (window.Api && window.Api.getRepeatTemplates) {
@@ -2054,14 +2137,14 @@ function RepeatOrderModal(p) {
     null,
     React.createElement(
       Modal,
-      { open: p.open, onClose: p.onClose, title: "🔁 Repeat Order (Belanja Berulang Cepat)", width: 520 },
+      { open: p.open, onClose: p.onClose, title: "🔁 Repeat Order (Belanja Berulang Cepat)", width: 540 },
       React.createElement(
         "div",
         { style: { display: "flex", flexDirection: "column", gap: 16 } },
         React.createElement(
           "div",
           { style: { fontSize: 12, color: T.textSub, lineHeight: 1.4 } },
-          "Pilih belanjaan rutin Anda di bawah ini untuk mencatat transaksi secara instan. Anda dapat mengubah harga nominal kapan saja saat memesan."
+          "Pilih belanjaan rutin Anda di bawah ini untuk mencatat transaksi secara instan. Klik ikon pensil ✏️ jika ingin memperbarui harga templat jika terjadi kenaikan/penurunan harga."
         ),
         React.createElement(
           "div",
@@ -2104,9 +2187,18 @@ function RepeatOrderModal(p) {
                 React.createElement(
                   "button",
                   {
+                    onClick: function () { setEditTmpl(tmpl); },
+                    title: "Edit Templat (Harga / Nama)",
+                    style: { background: T.card, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }
+                  },
+                  "✏️"
+                ),
+                React.createElement(
+                  "button",
+                  {
                     onClick: function () { handleDelete(tmpl.id); },
                     title: "Hapus Templat",
-                    style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" }
+                    style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }
                   },
                   "✕"
                 )
@@ -2138,6 +2230,15 @@ function RepeatOrderModal(p) {
         if (p.onSaveExpense) p.onSaveExpense(item);
         setExecTmpl(null);
         p.onClose();
+      }
+    }),
+
+    React.createElement(EditRepeatTemplateModal, {
+      open: !!editTmpl,
+      template: editTmpl,
+      onClose: function () { setEditTmpl(null); },
+      onSaved: function () {
+        loadTemplates();
       }
     })
   );
