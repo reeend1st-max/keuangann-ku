@@ -2316,6 +2316,25 @@ function App() {
   var saveExpense = useCallback(function (item) {
     window.Api.saveExpense(item).then(function (saved) {
       setExpenses(function (p) { return p.some(function (e) { return e.id === saved.id; }) ? p.map(function (e) { return e.id === saved.id ? saved : e; }) : [].concat(p, [saved]); });
+
+      var catLower = (saved.kategori || "").toLowerCase();
+      var reqLower = (saved.keperluan || "").toLowerCase();
+      if (catLower.indexOf("tabungan") >= 0 || catLower.indexOf("investasi") >= 0 || reqLower.indexOf("tabungan") >= 0) {
+        var autoSav = {
+          id: "sav_auto_" + saved.id,
+          tipe: "setoran",
+          lokasi: "KROM",
+          tanggal: saved.tanggal,
+          nominal: saved.nominal,
+          catatan: "Otomatis dari Pengeluaran: " + saved.keperluan + (saved.memo_detail ? (" (" + saved.memo_detail.replace(/\n/g, ", ") + ")") : "")
+        };
+        window.Api.saveSaving(autoSav).then(function (savedSav) {
+          setSavings(function (p) {
+            return p.some(function (s) { return s.id === savedSav.id; }) ? p.map(function (s) { return s.id === savedSav.id ? savedSav : s; }) : [savedSav].concat(p);
+          });
+          tk.show("✨ Pengeluaran Tabungan otomatis dicatat ke Tabel Tabungan (KROM)!", "success");
+        }).catch(function () {});
+      }
     }).catch(function (e) { tk.show(e.message || "Gagal menyimpan pengeluaran.", "error"); });
     setEditExp(null);
   }, []);
@@ -2341,6 +2360,10 @@ function App() {
     if (type === "expense") {
       window.Api.deleteExpense(id).then(function () {
         setExpenses(function (p) { return p.filter(function (e) { return e.id !== id; }); });
+        var autoSavId = "sav_auto_" + id;
+        window.Api.deleteSaving(autoSavId).then(function () {
+          setSavings(function (p) { return p.filter(function (s) { return s.id !== autoSavId; }); });
+        }).catch(function () {});
         tk.show("Transaksi pengeluaran dihapus", "info");
       }).catch(function (e) { tk.show(e.message || "Gagal menghapus.", "error"); });
     } else if (type === "income") {
