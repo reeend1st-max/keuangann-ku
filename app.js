@@ -674,8 +674,7 @@ function ExpenseForm(p) {
   var _nw = useState("Need"), nw = _nw[0], setNw = _nw[1];
   var _c = useState(""), catatan = _c[0], setCatatan = _c[1];
   var _md = useState(""), memoDetail = _md[0], setMemoDetail = _md[1];
-  var _err = useState(""), err = _err[0], setErr = _err[1];
-  var _sac = useState(false), showAddCat = _sac[0], setShowAddCat = _sac[1];
+  var _isRpt = useState(false), isRepeatTmpl = _isRpt[0], setIsRepeatTmpl = _isRpt[1];
 
   useEffect(function () {
     if (p.initial) {
@@ -687,9 +686,11 @@ function ExpenseForm(p) {
       setNw(p.initial.nw || "Need");
       setCatatan(p.initial.catatan || "");
       setMemoDetail(p.initial.memo_detail || p.initial.memo || "");
+      setIsRepeatTmpl(false);
     } else {
       setTanggal(todayStr()); setKeperluan(""); setKategori("Makan & Minum");
       setNominal(""); setBayar("Transfer"); setNw("Need"); setCatatan(""); setMemoDetail("");
+      setIsRepeatTmpl(false);
     }
     setErr("");
   }, [p.initial, p.open]);
@@ -724,6 +725,20 @@ function ExpenseForm(p) {
       catatan: catatan,
       memo_detail: memoDetail,
     };
+
+    if (isRepeatTmpl && window.Api && window.Api.saveRepeatTemplate) {
+      window.Api.saveRepeatTemplate({
+        id: "rpt_" + Date.now(),
+        keperluan: keperluan,
+        kategori: kategori,
+        nominal: nom,
+        bayar: bayar,
+        nw: nw,
+        memo_detail: memoDetail
+      });
+      if (p.showToast) p.showToast("Berhasil disimpan sebagai Templat Repeat Order!", "success");
+    }
+
     p.onSave(item);
     p.onClose();
   }
@@ -799,6 +814,13 @@ function ExpenseForm(p) {
             color: T.text, fontSize: 12, fontFamily: "inherit", resize: "vertical", outline: "none", boxSizing: "border-box"
           }
         })
+      ),
+
+      React.createElement(
+        "label",
+        { style: { fontSize: 11, color: T.teal, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, marginTop: 10 } },
+        React.createElement("input", { type: "checkbox", checked: isRepeatTmpl, onChange: function (e) { setIsRepeatTmpl(e.target.checked); } }),
+        "🔁 Simpan transaksi ini sebagai Templat Repeat Order (Belanja Berulang)"
       ),
 
       err && React.createElement("div", { style: { color: T.coral, fontSize: 12, marginTop: 10, fontWeight: 600 } }, "⚠️ ", err),
@@ -1409,7 +1431,12 @@ function PengeluaranView(p) {
             ["Semua", "Need", "Want"].map(function (n) { return pill(n === "Need" ? "🎯 Kebutuhan" : n === "Want" ? "✨ Keinginan" : "Semua K/K", fNW === n, n === "Need" ? T.sky : n === "Want" ? T.violet : T.textSub, function () { sFNW(n); }); })
           )
         ),
-        React.createElement(Btn, { color: T.coral, onClick: p.onAdd }, "➕ Tambah Pengeluaran")
+        React.createElement(
+          "div",
+          { style: { display: "flex", gap: 8, alignItems: "center" } },
+          React.createElement(Btn, { color: T.teal, outline: true, onClick: p.onOpenRepeat }, "🔁 Repeat Order"),
+          React.createElement(Btn, { color: T.coral, onClick: p.onAdd }, "➕ Tambah Pengeluaran")
+        )
       )
     ),
     rows.length === 0
@@ -1901,6 +1928,224 @@ function Sidebar(p) {
   );
 }
 
+// ── Quick Execute Repeat Modal (Adjust price & instant save) ──────────────────
+function QuickExecuteRepeatModal(p) {
+  if (!p.open || !p.template) return null;
+  var tmpl = p.template;
+
+  var _t = useState(todayStr()), tanggal = _t[0], setTanggal = _t[1];
+  var _nom = useState(""), nominal = _nom[0], setNominal = _nom[1];
+  var _md = useState(""), memoDetail = _md[0], setMemoDetail = _md[1];
+
+  useEffect(function () {
+    if (tmpl) {
+      setTanggal(todayStr());
+      setNominal(formatRupiahInput(tmpl.nominal || 0));
+      setMemoDetail(tmpl.memo_detail || "");
+    }
+  }, [tmpl, p.open]);
+
+  function handleSave() {
+    var nom = parseRupiahInput(nominal);
+    if (!nom || nom <= 0) return;
+    var parts = tanggal.split("/");
+    var d = parseInt(parts[0]) || 1;
+    var m = (parseInt(parts[1]) || 1) - 1;
+    var y = parseInt(parts[2]) || new Date().getFullYear();
+
+    var item = {
+      id: uid(),
+      month_id: mkKey(y, m),
+      year: y,
+      month: m,
+      tanggal: tanggal,
+      keperluan: tmpl.keperluan,
+      kategori: tmpl.kategori,
+      nominal: nom,
+      bayar: tmpl.bayar || "Transfer",
+      nw: tmpl.nw || "Need",
+      catatan: memoDetail || "",
+      memo_detail: memoDetail || "",
+    };
+
+    if (p.onSave) p.onSave(item);
+    if (p.onClose) p.onClose();
+  }
+
+  var catInfo = getCat(tmpl.kategori);
+
+  return React.createElement(
+    Modal,
+    { open: p.open, onClose: p.onClose, title: "⚡ Catat Repeat Order Instan", width: 440 },
+    React.createElement(
+      "div",
+      { style: { display: "flex", flexDirection: "column", gap: 14 } },
+
+      React.createElement(
+        "div",
+        { style: { background: T.tealDim, border: "1.5px solid " + T.teal + "40", padding: "14px 16px", borderRadius: 12, display: "flex", alignItems: "center", gap: 12 } },
+        React.createElement("span", { style: { fontSize: 26 } }, catInfo.emoji),
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: T.text } }, tmpl.keperluan),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, tmpl.kategori + " · " + (tmpl.bayar || "Transfer"))
+        )
+      ),
+
+      React.createElement(
+        "div",
+        { style: { background: T.surface, border: "1.5px solid " + T.border, padding: 14, borderRadius: 12, display: "flex", flexDirection: "column", gap: 6 } },
+        React.createElement("label", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase" } }, "💰 Nominal Harga (Dapat Diubah Jika Ada Perubahan Harga):"),
+        React.createElement("input", {
+          value: nominal,
+          onChange: function (e) { setNominal(formatRupiahInput(e.target.value)); },
+          style: { width: "100%", background: T.panel, border: "1.5px solid " + T.border, borderRadius: 8, padding: "8px 12px", fontSize: 18, fontWeight: 800, color: T.coral, outline: "none", boxSizing: "border-box" }
+        }),
+        React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontStyle: "italic" } }, "💡 Ubah angka di atas jika terjadi kenaikan atau penurunan harga.")
+      ),
+
+      React.createElement(DInput, { label: "Tanggal Pengeluaran", value: tanggal, onChange: setTanggal }),
+
+      React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 5 } },
+        React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "📌 Memo / Rincian Barang Spesifik"),
+        React.createElement("textarea", {
+          value: memoDetail,
+          onChange: function (e) { setMemoDetail(e.target.value); },
+          rows: 3,
+          style: { width: "100%", background: T.panel, border: "1.5px solid " + T.border, borderRadius: 8, padding: 8, color: T.text, fontSize: 12, outline: "none", boxSizing: "border-box" }
+        })
+      ),
+
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10, paddingTop: 14, borderTop: "1px solid " + T.border } },
+        React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
+        React.createElement(Btn, { color: T.teal, onClick: handleSave }, "⚡ Catat Pengeluaran Sekarang")
+      )
+    )
+  );
+}
+
+// ── Repeat Order Modal (Template List) ────────────────────────────────────────
+function RepeatOrderModal(p) {
+  if (!p.open) return null;
+  var _tmpls = useState([]), templates = _tmpls[0], setTemplates = _tmpls[1];
+  var _execTmpl = useState(null), execTmpl = _execTmpl[0], setExecTmpl = _execTmpl[1];
+
+  function loadTemplates() {
+    if (window.Api && window.Api.getRepeatTemplates) {
+      setTemplates(window.Api.getRepeatTemplates());
+    }
+  }
+
+  useEffect(function () {
+    if (p.open) loadTemplates();
+  }, [p.open]);
+
+  function handleDelete(id) {
+    if (window.Api && window.Api.deleteRepeatTemplate) {
+      window.Api.deleteRepeatTemplate(id);
+      loadTemplates();
+    }
+  }
+
+  return React.createElement(
+    React.Fragment,
+    null,
+    React.createElement(
+      Modal,
+      { open: p.open, onClose: p.onClose, title: "🔁 Repeat Order (Belanja Berulang Cepat)", width: 520 },
+      React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 16 } },
+        React.createElement(
+          "div",
+          { style: { fontSize: 12, color: T.textSub, lineHeight: 1.4 } },
+          "Pilih belanjaan rutin Anda di bawah ini untuk mencatat transaksi secara instan. Anda dapat mengubah harga nominal kapan saja saat memesan."
+        ),
+        React.createElement(
+          "div",
+          { style: { display: "flex", flexDirection: "column", gap: 10, maxHeight: 340, overflowY: "auto", paddingRight: 4 } },
+          templates.map(function (tmpl) {
+            var catInfo = getCat(tmpl.kategori);
+            return React.createElement(
+              "div",
+              {
+                key: tmpl.id,
+                style: {
+                  background: T.surface, border: "1.5px solid " + T.border, borderRadius: 12, padding: "12px 16px",
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12
+                }
+              },
+              React.createElement(
+                "div",
+                { style: { display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 } },
+                React.createElement("span", { style: { fontSize: 24 } }, catInfo.emoji),
+                React.createElement(
+                  "div",
+                  { style: { flex: 1, minWidth: 0 } },
+                  React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.text } }, tmpl.keperluan),
+                  React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, tmpl.kategori + " · " + fmt(tmpl.nominal)),
+                  tmpl.memo_detail ? React.createElement("div", { style: { fontSize: 10, color: T.teal, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, "📌 " + tmpl.memo_detail.replace(/\n/g, ", ")) : null
+                )
+              ),
+              React.createElement(
+                "div",
+                { style: { display: "flex", alignItems: "center", gap: 6 } },
+                React.createElement(
+                  Btn,
+                  {
+                    color: T.teal,
+                    onClick: function () { setExecTmpl(tmpl); },
+                    style: { padding: "6px 12px", fontSize: 12 }
+                  },
+                  "⚡ Pesan Ulang"
+                ),
+                React.createElement(
+                  "button",
+                  {
+                    onClick: function () { handleDelete(tmpl.id); },
+                    title: "Hapus Templat",
+                    style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" }
+                  },
+                  "✕"
+                )
+              )
+            );
+          })
+        ),
+        React.createElement(
+          "div",
+          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 14, borderTop: "1px solid " + T.border } },
+          React.createElement(
+            Btn,
+            {
+              outline: true, color: T.teal,
+              onClick: function () { if (p.onOpenAddExpense) p.onOpenAddExpense(); p.onClose(); }
+            },
+            "+ Buat Templat Baru Dari Form"
+          ),
+          React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Tutup")
+        )
+      )
+    ),
+
+    React.createElement(QuickExecuteRepeatModal, {
+      open: !!execTmpl,
+      template: execTmpl,
+      onClose: function () { setExecTmpl(null); },
+      onSave: function (item) {
+        if (p.onSaveExpense) p.onSaveExpense(item);
+        setExecTmpl(null);
+        p.onClose();
+      }
+    })
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 function App() {
   var _u = useState(null), user = _u[0], setUser = _u[1];
@@ -1919,6 +2164,7 @@ function App() {
   var _dst = useState("setoran"), defaultSavTipe = _dst[0], setDST = _dst[1];
   var _dt = useState(null), deleteTarget = _dt[0], setDT = _dt[1];
   var _pm = useState(window.privacyMode || false), privacyMode = _pm[0], setPrivacyMode = _pm[1];
+  var _sro = useState(false), showRepeatModal = _sro[0], setShowRepeatModal = _sro[1];
   var tk = useToast();
 
   var togglePrivacyMode = function () {
@@ -2054,15 +2300,16 @@ function App() {
               },
               privacyMode ? "🙈 Privasi On" : "👁️ Privasi Off"
             ),
+            React.createElement(Btn, { color: T.teal, style: { background: "#E0F2FE", border: "1px solid " + T.teal + "50", color: T.teal, fontWeight: 800 }, onClick: function () { setShowRepeatModal(true); } }, "🔁 Repeat Order"),
             React.createElement(Btn, { color: T.sage, onClick: function () { setEditInc(null); setSIF(true); } }, "+ Pemasukan"),
             React.createElement(Btn, { color: T.coral, onClick: function () { setEditExp(null); setSEF(true); } }, "+ Pengeluaran"),
             React.createElement(Btn, { color: T.coralDim, style: { border: "1px solid " + T.coral + "55", color: T.coral }, onClick: handleLogout }, "🚪 Keluar")
           )
         ),
         (function () {
-          if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings });
+          if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings, onOpenRepeat: function () { setShowRepeatModal(true); } });
           if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
-          if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id, item) { var lbl = item ? (item.keperluan + " (" + fmt(item.nominal) + ")") : ""; setDT({ type: "expense", id: id, label: lbl }); } });
+          if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id, item) { var lbl = item ? (item.keperluan + " (" + fmt(item.nominal) + ")") : ""; setDT({ type: "expense", id: id, label: lbl }); }, onOpenRepeat: function () { setShowRepeatModal(true); } });
           if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings, onEdit: function (item) { setEditExp(item); setSEF(true); }, onSave: saveExpense });
           if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); } });
           if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income });
@@ -2074,6 +2321,7 @@ function App() {
     React.createElement(ExpenseForm, { key: "modal-exp", open: showExpForm, onClose: function () { setSEF(false); setEditExp(null); }, onSave: saveExpense, initial: editingExp, showToast: tk.show }),
     React.createElement(IncomeForm, { key: "modal-inc", open: showIncForm, onClose: function () { setSIF(false); setEditInc(null); }, onSave: saveIncome, initial: editingInc, showToast: tk.show }),
     React.createElement(SavingForm, { key: "modal-sav", open: showSavForm, onClose: function () { setSSF(false); setEditSav(null); }, onSave: saveSaving, initial: editingSav, defaultTipe: defaultSavTipe, showToast: tk.show }),
+    React.createElement(RepeatOrderModal, { key: "modal-rpt", open: showRepeatModal, onClose: function () { setShowRepeatModal(false); }, onSaveExpense: saveExpense, onOpenAddExpense: function () { setEditExp(null); setSEF(true); } }),
     React.createElement(ConfirmModal, { key: "modal-del", open: !!deleteTarget, label: deleteTarget ? deleteTarget.label : "", message: "Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.", onConfirm: confirmDelete, onCancel: function () { setDT(null); } }),
     React.createElement(NameOnboardingModal, { key: "modal-name", open: user && (!user.name || !user.name.trim()), onSave: function (u) { setUser(u); tk.show("Nama akun berhasil disimpan!"); } }),
     React.createElement(Toast, { key: "toast-msg", toast: tk.toast })

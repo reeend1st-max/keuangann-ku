@@ -425,6 +425,36 @@
         this._setLocal("savings", list);
       }
     },
+
+    // ── Repeat Order Templates ───────────────────────────────────────────
+    getRepeatTemplates: function () {
+      var list = this._getLocal("repeat_templates");
+      if (!list || list.length === 0) {
+        var defaults = [
+          { id: "rpt_1", keperluan: "⚡ Token Listrik", kategori: "Rumah & Tagihan", nominal: 100000, bayar: "Transfer", nw: "Need", memo_detail: "Token Listrik PLN 100k" },
+          { id: "rpt_2", keperluan: "💧 Galon Air Minum", kategori: "Rumah & Tagihan", nominal: 20000, bayar: "Cash", nw: "Need", memo_detail: "Galon Aqua 2 Galon" },
+          { id: "rpt_3", keperluan: "📱 Pulsa & Paket Data", kategori: "Lain-lain", nominal: 50000, bayar: "E-Wallet", nw: "Need", memo_detail: "Paket Data Bulanan 50k" },
+          { id: "rpt_4", keperluan: "🧴 Belanja Alat Mandi", kategori: "Belanja", nominal: 130000, bayar: "Transfer", nw: "Need", memo_detail: "Sabun Dettol 3pcs (45k)\nShampoo Pantene (55k)\nOdol & Sikat (30k)" },
+          { id: "rpt_5", keperluan: "👕 Beli Celana & Outfit", kategori: "Pakaian & Outfit", nominal: 150000, bayar: "Transfer", nw: "Want", memo_detail: "Celana Short Pants & Celana Dalam" },
+        ];
+        this._setLocal("repeat_templates", defaults);
+        return defaults;
+      }
+      return list;
+    },
+
+    saveRepeatTemplate: function (item) {
+      var list = this.getRepeatTemplates();
+      var idx = list.findIndex(function (x) { return x.id === item.id; });
+      if (idx >= 0) list[idx] = item; else list.unshift(item);
+      this._setLocal("repeat_templates", list);
+      return item;
+    },
+
+    deleteRepeatTemplate: function (id) {
+      var list = this.getRepeatTemplates().filter(function (x) { return x.id !== id; });
+      this._setLocal("repeat_templates", list);
+    },
   };
 
   window.Api = Api;

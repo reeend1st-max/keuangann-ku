@@ -1,67 +1,79 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="notranslate" translate="no">
 <head>
 <meta charset="UTF-8"/>
+<meta name="google" content="notranslate"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<meta name="theme-color" content="#0A0E17"/>
+<meta name="theme-color" content="#0284C7"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='28' fill='%230284C7'/><text x='50%' y='55%' dominant-baseline='central' text-anchor='middle' font-size='62'>💰</text></svg>"/>
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='28' fill='%230284C7'/><text x='50%' y='55%' dominant-baseline='central' text-anchor='middle' font-size='62'>💰</text></svg>"/>
 <meta name="description" content="Keuangan Ku — Personal Finance Tracker"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Keuangan Ku"/>
 <title>Keuangan Ku 💰</title>
-<link rel="manifest" href="/manifest.json"/>
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png"/>
-<link rel="apple-touch-icon" href="/assets/icon-192.png"/>
-<link rel="stylesheet" href="/css/style.css"/>
-</head>
-<body>
-<div id="root"></div>
-<div id="boot-error">
-  <h2>⚠️ Gagal memuat</h2>
-  <p style="color:#7A90B0;font-size:14px;margin-bottom:12px;">Periksa koneksi internet, lalu tekan F5. Jika masalah berlanjut, pastikan environment variables Supabase sudah diisi dengan benar di Vercel.</p>
-  <pre id="boot-error-detail"></pre>
-</div>
-
-<!-- Vendored libraries — no external CDN dependency at runtime -->
-<script src="/vendor/react.production.min.js"></script>
-<script src="/vendor/react-dom.production.min.js"></script>
-<script src="/vendor/supabase.js"></script>
-
-<!-- Runtime config: SUPABASE_URL / SUPABASE_ANON_KEY, generated at build
-     time from environment variables by scripts/generate-config.js -->
-<script src="/config.js"></script>
 
 <script>
-window.addEventListener("error",function(e){
-  var b=document.getElementById("boot-error"),d=document.getElementById("boot-error-detail");
-  if(b&&!b.classList.contains("show")){d.textContent=(e.error&&e.error.stack)?e.error.stack:e.message;b.classList.add("show");}
-});
-</script>
-
-<!-- Supabase-backed data layer -->
-<script src="/js/api.js"></script>
-<!-- Main application -->
-<script src="/js/app.js"></script>
-
-<script>
-try{
-  if(!window.React||!window.ReactDOM)throw new Error("React gagal dimuat.");
-  if(!window.supabase)throw new Error("Supabase client gagal dimuat.");
-  if(!window.Api)throw new Error("Modul Api (api.js) gagal dimuat.");
-  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
-}catch(e){
-  var b=document.getElementById("boot-error"),d=document.getElementById("boot-error-detail");
-  d.textContent=e.stack||e.message;b.classList.add("show");
+if (typeof Node === "function" && Node.prototype) {
+  var origRemove = Node.prototype.removeChild;
+  Node.prototype.removeChild = function (child) {
+    if (child && child.parentNode !== this) { return child; }
+    return origRemove.apply(this, arguments);
+  };
+  var origInsert = Node.prototype.insertBefore;
+  Node.prototype.insertBefore = function (newNode, refNode) {
+    if (refNode && refNode.parentNode !== this) { return newNode; }
+    return origInsert.apply(this, arguments);
+  };
 }
-</script>
-
-<script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load',function(){
-    navigator.serviceWorker.register('/sw.js').catch(function(){});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    for (var r of regs) r.unregister();
   });
 }
+if (window.caches) {
+  caches.keys().then(function(names) {
+    for (var name of names) caches.delete(name);
+  });
+}
+</script>
+
+<link rel="manifest" href="./manifest.json"/>
+<link rel="stylesheet" href="./style.css?v=20260805_V300"/>
+</head>
+<body style="background:#F1F5F9;margin:0;color:#0F172A;">
+<div id="root"></div>
+
+<script src="./vendor/react.production.min.js"></script>
+<script src="./vendor/react-dom.production.min.js"></script>
+<script src="./vendor/supabase.js"></script>
+
+<script>
+if (!window.React) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"><\/script>');
+if (!window.ReactDOM) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"><\/script>');
+if (!window.supabase) document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
+</script>
+
+<script src="./config.js?v=20260927_V3200"></script>
+<script src="./api.js?v=20260927_V3200"></script>
+<script src="./app.js?v=20260927_V3200"></script>
+
+<script>
+// Wait for everything to be ready then render
+(function tryRender(attempts) {
+  attempts = attempts || 0;
+  var root = document.getElementById("root");
+  if (window.React && window.ReactDOM && typeof App !== "undefined" && root) {
+    try {
+      ReactDOM.createRoot(root).render(React.createElement(App));
+    } catch(e) {
+      console.error("Render error:", e);
+    }
+  } else if (attempts < 100) {
+    setTimeout(function() { tryRender(attempts + 1); }, 100);
+  }
+})(0);
 </script>
 </body>
 </html>
