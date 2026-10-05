@@ -138,15 +138,161 @@ function uid() {
 
 var MONTH_NAMES = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 
-function groupByMonth(items) {
+// ── Financial Period Helpers (Siklus Gajian Dinamis) ─────────────────────────
+function getDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function getEffectivePayday(year, month, targetDay) {
+  var maxDays = getDaysInMonth(year, month);
+  return Math.min(Math.max(1, targetDay || 28), maxDays);
+}
+
+function parseDateParts(raw, fallbackYear, fallbackMonth) {
+  if (!raw) {
+    if (fallbackYear && fallbackMonth !== undefined) {
+      return { year: parseInt(fallbackYear, 10), month: parseInt(fallbackMonth, 10) + 1, day: 1 };
+    }
+    var now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
+  }
+  if (raw instanceof Date) {
+    return { year: raw.getFullYear(), month: raw.getMonth() + 1, day: raw.getDate() };
+  }
+  if (typeof raw === "string") {
+    if (raw.indexOf("/") !== -1) {
+      var p = raw.split("/");
+      if (p.length === 3) {
+        return { day: parseInt(p[0], 10), month: parseInt(p[1], 10), year: parseInt(p[2], 10) };
+      }
+    }
+    if (raw.indexOf("-") !== -1) {
+      var s = raw.split("T")[0].split("-");
+      if (s.length === 3) {
+        if (s[0].length === 4) {
+          return { year: parseInt(s[0], 10), month: parseInt(s[1], 10), day: parseInt(s[2], 10) };
+        } else {
+          return { day: parseInt(s[0], 10), month: parseInt(s[1], 10), year: parseInt(s[2], 10) };
+        }
+      }
+    }
+  }
+  var d = new Date(raw);
+  if (!isNaN(d.getTime())) {
+    return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };
+  }
+  var def = new Date();
+  return { year: def.getFullYear(), month: def.getMonth() + 1, day: def.getDate() };
+}
+
+function getFinancialPeriod(transactionDate, paydayDate) {
+  var payday = typeof paydayDate === "number" ? paydayDate : parseInt(paydayDate, 10) || 28;
+  payday = Math.min(31, Math.max(1, payday));
+
+  var parts = parseDateParts(transactionDate);
+  var tYear = parts.year;
+  var tMonth = parts.month;
+  var tDay = parts.day;
+
+  // Kasus 1: paydayDate == 1 (Siklus Kalender Reguler)
+  if (payday === 1) {
+    var maxD = getDaysInMonth(tYear, tMonth);
+    var cKey = tYear + "-" + String(tMonth).padStart(2, "0");
+    var mName = MONTH_NAMES[tMonth - 1] || "Bulan " + tMonth;
+
+    return {
+      cycleKey: cKey,
+      cycleYear: tYear,
+      cycleMonth: tMonth,
+      cycleName: mName + " " + tYear,
+      monthName: mName,
+      startDate: new Date(tYear, tMonth - 1, 1),
+      endDate: new Date(tYear, tMonth - 1, maxD, 23, 59, 59),
+      startDateStr: "01/" + String(tMonth).padStart(2, "0") + "/" + tYear,
+      endDateStr: String(maxD).padStart(2, "0") + "/" + String(tMonth).padStart(2, "0") + "/" + tYear,
+      label: "Siklus " + mName + " " + tYear + " (1 - " + maxD + " " + mName.slice(0, 3) + ")"
+    };
+  }
+
+  // Kasus 2: paydayDate > 1 (Siklus Gajian Dinamis)
+  var effPaydayThisMonth = getEffectivePayday(tYear, tMonth, payday);
+
+  var cycleYear, cycleMonth;
+  var startYear, startMonth, startDay;
+  var endYear, endMonth, endDay;
+
+  if (tDay >= effPaydayThisMonth) {
+    cycleYear = tYear;
+    cycleMonth = tMonth;
+
+    startYear = tYear;
+    startMonth = tMonth;
+    startDay = effPaydayThisMonth;
+
+    if (tMonth === 12) {
+      endYear = tYear + 1;
+      endMonth = 1;
+    } else {
+      endYear = tYear;
+      endMonth = tMonth + 1;
+    }
+    var effPaydayNext = getEffectivePayday(endYear, endMonth, payday);
+    endDay = effPaydayNext - 1;
+  } else {
+    if (tMonth === 1) {
+      cycleYear = tYear - 1;
+      cycleMonth = 12;
+    } else {
+      cycleYear = tYear;
+      cycleMonth = tMonth - 1;
+    }
+
+    startYear = cycleYear;
+    startMonth = cycleMonth;
+    startDay = getEffectivePayday(startYear, startMonth, payday);
+
+    endYear = tYear;
+    endMonth = tMonth;
+    endDay = effPaydayThisMonth - 1;
+  }
+
+  var cMonthName = MONTH_NAMES[cycleMonth - 1] || "Bulan " + cycleMonth;
+  var sMonthName = (MONTH_NAMES[startMonth - 1] || "").slice(0, 3);
+  var eMonthName = (MONTH_NAMES[endMonth - 1] || "").slice(0, 3);
+  var cycleKey = cycleYear + "-" + String(cycleMonth).padStart(2, "0");
+
+  var startStr = String(startDay).padStart(2, "0") + "/" + String(startMonth).padStart(2, "0") + "/" + startYear;
+  var endStr = String(endDay).padStart(2, "0") + "/" + String(endMonth).padStart(2, "0") + "/" + endYear;
+
+  return {
+    cycleKey: cycleKey,
+    cycleYear: cycleYear,
+    cycleMonth: cycleMonth,
+    cycleName: cMonthName + " " + cycleYear,
+    monthName: cMonthName,
+    startDate: new Date(startYear, startMonth - 1, startDay),
+    endDate: new Date(endYear, endMonth - 1, endDay, 23, 59, 59),
+    startDateStr: startStr,
+    endDateStr: endStr,
+    label: "Siklus " + cMonthName + " " + cycleYear + " (" + startDay + " " + sMonthName + " - " + endDay + " " + eMonthName + ")"
+  };
+}
+
+function groupByMonth(items, paydayDate) {
   var groups = {};
+  var pDate = paydayDate || 1;
   items.forEach(function (item) {
-    var key = mkKey(item.year, item.month);
+    var rawDate = item.tanggal || item.date;
+    var period = getFinancialPeriod(rawDate, pDate);
+    var key = period.cycleKey;
     if (!groups[key]) {
       groups[key] = {
         key: key,
-        year: item.year,
-        month: item.month,
+        year: period.cycleYear,
+        month: period.cycleMonth - 1,
+        cycleName: period.cycleName,
+        label: period.label,
+        period: period,
         items: []
       };
     }
@@ -158,12 +304,23 @@ function groupByMonth(items) {
   });
 }
 
-// ── Toast Hook ────────────────────────────────────────────────────────────────
+// ── Toast Hook (Auto-dismiss in 5s) ──────────────────────────────────────────
 function useToast() {
   var _t = useState(null), toast = _t[0], setToast = _t[1];
   var show = useCallback(function (msg, type) {
     setToast({ msg: msg, type: type || "info", id: uid() });
   }, []);
+
+  useEffect(function () {
+    if (!toast) return;
+    var timer = setTimeout(function () {
+      setToast(null);
+    }, 5000);
+    return function () {
+      clearTimeout(timer);
+    };
+  }, [toast]);
+
   return { toast: toast, show: show };
 }
 
@@ -1154,8 +1311,22 @@ function TabunganView(p) {
 
 // ── Dashboard View (Ringkasan) ────────────────────────────────────────────────
 function DashboardView(p) {
-  var tInc = p.income.reduce(function (s, i) { return s + i.nominal; }, 0);
-  var tExp = p.expenses.reduce(function (s, e) { return s + e.nominal; }, 0);
+  var paydayDate = p.paydayDate || 28;
+  var curPeriod = getFinancialPeriod(new Date(), paydayDate);
+  var _fmode = useState("cycle");
+  var filterMode = _fmode[0], setFilterMode = _fmode[1];
+
+  var isCycle = filterMode === "cycle";
+  var activeIncome = isCycle
+    ? p.income.filter(function (i) { return getFinancialPeriod(i.tanggal || i.date, paydayDate).cycleKey === curPeriod.cycleKey; })
+    : p.income;
+
+  var activeExpenses = isCycle
+    ? p.expenses.filter(function (e) { return getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey === curPeriod.cycleKey; })
+    : p.expenses;
+
+  var tInc = activeIncome.reduce(function (s, i) { return s + i.nominal; }, 0);
+  var tExp = activeExpenses.reduce(function (s, e) { return s + e.nominal; }, 0);
   var saldo = tInc - tExp;
   var pct = tInc > 0 ? Math.min(100, Math.round((tExp / tInc) * 100)) : tExp > 0 ? 100 : 0;
 
@@ -1163,8 +1334,8 @@ function DashboardView(p) {
   var totalPenarikan = p.savings.filter(function (s) { return s.tipe === "penarikan"; }).reduce(function (a, s) { return a + s.nominal; }, 0);
   var saldoTab = totalSetoran - totalPenarikan;
 
-  var incRows = sortNewestFirst(p.income).slice(0, 3);
-  var expRows = sortNewestFirst(p.expenses).slice(0, 3);
+  var incRows = sortNewestFirst(activeIncome).slice(0, 3);
+  var expRows = sortNewestFirst(activeExpenses).slice(0, 3);
 
   function Card(cp) {
     return React.createElement(
@@ -1184,13 +1355,67 @@ function DashboardView(p) {
   return React.createElement(
     "div",
     { style: { padding: "22px 26px", overflowY: "auto", height: "100%" } },
+    // Top Bar Selector: Cycle vs All Time + Payday indicator
+    React.createElement(
+      "div",
+      { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 } },
+      React.createElement(
+        "div",
+        { style: { display: "inline-flex", background: T.card, padding: 3, borderRadius: 10, border: "1px solid " + T.border } },
+        React.createElement(
+          "button",
+          {
+            onClick: function () { setFilterMode("cycle"); },
+            style: {
+              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer",
+              background: isCycle ? "#0284C7" : "transparent",
+              color: isCycle ? "#FFFFFF" : T.textSub
+            }
+          },
+          "⚡ Siklus " + curPeriod.monthName + " (" + curPeriod.startDateStr.slice(0, 5) + " - " + curPeriod.endDateStr.slice(0, 5) + ")"
+        ),
+        React.createElement(
+          "button",
+          {
+            onClick: function () { setFilterMode("all"); },
+            style: {
+              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer",
+              background: !isCycle ? "#0284C7" : "transparent",
+              color: !isCycle ? "#FFFFFF" : T.textSub
+            }
+          },
+          "🌐 Seluruh Waktu"
+        )
+      ),
+      p.onUpdatePayday && React.createElement(
+        "div",
+        { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: T.textSub, background: T.card, padding: "4px 10px", borderRadius: 8, border: "1px solid " + T.border } },
+        React.createElement("span", null, "🗓️ Gajian:"),
+        React.createElement(
+          "select",
+          {
+            value: paydayDate,
+            onChange: function (e) { p.onUpdatePayday(parseInt(e.target.value, 10)); },
+            style: { border: "none", background: "transparent", fontWeight: 800, color: T.teal, cursor: "pointer" }
+          },
+          Array.from({ length: 31 }, function (_, i) { return i + 1; }).map(function (d) {
+            return React.createElement("option", { key: d, value: d }, d === 1 ? "Tgl 1 (Kalender)" : "Tgl " + d);
+          })
+        )
+      )
+    ),
     // Top Main Balance Banner (SALDO KEUANGAN = Pemasukan - Pengeluaran)
     React.createElement(
       "div",
       { style: { background: "linear-gradient(135deg, #1E3A8A, #0284C7)", borderRadius: 16, padding: "24px 28px", border: "1px solid " + T.border, marginBottom: 20, color: "#FFFFFF" } },
-      React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 } }, "SALDO KEUANGAN"),
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
+        React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 } }, isCycle ? ("SALDO SIKLUS " + curPeriod.monthName.toUpperCase() + " (GAJIAN TGL " + paydayDate + ")") : "SALDO KEUANGAN KESELURUHAN"),
+        isCycle && React.createElement("div", { style: { fontSize: 11, color: "#E0F2FE", fontWeight: 700, background: "rgba(255,255,255,0.15)", padding: "2px 8px", borderRadius: 6 } }, curPeriod.startDateStr + " - " + curPeriod.endDateStr)
+      ),
       React.createElement("div", { style: { fontSize: 40, fontWeight: 900, letterSpacing: -1, color: "#FFFFFF", marginBottom: 6 } }, (saldo < 0 ? "-" : "") + "Rp " + new Intl.NumberFormat("id-ID").format(Math.abs(saldo))),
-      React.createElement("div", { style: { fontSize: 12, color: "#FDE047", fontWeight: 700, marginBottom: 14 } }, pct + "% pemasukan sudah terpakai"),
+      React.createElement("div", { style: { fontSize: 12, color: "#FDE047", fontWeight: 700, marginBottom: 14 } }, pct + "% pemasukan " + (isCycle ? "siklus ini" : "") + " sudah terpakai"),
       React.createElement("div", { style: { height: 6, background: "rgba(255,255,255,0.2)", borderRadius: 3, overflow: "hidden" } },
         React.createElement("div", { style: { height: "100%", width: pct + "%", borderRadius: 3, background: "#FDE047" } })
       )
@@ -1203,7 +1428,7 @@ function DashboardView(p) {
       // Card 1: Pemasukan
       React.createElement(
         Card,
-        { icon: "🟢", title: "Pemasukan", badge: p.income.length + " transaksi", badgeColor: T.sage },
+        { icon: "🟢", title: "Pemasukan", badge: activeIncome.length + " transaksi", badgeColor: T.sage },
         React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.teal, marginBottom: 14 } }, fmt(tInc)),
         React.createElement(
           "div",
@@ -1224,7 +1449,7 @@ function DashboardView(p) {
       // Card 2: Pengeluaran
       React.createElement(
         Card,
-        { icon: "🔴", title: "Pengeluaran", badge: p.expenses.length + " transaksi", badgeColor: T.coral },
+        { icon: "🔴", title: "Pengeluaran", badge: activeExpenses.length + " transaksi", badgeColor: T.coral },
         React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.coral, marginBottom: 14 } }, fmt(tExp)),
         React.createElement(
           "div",
@@ -1270,10 +1495,11 @@ function DashboardView(p) {
 
 // ── Pemasukan View ────────────────────────────────────────────────────────────
 function PemasukanView(p) {
+  var paydayDate = p.paydayDate || 28;
   var rows = sortNewestFirst(p.income);
   var total = rows.reduce(function (s, i) { return s + i.nominal; }, 0);
   var mc = { Transfer: T.teal, "E-Wallet": T.violet, Cash: T.amber, QRIS: T.sky, Debit: T.sage, Kredit: T.coral };
-  var grouped = groupByMonth(rows);
+  var grouped = groupByMonth(rows, paydayDate);
 
   return React.createElement(
     "div",
@@ -1302,11 +1528,11 @@ function PemasukanView(p) {
           ),
           grouped.map(function (g) {
             var mTotal = g.items.reduce(function (s, i) { return s + i.nominal; }, 0);
-            var mLabel = MONTH_NAMES[g.month] + " " + g.year;
+            var mLabel = g.label || (MONTH_NAMES[g.month] + " " + g.year);
             return React.createElement(
               "div",
               { key: g.key },
-              // Sekat Pergantian Bulan
+              // Sekat Pergantian Bulan / Siklus
               React.createElement(
                 "div",
                 { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 32px", background: "linear-gradient(90deg, #10B98122, transparent)", borderTop: "1.5px solid " + T.sage + "40", borderBottom: "1.5px solid " + T.sage + "40" } },
@@ -1315,7 +1541,7 @@ function PemasukanView(p) {
                   React.createElement("span", null, mLabel),
                   React.createElement("span", { style: { fontSize: 11, color: T.textSub, fontWeight: 600 } }, "(" + g.items.length + " transaksi)")
                 ),
-                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.sage } }, "Total Pemasukan " + mLabel + ": " + fmt(mTotal))
+                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.sage } }, "Total " + (g.cycleName || mLabel) + ": " + fmt(mTotal))
               ),
               g.items.map(function (item, i) {
                 return React.createElement(
@@ -1341,6 +1567,9 @@ function PemasukanView(p) {
 
 // ── Pengeluaran View ──────────────────────────────────────────────────────────
 function PengeluaranView(p) {
+  var paydayDate = p.paydayDate || 28;
+  var curPeriod = getFinancialPeriod(new Date(), paydayDate);
+
   var _fc = useState("Semua"), fCat = _fc[0], sFCat = _fc[1];
   var _fn = useState("Semua"), fNW = _fn[0], sFNW = _fn[1];
   var _fs = useState(""), search = _fs[0], sSearch = _fs[1];
@@ -1349,15 +1578,8 @@ function PengeluaranView(p) {
   var all = p.expenses || [];
   var total = all.reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
 
-  var now = new Date();
-  var curY = now.getFullYear();
-  var curM = now.getMonth();
-  var thisMonthExp = all.filter(function (e) {
-    var parts = (e.tanggal || "").split("/");
-    if (parts.length === 3) {
-      return parseInt(parts[2], 10) === curY && (parseInt(parts[1], 10) - 1) === curM;
-    }
-    return false;
+  var thisCycleExp = all.filter(function (e) {
+    return getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey === curPeriod.cycleKey;
   }).reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
 
   var usedCats = [].concat([], all.map(function (e) { return e.kategori; })).filter(function (v, i, a) { return a.indexOf(v) === i; });
@@ -1369,7 +1591,7 @@ function PengeluaranView(p) {
   });
   var rows = sortNewestFirst(filtered);
 
-  var grouped = groupByMonth(rows);
+  var grouped = groupByMonth(rows, paydayDate);
 
   function pill(label, active, col, fn) {
     return React.createElement(
@@ -1413,8 +1635,8 @@ function PengeluaranView(p) {
         React.createElement(
           "div",
           { style: { background: T.card, borderRadius: 14, border: "1px solid " + T.border, padding: "12px 18px" } },
-          React.createElement("div", { style: { fontSize: 10, color: T.violet, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 } }, "📊 BULAN INI (" + MONTH_NAMES[curM].toUpperCase() + ")"),
-          React.createElement("div", { style: { fontSize: 24, fontWeight: 900, color: T.violet, marginTop: 2 } }, fmt(thisMonthExp))
+          React.createElement("div", { style: { fontSize: 10, color: T.violet, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 } }, "📊 SIKLUS INI (" + curPeriod.monthName.toUpperCase() + ")"),
+          React.createElement("div", { style: { fontSize: 24, fontWeight: 900, color: T.violet, marginTop: 2 } }, fmt(thisCycleExp))
         )
       ),
 
@@ -1448,7 +1670,7 @@ function PengeluaranView(p) {
           ),
           grouped.map(function (g) {
             var mTotal = g.items.reduce(function (s, e) { return s + e.nominal; }, 0);
-            var mLabel = MONTH_NAMES[g.month] + " " + g.year;
+            var mLabel = g.label || (MONTH_NAMES[g.month] + " " + g.year);
             return React.createElement(
               "div",
               { key: g.key },
@@ -1460,7 +1682,7 @@ function PengeluaranView(p) {
                   React.createElement("span", null, mLabel),
                   React.createElement("span", { style: { fontSize: 11, color: T.textSub, fontWeight: 600 } }, "(" + g.items.length + " transaksi)")
                 ),
-                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.coral } }, "Total " + mLabel + ": " + fmt(mTotal))
+                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.coral } }, "Total " + (g.cycleName || mLabel) + ": " + fmt(mTotal))
               ),
               g.items.map(function (item, i) {
                 var cfg = getCat(item.kategori);
@@ -1516,42 +1738,129 @@ function PengeluaranView(p) {
 
 // ── Analisis Bulanan View ─────────────────────────────────────────────────────
 function AnalisisBulananView(p) {
-  var monthKeys = ["2026-07", "2026-06", "2026-05"];
+  var paydayDate = p.paydayDate || 28;
+  var curP = getFinancialPeriod(new Date(), paydayDate);
+
+  var cycleMap = {};
+  cycleMap[curP.cycleKey] = curP;
+
+  (p.income || []).concat(p.expenses || []).forEach(function (tx) {
+    var rawDate = tx.tanggal || tx.date;
+    var pr = getFinancialPeriod(rawDate, paydayDate);
+    cycleMap[pr.cycleKey] = pr;
+  });
+
+  var sortedKeys = Object.keys(cycleMap).sort(function (a, b) {
+    return b.localeCompare(a);
+  });
+
   return React.createElement(
     "div",
     { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
-    React.createElement("h2", { style: { margin: "0 0 16px", fontSize: 20, fontWeight: 900, color: T.text } }, "📈 Analisis Keuangan Per Bulan"),
+    React.createElement(
+      "div",
+      { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 } },
+      React.createElement(
+        "div",
+        null,
+        React.createElement("h2", { style: { margin: "0 0 4px", fontSize: 20, fontWeight: 900, color: T.text } }, "📈 Analisis Keuangan Per Siklus Gajian"),
+        React.createElement("div", { style: { fontSize: 12, color: T.textSub } }, "Data dihitung otomatis berdasarkan tanggal gajian dan siklus cashflow")
+      ),
+      p.onUpdatePayday && React.createElement(
+        "div",
+        { style: { display: "flex", alignItems: "center", gap: 8, background: T.card, padding: "8px 14px", borderRadius: 12, border: "1px solid " + T.border, boxShadow: "0 2px 6px rgba(0,0,0,0.03)" } },
+        React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "🗓️ Tanggal Gajian:"),
+        React.createElement(
+          "select",
+          {
+            value: paydayDate,
+            onChange: function (e) { p.onUpdatePayday(parseInt(e.target.value, 10)); },
+            style: { padding: "4px 8px", borderRadius: 8, border: "1px solid " + T.border, fontSize: 13, fontWeight: 800, color: T.teal, background: T.panel, cursor: "pointer" }
+          },
+          Array.from({ length: 31 }, function (_, i) { return i + 1; }).map(function (d) {
+            return React.createElement("option", { key: d, value: d }, d === 1 ? "Tgl 1 (Kalender)" : "Tgl " + d);
+          })
+        )
+      )
+    ),
     React.createElement(
       "div",
       { style: { display: "flex", flexDirection: "column", gap: 16 } },
-      monthKeys.map(function (mKey) {
-        var mInc = p.income.filter(function (i) { return mkKey(i.year, i.month) === mKey; });
-        var mExp = p.expenses.filter(function (e) { return mkKey(e.year, e.month) === mKey; });
+      sortedKeys.map(function (mKey) {
+        var periodInfo = cycleMap[mKey];
+        var isCurrent = mKey === curP.cycleKey;
+
+        var mInc = (p.income || []).filter(function (i) {
+          return getFinancialPeriod(i.tanggal || i.date, paydayDate).cycleKey === mKey;
+        });
+        var mExp = (p.expenses || []).filter(function (e) {
+          return getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey === mKey;
+        });
+
         var tInc = mInc.reduce(function (s, i) { return s + i.nominal; }, 0);
         var tExp = mExp.reduce(function (s, e) { return s + e.nominal; }, 0);
         var net = tInc - tExp;
-        var parts = mKey.split("-");
-        var label = MONTH_NAMES[parseInt(parts[1])] + " " + parts[0];
+        var pctSpent = tInc > 0 ? Math.min(100, Math.round((tExp / tInc) * 100)) : tExp > 0 ? 100 : 0;
 
         return React.createElement(
           "div",
-          { key: mKey, style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, padding: 20 } },
+          {
+            key: mKey,
+            style: {
+              background: T.card,
+              borderRadius: 16,
+              border: isCurrent ? "2px solid " + T.teal : "1px solid " + T.border,
+              padding: 22,
+              position: "relative",
+              boxShadow: isCurrent ? "0 4px 16px " + T.tealDim : "none"
+            }
+          },
           React.createElement(
             "div",
-            { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
-            React.createElement("div", { style: { fontSize: 16, fontWeight: 800, color: T.teal } }, "📅 " + label),
-            React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: net >= 0 ? T.sage : T.coral } }, "Sisa Cashflow: " + fmt(net))
+            { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 } },
+            React.createElement(
+              "div",
+              { style: { display: "flex", alignItems: "center", gap: 10 } },
+              React.createElement("div", { style: { fontSize: 17, fontWeight: 900, color: isCurrent ? T.teal : T.text } }, "📅 " + periodInfo.label),
+              isCurrent && React.createElement("span", { style: { background: T.teal, color: "#FFFFFF", fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 6, textTransform: "uppercase" }, title: "Siklus yang aktif saat ini" }, "⚡ Sedang Berjalan")
+            ),
+            React.createElement(
+              "div",
+              { style: { textAlign: "right" } },
+              React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700 } }, "Sisa Cashflow:"),
+              React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: net >= 0 ? T.sage : T.coral } }, fmt(net))
+            )
+          ),
+          // Progress bar
+          tInc > 0 && React.createElement(
+            "div",
+            { style: { marginBottom: 14 } },
+            React.createElement(
+              "div",
+              { style: { display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700, color: T.textSub, marginBottom: 4 } },
+              React.createElement("span", null, "Persentase Terpakai"),
+              React.createElement("span", { style: { color: pctSpent > 90 ? T.coral : pctSpent > 70 ? T.amber : T.sage } }, pctSpent + "%")
+            ),
+            React.createElement(
+              "div",
+              { style: { height: 6, background: T.panel, borderRadius: 3, overflow: "hidden" } },
+              React.createElement("div", { style: { height: "100%", width: pctSpent + "%", background: pctSpent > 90 ? T.coral : pctSpent > 70 ? T.amber : T.teal, borderRadius: 3 } })
+            )
           ),
           React.createElement(
             "div",
             { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } },
-            React.createElement("div", { style: { background: T.sageDim, padding: 12, borderRadius: 10, border: "1px solid " + T.sage + "30" } },
-              React.createElement("div", { style: { fontSize: 11, color: T.sage, fontWeight: 700 } }, "Pemasukan (" + mInc.length + " transaksi)"),
-              React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.text, marginTop: 4 } }, fmt(tInc))
+            React.createElement(
+              "div",
+              { style: { background: T.sageDim, padding: 14, borderRadius: 12, border: "1px solid " + T.sage + "30" } },
+              React.createElement("div", { style: { fontSize: 11, color: T.sage, fontWeight: 800, textTransform: "uppercase" } }, "Pemasukan (" + mInc.length + " transaksi)"),
+              React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: T.text, marginTop: 4 } }, fmt(tInc))
             ),
-            React.createElement("div", { style: { background: T.coralDim, padding: 12, borderRadius: 10, border: "1px solid " + T.coral + "30" } },
-              React.createElement("div", { style: { fontSize: 11, color: T.coral, fontWeight: 700 } }, "Pengeluaran (" + mExp.length + " transaksi)"),
-              React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.text, marginTop: 4 } }, fmt(tExp))
+            React.createElement(
+              "div",
+              { style: { background: T.coralDim, padding: 14, borderRadius: 12, border: "1px solid " + T.coral + "30" } },
+              React.createElement("div", { style: { fontSize: 11, color: T.coral, fontWeight: 800, textTransform: "uppercase" } }, "Pengeluaran (" + mExp.length + " transaksi)"),
+              React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: T.text, marginTop: 4 } }, fmt(tExp))
             )
           )
         );
@@ -1562,25 +1871,137 @@ function AnalisisBulananView(p) {
 
 // ── Analisis Tahunan View ─────────────────────────────────────────────────────
 function AnalisisTahunanView(p) {
-  var tInc = p.income.reduce(function (s, i) { return s + i.nominal; }, 0);
-  var tExp = p.expenses.reduce(function (s, e) { return s + e.nominal; }, 0);
+  var paydayDate = p.paydayDate || 28;
+  var curP = getFinancialPeriod(new Date(), paydayDate);
+  var _sy = useState(curP.cycleYear);
+  var selYear = _sy[0], setSelYear = _sy[1];
+
+  // Kumpulkan tahun-tahun siklus yang ada
+  var yearSet = {};
+  yearSet[curP.cycleYear] = true;
+  (p.income || []).concat(p.expenses || []).forEach(function (tx) {
+    var pr = getFinancialPeriod(tx.tanggal || tx.date, paydayDate);
+    yearSet[pr.cycleYear] = true;
+  });
+  var availYears = Object.keys(yearSet).map(Number).sort(function (a, b) { return b - a; });
+
+  // Filter transaksi tahun siklus yang dipilih
+  var yInc = (p.income || []).filter(function (i) {
+    return getFinancialPeriod(i.tanggal || i.date, paydayDate).cycleYear === selYear;
+  });
+  var yExp = (p.expenses || []).filter(function (e) {
+    return getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleYear === selYear;
+  });
+
+  var tInc = yInc.reduce(function (s, i) { return s + i.nominal; }, 0);
+  var tExp = yExp.reduce(function (s, e) { return s + e.nominal; }, 0);
   var net = tInc - tExp;
+
+  // Breakdown 12 siklus dalam tahun selYear
+  var MONTH_NAMES = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  var cycleBreakdown = [];
+  for (var m = 1; m <= 12; m++) {
+    var cKey = selYear + "-" + String(m).padStart(2, "0");
+    var mInc = yInc.filter(function (i) { return getFinancialPeriod(i.tanggal || i.date, paydayDate).cycleKey === cKey; });
+    var mExp = yExp.filter(function (e) { return getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey === cKey; });
+    var totI = mInc.reduce(function (s, i) { return s + i.nominal; }, 0);
+    var totE = mExp.reduce(function (s, e) { return s + e.nominal; }, 0);
+    var diff = totI - totE;
+    cycleBreakdown.push({
+      month: m,
+      monthName: MONTH_NAMES[m - 1],
+      key: cKey,
+      inc: totI,
+      exp: totE,
+      net: diff,
+      txCount: mInc.length + mExp.length
+    });
+  }
 
   return React.createElement(
     "div",
     { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
-    React.createElement("h2", { style: { margin: "0 0 16px", fontSize: 20, fontWeight: 900, color: T.text } }, "📊 Analisis Keuangan Per Tahun (2026)"),
+    React.createElement(
+      "div",
+      { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 } },
+      React.createElement("h2", { style: { margin: 0, fontSize: 20, fontWeight: 900, color: T.text } }, "📊 Analisis Keuangan Tahunan (Siklus Gajian)"),
+      React.createElement(
+        "div",
+        { style: { display: "flex", alignItems: "center", gap: 8 } },
+        React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: T.textSub } }, "Pilih Tahun Siklus:"),
+        React.createElement(
+          "select",
+          {
+            value: selYear,
+            onChange: function (e) { setSelYear(parseInt(e.target.value, 10)); },
+            style: { padding: "6px 12px", borderRadius: 8, border: "1px solid " + T.border, fontSize: 13, fontWeight: 800, color: T.teal, background: T.card, cursor: "pointer" }
+          },
+          availYears.map(function (y) {
+            return React.createElement("option", { key: y, value: y }, "Tahun " + y);
+          })
+        )
+      )
+    ),
+    // Ringkasan Banner
     React.createElement(
       "div",
       { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, padding: 24, marginBottom: 20 } },
-      React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Ringkasan Cashflow Tahun 2026"),
+      React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 } }, "Sisa Cashflow Siklus Tahun " + selYear + (paydayDate > 1 ? " (Gajian tgl " + paydayDate + ")" : "")),
       React.createElement("div", { style: { fontSize: 32, fontWeight: 900, color: net >= 0 ? T.teal : T.coral, marginTop: 6 } }, fmt(net)),
       React.createElement(
         "div",
         { style: { display: "flex", gap: 24, marginTop: 16, paddingTop: 16, borderTop: "1px solid " + T.border } },
-        React.createElement("div", null, React.createElement("div", { style: { fontSize: 11, color: T.textSub } }, "Total Pemasukan"), React.createElement("div", { style: { fontSize: 18, fontWeight: 800, color: T.sage } }, fmt(tInc))),
-        React.createElement("div", null, React.createElement("div", { style: { fontSize: 11, color: T.textSub } }, "Total Pengeluaran"), React.createElement("div", { style: { fontSize: 18, fontWeight: 800, color: T.coral } }, fmt(tExp)))
+        React.createElement("div", null, React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700 } }, "Total Pemasukan (" + yInc.length + " tx)"), React.createElement("div", { style: { fontSize: 18, fontWeight: 800, color: T.sage, marginTop: 2 } }, fmt(tInc))),
+        React.createElement("div", null, React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700 } }, "Total Pengeluaran (" + yExp.length + " tx)"), React.createElement("div", { style: { fontSize: 18, fontWeight: 800, color: T.coral, marginTop: 2 } }, fmt(tExp)))
       )
+    ),
+    // Tabel / Grid 12 Siklus
+    React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 12 } }, "🗓️ Rincian 12 Siklus Bulanan Tahun " + selYear),
+    React.createElement(
+      "div",
+      { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 } },
+      cycleBreakdown.map(function (c) {
+        var isCurrent = c.key === curP.cycleKey;
+        return React.createElement(
+          "div",
+          {
+            key: c.month,
+            style: {
+              background: T.card,
+              borderRadius: 14,
+              border: isCurrent ? "2px solid " + T.teal : "1px solid " + T.border,
+              padding: 16,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8
+            }
+          },
+          React.createElement(
+            "div",
+            { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+            React.createElement("span", { style: { fontSize: 14, fontWeight: 800, color: isCurrent ? T.teal : T.text } }, "Siklus " + c.monthName),
+            isCurrent && React.createElement("span", { style: { fontSize: 10, background: T.tealDim, color: T.teal, fontWeight: 800, padding: "2px 6px", borderRadius: 4 } }, "Aktif")
+          ),
+          React.createElement(
+            "div",
+            { style: { display: "flex", justifyContent: "space-between", fontSize: 12, marginTop: 4 } },
+            React.createElement("span", { style: { color: T.textSub } }, "Pemasukan:"),
+            React.createElement("span", { style: { fontWeight: 700, color: T.sage } }, fmt(c.inc))
+          ),
+          React.createElement(
+            "div",
+            { style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
+            React.createElement("span", { style: { color: T.textSub } }, "Pengeluaran:"),
+            React.createElement("span", { style: { fontWeight: 700, color: T.coral } }, fmt(c.exp))
+          ),
+          React.createElement(
+            "div",
+            { style: { display: "flex", justifyContent: "space-between", fontSize: 12, paddingTop: 6, borderTop: "1px dashed " + T.border } },
+            React.createElement("span", { style: { fontWeight: 700, color: T.text } }, "Cashflow:"),
+            React.createElement("span", { style: { fontWeight: 800, color: c.net >= 0 ? T.sage : T.coral } }, fmt(c.net))
+          )
+        );
+      })
     )
   );
 }
@@ -2263,7 +2684,25 @@ function App() {
   var _dt = useState(null), deleteTarget = _dt[0], setDT = _dt[1];
   var _pm = useState(window.privacyMode || false), privacyMode = _pm[0], setPrivacyMode = _pm[1];
   var _sro = useState(false), showRepeatModal = _sro[0], setShowRepeatModal = _sro[1];
+  var _pdd = useState(function () {
+    try {
+      var saved = localStorage.getItem("keuangan_payday_date");
+      return saved ? parseInt(saved, 10) : 28;
+    } catch (e) {
+      return 28;
+    }
+  });
+  var paydayDate = _pdd[0], setPaydayDate = _pdd[1];
   var tk = useToast();
+
+  var updatePaydayDate = useCallback(function (newDate) {
+    var val = Math.min(31, Math.max(1, parseInt(newDate, 10) || 28));
+    setPaydayDate(val);
+    try {
+      localStorage.setItem("keuangan_payday_date", String(val));
+    } catch (e) {}
+    tk.show("Tanggal gajian diatur ke tanggal " + val, "success");
+  }, [tk]);
 
   var togglePrivacyMode = function () {
     var next = !privacyMode;
@@ -2421,6 +2860,24 @@ function App() {
               },
               privacyMode ? "🙈 Privasi On" : "👁️ Privasi Off"
             ),
+            React.createElement(
+              "button",
+              {
+                style: {
+                  padding: "7px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer",
+                  background: "#E0F2FE", border: "1px solid " + T.teal + "50",
+                  color: T.teal, fontWeight: 800, display: "flex", alignItems: "center", gap: 5
+                },
+                onClick: function () {
+                  var res = prompt("Masukkan Tanggal Siklus Gajian (1 - 31):", String(paydayDate));
+                  if (res !== null && res.trim()) {
+                    updatePaydayDate(res);
+                  }
+                },
+                title: "Klik untuk mengubah tanggal siklus gajian (Saat ini: Tgl " + paydayDate + ")"
+              },
+              "🗓️ Gajian: Tgl " + paydayDate
+            ),
             React.createElement(Btn, { color: T.teal, style: { background: "#E0F2FE", border: "1px solid " + T.teal + "50", color: T.teal, fontWeight: 800 }, onClick: function () { setShowRepeatModal(true); } }, "🔁 Repeat Order"),
             React.createElement(Btn, { color: T.sage, onClick: function () { setEditInc(null); setSIF(true); } }, "+ Pemasukan"),
             React.createElement(Btn, { color: T.coral, onClick: function () { setEditExp(null); setSEF(true); } }, "+ Pengeluaran"),
@@ -2428,13 +2885,13 @@ function App() {
           )
         ),
         (function () {
-          if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings, onOpenRepeat: function () { setShowRepeatModal(true); } });
-          if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
-          if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id, item) { var lbl = item ? (item.keperluan + " (" + fmt(item.nominal) + ")") : ""; setDT({ type: "expense", id: id, label: lbl }); }, onOpenRepeat: function () { setShowRepeatModal(true); } });
-          if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings, onEdit: function (item) { setEditExp(item); setSEF(true); }, onSave: saveExpense });
-          if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); } });
-          if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income });
-          if (view === "analisis-tahunan") return React.createElement(AnalisisTahunanView, { key: "view-amt", expenses: expenses, income: income });
+          if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings, paydayDate: paydayDate, onUpdatePayday: updatePaydayDate, onOpenRepeat: function () { setShowRepeatModal(true); } });
+          if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, paydayDate: paydayDate, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
+          if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, paydayDate: paydayDate, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id, item) { var lbl = item ? (item.keperluan + " (" + fmt(item.nominal) + ")") : ""; setDT({ type: "expense", id: id, label: lbl }); }, onOpenRepeat: function () { setShowRepeatModal(true); } });
+          if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings, paydayDate: paydayDate, onEdit: function (item) { setEditExp(item); setSEF(true); }, onSave: saveExpense });
+          if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, paydayDate: paydayDate, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); } });
+          if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income, paydayDate: paydayDate, onUpdatePayday: updatePaydayDate });
+          if (view === "analisis-tahunan") return React.createElement(AnalisisTahunanView, { key: "view-amt", expenses: expenses, income: income, paydayDate: paydayDate });
           return null;
         })()
       )
