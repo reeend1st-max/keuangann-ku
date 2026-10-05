@@ -304,7 +304,7 @@ function groupByMonth(items, paydayDate) {
   });
 }
 
-// ── Toast Hook (Auto-dismiss in 5s) ──────────────────────────────────────────
+// ── Toast Hook (Auto-dismiss in 2s) ──────────────────────────────────────────
 function useToast() {
   var _t = useState(null), toast = _t[0], setToast = _t[1];
   var show = useCallback(function (msg, type) {
@@ -315,7 +315,7 @@ function useToast() {
     if (!toast) return;
     var timer = setTimeout(function () {
       setToast(null);
-    }, 5000);
+    }, 2000);
     return function () {
       clearTimeout(timer);
     };
@@ -332,8 +332,9 @@ function Toast(p) {
     {
       style: {
         position: "fixed", bottom: 24, right: 24, background: bg, color: "#fff",
-        padding: "12px 20px", borderRadius: 10, fontWeight: 700, fontSize: 13,
-        boxShadow: "0 10px 30px rgba(0,0,0,0.4)", zIndex: 9999, display: "flex", alignItems: "center", gap: 10,
+        padding: "10px 18px", borderRadius: 10, fontWeight: 700, fontSize: 13,
+        boxShadow: "0 10px 30px rgba(0,0,0,0.35)", zIndex: 9999, display: "flex", alignItems: "center", gap: 10,
+        pointerEvents: "none", userSelect: "none", transition: "opacity 0.2s ease"
       },
     },
     React.createElement("span", null, p.toast.msg)
@@ -955,7 +956,7 @@ function ExpenseForm(p) {
           colors: [T.sky, T.violet]
         })
       ),
-      React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DSelect, { label: "Metode Pembayaran", value: bayar, onChange: setBayar, options: ["Transfer", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })),
+      React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DSelect, { label: "Metode Pembayaran", value: bayar, onChange: setBayar, options: ["Transfer", "M-Banking", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })),
       React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DInput, { label: "Catatan Ringkas (opsional)", value: catatan, onChange: setCatatan, placeholder: "Keterangan singkat..." })),
       
       // Memo Detail Text Area
@@ -1061,7 +1062,7 @@ function IncomeForm(p) {
     ),
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
       React.createElement(DInput, { label: "Sumber Pemasukan", value: sumber, onChange: setSumber, placeholder: "Gajian, Lemburan, Bonus...", autoFocus: true }),
-      React.createElement(DSelect, { label: "Metode Penerimaan", value: metode, onChange: setMetode, options: ["Transfer", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })
+      React.createElement(DSelect, { label: "Metode Penerimaan", value: metode, onChange: setMetode, options: ["Transfer", "M-Banking", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })
     ),
     React.createElement(DInput, { label: "Catatan Tambahan (opsional)", value: catatan, onChange: setCatatan, placeholder: "Keterangan..." }),
     err && React.createElement("div", { style: { color: T.coral, fontSize: 12, marginTop: 10, fontWeight: 600 } }, "⚠️ ", err),
@@ -1498,7 +1499,7 @@ function PemasukanView(p) {
   var paydayDate = p.paydayDate || 28;
   var rows = sortNewestFirst(p.income);
   var total = rows.reduce(function (s, i) { return s + i.nominal; }, 0);
-  var mc = { Transfer: T.teal, "E-Wallet": T.violet, Cash: T.amber, QRIS: T.sky, Debit: T.sage, Kredit: T.coral };
+  var mc = { Transfer: T.teal, "M-Banking": "#0EA5E9", "E-Wallet": T.violet, Cash: T.amber, QRIS: T.sky, Debit: T.sage, Kredit: T.coral };
   var grouped = groupByMonth(rows, paydayDate);
 
   return React.createElement(
