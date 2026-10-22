@@ -136,6 +136,27 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
+// Hitung selisih hari antara tanggal jatuh tempo (DD/MM/YYYY) dan hari ini
+function daysUntilDue(tanggalStr) {
+  if (!tanggalStr) return null;
+  var parts = String(tanggalStr).split("/");
+  if (parts.length !== 3) return null;
+  var due = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function getBills() {
+  try {
+    var raw = localStorage.getItem("keuangan_upcoming_bills");
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function saveBills(bills) {
+  try { localStorage.setItem("keuangan_upcoming_bills", JSON.stringify(bills)); } catch(e) {}
+}
+
 var MONTH_NAMES = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 
 // ── Financial Period Helpers (Siklus Gajian Dinamis) ─────────────────────────
@@ -1310,6 +1331,446 @@ function TabunganView(p) {
   );
 }
 
+// ── Tagihan Mendatang — Form Modal ────────────────────────────────────────────
+function TagihanForm(p) {
+  var initial = p.initial || {};
+  var _nama = useState(initial.nama || ""), nama = _nama[0], setNama = _nama[1];
+  var _nom = useState(initial.nominal ? formatRupiahInput(initial.nominal) : ""), nominal = _nom[0], setNominal = _nom[1];
+  var _tgl = useState(initial.tanggal || ""), tanggal = _tgl[0], setTanggal = _tgl[1];
+  var _kat = useState(initial.kategori || "Tagihan"), kategori = _kat[0], setKategori = _kat[1];
+  var _met = useState(initial.metode || "Transfer"), metode = _met[0], setMetode = _met[1];
+  var _rep = useState(initial.repeat || "monthly"), repeat = _rep[0], setRepeat = _rep[1];
+  var _cat = useState(initial.catatan || ""), catatan = _cat[0], setCatatan = _cat[1];
+  var _err = useState(""), err = _err[0], setErr = _err[1];
+
+  useEffect(function () {
+    if (p.open && initial && initial.id) {
+      setNama(initial.nama || "");
+      setNominal(initial.nominal ? formatRupiahInput(initial.nominal) : "");
+      setTanggal(initial.tanggal || "");
+      setKategori(initial.kategori || "Tagihan");
+      setMetode(initial.metode || "Transfer");
+      setRepeat(initial.repeat || "monthly");
+      setCatatan(initial.catatan || "");
+      setErr("");
+    } else if (p.open && !initial.id) {
+      setNama(""); setNominal(""); setTanggal(""); setKategori("Tagihan");
+      setMetode("Transfer"); setRepeat("monthly"); setCatatan(""); setErr("");
+    }
+  }, [p.open]);
+
+  function save() {
+    if (!nama.trim()) return setErr("Nama tagihan wajib diisi.");
+    var nom = parseRupiahInput(nominal);
+    if (!nom || nom <= 0) return setErr("Nominal harus diisi dan lebih dari 0.");
+    if (!tanggal || !tanggal.match(/^\d{2}\/\d{2}\/\d{4}$/)) return setErr("Tanggal format DD/MM/YYYY wajib diisi.");
+    var bill = {
+      id: initial.id || uid(),
+      nama: nama.trim(),
+      nominal: nom,
+      tanggal: tanggal,
+      kategori: kategori,
+      metode: metode,
+      repeat: repeat,
+      catatan: catatan.trim(),
+      status: "pending",
+    };
+    if (p.onSave) p.onSave(bill);
+    if (p.onClose) p.onClose();
+  }
+
+  var allCatKeys = Object.keys(CATS).concat(Object.keys(window.customCats || {})).filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+  return React.createElement(
+    Modal,
+    { open: p.open, onClose: p.onClose, title: p.initial && p.initial.id ? "✏️ Edit Tagihan" : "📅 Tambah Tagihan Mendatang", width: 460 },
+    React.createElement(
+      "div",
+      { style: { display: "flex", flexDirection: "column", gap: 14 } },
+      React.createElement(DInput, { label: "Nama Tagihan", value: nama, onChange: setNama, placeholder: "Contoh: Tagihan Listrik, Cicilan Motor...", autoFocus: true }),
+      React.createElement(
+        "div",
+        { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } },
+        React.createElement(
+          "div",
+          { style: { display: "flex", flexDirection: "column", gap: 5 } },
+          React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Nominal (Rp)"),
+          React.createElement("input", {
+            value: nominal,
+            onChange: function (e) { setNominal(formatRupiahInput(e.target.value)); },
+            placeholder: "0",
+            style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 9, padding: "9px 12px", color: T.coral, fontSize: 15, fontWeight: 800, outline: "none", fontFamily: "inherit" }
+          })
+        ),
+        React.createElement(DInput, { label: "Tanggal Jatuh Tempo (DD/MM/YYYY)", value: tanggal, onChange: setTanggal, placeholder: "DD/MM/YYYY" })
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } },
+        React.createElement(DSelect, { label: "Kategori", value: kategori, onChange: setKategori, options: allCatKeys }),
+        React.createElement(DSelect, { label: "Metode Pembayaran", value: metode, onChange: setMetode, options: ["Transfer", "M-Banking", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] })
+      ),
+      React.createElement(DSelect, {
+        label: "Pengulangan",
+        value: repeat,
+        onChange: setRepeat,
+        options: [
+          { value: "none", label: "❌ Tidak Berulang (Sekali Saja)" },
+          { value: "monthly", label: "🔄 Berulang Setiap Bulan" },
+          { value: "yearly", label: "📅 Berulang Setiap Tahun" }
+        ]
+      }),
+      React.createElement(DInput, { label: "Catatan (opsional)", value: catatan, onChange: setCatatan, placeholder: "Keterangan tambahan..." }),
+      err && React.createElement("div", { style: { color: T.coral, fontSize: 12, fontWeight: 600 } }, "⚠️ ", err),
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 16, borderTop: "1px solid " + T.border } },
+        React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
+        React.createElement(Btn, { color: T.amber, onClick: save }, "💾 ", p.initial && p.initial.id ? "Simpan Perubahan" : "Tambah Tagihan")
+      )
+    )
+  );
+}
+
+// ── Tagihan Mendatang — Dialog Konfirmasi Bayar ───────────────────────────────
+function BayarTagihanModal(p) {
+  var bill = p.bill || {};
+  var _nom = useState(bill.nominal ? formatRupiahInput(bill.nominal) : ""), nominal = _nom[0], setNominal = _nom[1];
+  var _met = useState(bill.metode || "Transfer"), metode = _met[0], setMetode = _met[1];
+  var _tgl = useState(todayStr()), tanggal = _tgl[0], setTanggal = _tgl[1];
+
+  useEffect(function () {
+    if (p.open && bill.id) {
+      setNominal(bill.nominal ? formatRupiahInput(bill.nominal) : "");
+      setMetode(bill.metode || "Transfer");
+      setTanggal(todayStr());
+    }
+  }, [p.open, bill.id]);
+
+  function confirm() {
+    var nom = parseRupiahInput(nominal);
+    if (!nom || nom <= 0) return;
+    if (p.onConfirm) p.onConfirm(nom, metode, tanggal);
+  }
+
+  var catInfo = getCat(bill.kategori || "Tagihan");
+
+  return React.createElement(
+    Modal,
+    { open: p.open, onClose: p.onClose, title: "💳 Konfirmasi Pembayaran", width: 440 },
+    React.createElement(
+      "div",
+      { style: { display: "flex", flexDirection: "column", gap: 14 } },
+      React.createElement(
+        "div",
+        { style: { background: T.amberDim, border: "1.5px solid " + T.amber + "60", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 } },
+        React.createElement("span", { style: { fontSize: 28 } }, catInfo.emoji),
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: T.text } }, bill.nama),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, (bill.kategori || "Tagihan") + " · Jatuh Tempo " + (bill.tanggal || "-"))
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { background: T.surface, border: "1.5px solid " + T.border, padding: 14, borderRadius: 12, display: "flex", flexDirection: "column", gap: 6 } },
+        React.createElement("label", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase" } }, "💰 Nominal Pembayaran (Bisa Diubah):"),
+        React.createElement("input", {
+          value: nominal,
+          onChange: function (e) { setNominal(formatRupiahInput(e.target.value)); },
+          style: { width: "100%", background: T.panel, border: "1.5px solid " + T.border, borderRadius: 8, padding: "8px 12px", fontSize: 20, fontWeight: 800, color: T.coral, outline: "none", boxSizing: "border-box" }
+        }),
+        React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontStyle: "italic" } }, "💡 Ubah nominal jika ada perbedaan harga dari biasanya.")
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } },
+        React.createElement(DSelect, { label: "Metode Pembayaran", value: metode, onChange: setMetode, options: ["Transfer", "M-Banking", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] }),
+        React.createElement(DInput, { label: "Tanggal Bayar (DD/MM/YYYY)", value: tanggal, onChange: setTanggal })
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 16, borderTop: "1px solid " + T.border } },
+        React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
+        React.createElement(Btn, { color: T.sage, onClick: confirm }, "✅ Bayar & Catat Pengeluaran")
+      )
+    )
+  );
+}
+
+// ── Tagihan Mendatang — Widget untuk Dashboard ────────────────────────────────
+function TagihanMendatangWidget(p) {
+  var _bills = useState(function () { return getBills(); }), bills = _bills[0], setBills = _bills[1];
+  var _showForm = useState(false), showForm = _showForm[0], setShowForm = _showForm[1];
+  var _editBill = useState(null), editBill = _editBill[0], setEditBill = _editBill[1];
+  var _bayarBill = useState(null), bayarBill = _bayarBill[0], setBayarBill = _bayarBill[1];
+  var _delBill = useState(null), delBill = _delBill[0], setDelBill = _delBill[1];
+
+  function reload() {
+    setBills(getBills());
+  }
+
+  function handleSaveBill(bill) {
+    var existing = getBills();
+    var idx = existing.findIndex(function (b) { return b.id === bill.id; });
+    var updated;
+    if (idx >= 0) {
+      updated = existing.map(function (b) { return b.id === bill.id ? bill : b; });
+    } else {
+      updated = existing.concat([bill]);
+    }
+    saveBills(updated);
+    reload();
+    if (p.showToast) p.showToast("Tagihan " + bill.nama + " disimpan!", "success");
+  }
+
+  function handleDeleteBill(id) {
+    var existing = getBills();
+    saveBills(existing.filter(function (b) { return b.id !== id; }));
+    reload();
+    setDelBill(null);
+    if (p.showToast) p.showToast("Tagihan dihapus.", "info");
+  }
+
+  function handleBayar(nom, metode, tanggal) {
+    var bill = bayarBill;
+    if (!bill) return;
+
+    // Buat pengeluaran dari tagihan ini
+    var parts = tanggal.split("/");
+    var d = parseInt(parts[0]) || 1;
+    var m = (parseInt(parts[1]) || 1) - 1;
+    var y = parseInt(parts[2]) || new Date().getFullYear();
+    var expItem = {
+      id: uid(),
+      month_id: mkKey(y, m + 1),
+      year: y,
+      month: m,
+      tanggal: tanggal,
+      keperluan: bill.nama,
+      kategori: bill.kategori || "Tagihan",
+      nominal: nom,
+      bayar: metode,
+      nw: "Need",
+      catatan: bill.catatan || "",
+      memo_detail: "",
+    };
+    if (p.onSaveExpense) p.onSaveExpense(expItem);
+
+    // Setelah bayar: jika berulang, buat tagihan berikutnya; jika tidak, hapus
+    var existingBills = getBills();
+    var updatedBills;
+    if (bill.repeat === "monthly" || bill.repeat === "yearly") {
+      // Hitung tanggal jatuh tempo berikutnya
+      var tParts = bill.tanggal.split("/");
+      var tD = parseInt(tParts[0], 10);
+      var tM = parseInt(tParts[1], 10);
+      var tY = parseInt(tParts[2], 10);
+      if (bill.repeat === "monthly") {
+        tM += 1;
+        if (tM > 12) { tM = 1; tY += 1; }
+      } else {
+        tY += 1;
+      }
+      var newTgl = String(tD).padStart(2, "0") + "/" + String(tM).padStart(2, "0") + "/" + tY;
+      var newBill = Object.assign({}, bill, { id: uid(), tanggal: newTgl, status: "pending" });
+      updatedBills = existingBills.filter(function (b) { return b.id !== bill.id; }).concat([newBill]);
+      if (p.showToast) p.showToast("✅ Tagihan " + bill.nama + " lunas! Tagihan berikutnya: " + newTgl, "success");
+    } else {
+      updatedBills = existingBills.filter(function (b) { return b.id !== bill.id; });
+      if (p.showToast) p.showToast("✅ Tagihan " + bill.nama + " lunas & dicatat ke pengeluaran!", "success");
+    }
+    saveBills(updatedBills);
+    reload();
+    setBayarBill(null);
+  }
+
+  // Sort & kategorikan
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  var pendingBills = bills.filter(function (b) { return b.status !== "paid"; }).map(function (b) {
+    return Object.assign({}, b, { _days: daysUntilDue(b.tanggal) });
+  }).sort(function (a, b) { return (a._days === null ? 9999 : a._days) - (b._days === null ? 9999 : b._days); });
+
+  var overdue = pendingBills.filter(function (b) { return b._days !== null && b._days < 0; });
+  var dueSoon = pendingBills.filter(function (b) { return b._days !== null && b._days >= 0 && b._days <= 3; });
+  var upcoming = pendingBills.filter(function (b) { return b._days !== null && b._days > 3; });
+
+  var totalPending = pendingBills.reduce(function (s, b) { return s + (b.nominal || 0); }, 0);
+  var overdueCount = overdue.length + dueSoon.length;
+
+  function BillRow(rp) {
+    var b = rp.bill;
+    var days = b._days;
+    var isOverdue = days !== null && days < 0;
+    var isToday = days === 0;
+    var isSoon = days !== null && days > 0 && days <= 3;
+    var statusColor = isOverdue ? T.coral : (isToday || isSoon) ? T.amber : T.sage;
+    var statusBg = isOverdue ? T.coralDim : (isToday || isSoon) ? T.amberDim : T.sageDim;
+    var statusLabel = isOverdue
+      ? ("Telat " + Math.abs(days) + " hari")
+      : isToday ? "Hari Ini!"
+      : isSoon ? (days + " hari lagi")
+      : (days + " hari lagi");
+    var catInfo = getCat(b.kategori || "Tagihan");
+    var repLabel = b.repeat === "monthly" ? "🔄 Bulanan" : b.repeat === "yearly" ? "📅 Tahunan" : "❌ Sekali";
+
+    return React.createElement(
+      "div",
+      {
+        key: b.id,
+        style: {
+          background: T.card,
+          border: "1.5px solid " + (isOverdue ? T.coral + "60" : isToday || isSoon ? T.amber + "60" : T.border),
+          borderRadius: 12,
+          padding: "12px 14px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12
+        }
+      },
+      React.createElement("span", { style: { fontSize: 24, flexShrink: 0 } }, catInfo.emoji),
+      React.createElement(
+        "div",
+        { style: { flex: 1, minWidth: 0 } },
+        React.createElement(
+          "div",
+          { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" } },
+          React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, b.nama),
+          React.createElement("span", { style: { fontSize: 10, fontWeight: 700, background: statusBg, color: statusColor, padding: "2px 7px", borderRadius: 6 } }, statusLabel)
+        ),
+        React.createElement(
+          "div",
+          { style: { display: "flex", gap: 8, marginTop: 3, flexWrap: "wrap", alignItems: "center" } },
+          React.createElement("span", { style: { fontSize: 14, fontWeight: 900, color: T.coral } }, fmt(b.nominal)),
+          React.createElement("span", { style: { fontSize: 10, color: T.textSub } }, "· " + (b.tanggal || "-")),
+          React.createElement("span", { style: { fontSize: 10, color: T.textSub } }, "· " + repLabel)
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 4, flexShrink: 0 } },
+        React.createElement(
+          "button",
+          {
+            onClick: function () { setBayarBill(b); },
+            title: "Bayar tagihan ini",
+            style: { background: T.sage, border: "none", color: "#fff", padding: "5px 10px", borderRadius: 7, fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }
+          },
+          "💳 Bayar"
+        ),
+        React.createElement(
+          "button",
+          {
+            onClick: function () { setEditBill(b); setShowForm(true); },
+            title: "Edit tagihan",
+            style: { background: T.panel, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }
+          },
+          "✏"
+        ),
+        React.createElement(
+          "button",
+          {
+            onClick: function () { setDelBill(b); },
+            title: "Hapus tagihan",
+            style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }
+          },
+          "✕"
+        )
+      )
+    );
+  }
+
+  function Section(sp) {
+    if (sp.items.length === 0) return null;
+    return React.createElement(
+      "div",
+      { style: { marginBottom: 12 } },
+      React.createElement(
+        "div",
+        { style: { fontSize: 11, fontWeight: 800, color: sp.color, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, display: "flex", alignItems: "center", gap: 5 } },
+        sp.icon, " ", sp.label, " (", sp.items.length, ")"
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 8 } },
+        sp.items.map(function (b) { return React.createElement(BillRow, { key: b.id, bill: b }); })
+      )
+    );
+  }
+
+  return React.createElement(
+    "div",
+    { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, overflow: "hidden", marginTop: 20 } },
+    // Header
+    React.createElement(
+      "div",
+      { style: { padding: "14px 18px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between" } },
+      React.createElement(
+        "div",
+        { style: { display: "flex", alignItems: "center", gap: 8 } },
+        React.createElement("span", { style: { fontSize: 16 } }, "📅"),
+        React.createElement("span", { style: { fontSize: 14, fontWeight: 800, color: T.text } }, "Tagihan Mendatang"),
+        overdueCount > 0 && React.createElement(
+          "span",
+          { style: { background: T.coral, color: "#fff", fontSize: 11, fontWeight: 800, padding: "2px 7px", borderRadius: 10, marginLeft: 4 } },
+          overdueCount + " harus bayar!"
+        ),
+        pendingBills.length > 0 && React.createElement(
+          "span",
+          { style: { fontSize: 11, color: T.textSub, marginLeft: 6 } },
+          "Total: ", React.createElement("strong", { style: { color: T.coral } }, fmt(totalPending))
+        )
+      ),
+      React.createElement(
+        Btn,
+        { color: T.amber, small: true, onClick: function () { setEditBill(null); setShowForm(true); } },
+        "+ Tambah Tagihan"
+      )
+    ),
+    // Body
+    React.createElement(
+      "div",
+      { style: { padding: "14px 18px" } },
+      pendingBills.length === 0
+        ? React.createElement(
+            "div",
+            { style: { textAlign: "center", padding: "20px 0", color: T.textDim, fontSize: 13 } },
+            React.createElement("div", { style: { fontSize: 32, marginBottom: 8 } }, "🎉"),
+            "Tidak ada tagihan mendatang. Tambahkan tagihan untuk pengingat!"
+          )
+        : React.createElement(
+            React.Fragment,
+            null,
+            React.createElement(Section, { items: overdue, icon: "🔴", label: "Jatuh Tempo / Terlambat", color: T.coral }),
+            React.createElement(Section, { items: dueSoon, icon: "🟡", label: "Hari Ini / 3 Hari Ke Depan", color: T.amber }),
+            React.createElement(Section, { items: upcoming, icon: "🟢", label: "Mendatang", color: T.sage })
+          )
+    ),
+    // Modals
+    React.createElement(TagihanForm, {
+      open: showForm,
+      initial: editBill || {},
+      onClose: function () { setShowForm(false); setEditBill(null); },
+      onSave: handleSaveBill
+    }),
+    React.createElement(BayarTagihanModal, {
+      open: !!bayarBill,
+      bill: bayarBill || {},
+      onClose: function () { setBayarBill(null); },
+      onConfirm: handleBayar
+    }),
+    React.createElement(ConfirmModal, {
+      open: !!delBill,
+      label: delBill ? delBill.nama : "",
+      onConfirm: function () { handleDeleteBill(delBill.id); },
+      onCancel: function () { setDelBill(null); }
+    })
+  );
+}
+
 // ── Dashboard View (Ringkasan) ────────────────────────────────────────────────
 function DashboardView(p) {
   var paydayDate = p.paydayDate || 28;
@@ -1490,7 +1951,10 @@ function DashboardView(p) {
           )
         )
       )
-    )
+    ),
+
+    // Widget Tagihan Mendatang
+    React.createElement(TagihanMendatangWidget, { onSaveExpense: p.onSaveExpense, showToast: p.showToast })
   );
 }
 
@@ -2886,7 +3350,7 @@ function App() {
           )
         ),
         (function () {
-          if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings, paydayDate: paydayDate, onUpdatePayday: updatePaydayDate, onOpenRepeat: function () { setShowRepeatModal(true); } });
+          if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings, paydayDate: paydayDate, onUpdatePayday: updatePaydayDate, onOpenRepeat: function () { setShowRepeatModal(true); }, onSaveExpense: saveExpense, showToast: tk.show });
           if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, paydayDate: paydayDate, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
           if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, paydayDate: paydayDate, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id, item) { var lbl = item ? (item.keperluan + " (" + fmt(item.nominal) + ")") : ""; setDT({ type: "expense", id: id, label: lbl }); }, onOpenRepeat: function () { setShowRepeatModal(true); } });
           if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings, paydayDate: paydayDate, onEdit: function (item) { setEditExp(item); setSEF(true); }, onSave: saveExpense });
