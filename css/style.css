@@ -67,3 +67,9 @@ button{font-family:inherit;}
     grid-template-columns: 1fr !important;
   }
 }
+
+@media (max-width: 960px) {
+  .fintech-2col-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

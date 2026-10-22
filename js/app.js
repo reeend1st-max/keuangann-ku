@@ -1795,6 +1795,7 @@ function TagihanMendatangWidget(p) {
 }
 
 // ── Dashboard View (Ringkasan) ────────────────────────────────────────────────
+// ── Dashboard View (Ringkasan — Fintech Wise/Revolut Layout) ─────────────────
 function DashboardView(p) {
   var paydayDate = p.paydayDate || 28;
   var curPeriod = getFinancialPeriod(new Date(), paydayDate);
@@ -1819,8 +1820,17 @@ function DashboardView(p) {
   var totalPenarikan = p.savings.filter(function (s) { return s.tipe === "penarikan"; }).reduce(function (a, s) { return a + s.nominal; }, 0);
   var saldoTab = totalSetoran - totalPenarikan;
 
-  var incRows = sortNewestFirst(activeIncome).slice(0, 3);
-  var expRows = sortNewestFirst(activeExpenses).slice(0, 3);
+  // Need vs Want calculations
+  var totalNeed = activeExpenses.filter(function (e) { return (e.nw || "Need") === "Need"; }).reduce(function (s, e) { return s + e.nominal; }, 0);
+  var totalWant = activeExpenses.filter(function (e) { return (e.nw || "Need") === "Want"; }).reduce(function (s, e) { return s + e.nominal; }, 0);
+  var needPct = tExp > 0 ? Math.round((totalNeed / tExp) * 100) : 0;
+  var wantPct = tExp > 0 ? (100 - needPct) : 0;
+
+  // Recent transactions feed (combined income & expense)
+  var allRecent = sortNewestFirst([].concat(
+    activeIncome.map(function (i) { return Object.assign({}, i, { _type: "income" }); }),
+    activeExpenses.map(function (e) { return Object.assign({}, e, { _type: "expense" }); })
+  )).slice(0, 5);
 
   var diffDays = null;
   if (curPeriod && curPeriod.endDateStr) {
@@ -1835,323 +1845,429 @@ function DashboardView(p) {
     } catch(e) {}
   }
 
-  function Card(cp) {
-    return React.createElement(
+  return React.createElement(
+    "div",
+    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%" } },
+
+    // 1. HERO FINANCIAL COMMAND CENTER (Wise / Revolut Hero Card)
+    React.createElement(
       "div",
       {
         style: {
-          background: T.card,
-          borderRadius: 16,
+          background: "#FFFFFF",
           border: "1px solid " + T.border,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
+          borderRadius: 24,
+          padding: "26px 30px",
+          marginBottom: 24,
+          boxShadow: "0 2px 10px rgba(0,0,0,0.03)"
         }
       },
+      // Top Row: Cycle Status Pill & Cycle Switcher
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 } },
+        React.createElement(
+          "div",
+          { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
+          React.createElement(
+            "span",
+            { style: { background: "rgba(2, 132, 199, 0.08)", color: T.teal, border: "1px solid rgba(2, 132, 199, 0.2)", fontSize: 12, fontWeight: 800, padding: "4px 12px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 6 } },
+            React.createElement("span", { style: { width: 7, height: 7, borderRadius: "50%", background: T.teal } }),
+            isCycle ? ("Siklus " + curPeriod.monthName + " (Gajian Tgl " + paydayDate + ")") : "Seluruh Waktu"
+          ),
+          isCycle && React.createElement(
+            "span",
+            { style: { background: "rgba(16, 185, 129, 0.08)", color: "#059669", border: "1px solid rgba(16, 185, 129, 0.2)", fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 20 } },
+            "⏳ " + (diffDays !== null ? (diffDays + " Hari Tersisa") : "Aktif")
+          )
+        ),
+        // Switcher button
+        React.createElement(
+          "div",
+          { style: { display: "inline-flex", background: T.panel, padding: 3, borderRadius: 10, border: "1px solid " + T.border } },
+          React.createElement(
+            "button",
+            {
+              onClick: function () { setFilterMode("cycle"); },
+              style: {
+                padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 800, border: "none", cursor: "pointer",
+                background: isCycle ? "#0F172A" : "transparent",
+                color: isCycle ? "#FFFFFF" : T.textSub
+              }
+            },
+            "⚡ Siklus Ini"
+          ),
+          React.createElement(
+            "button",
+            {
+              onClick: function () { setFilterMode("all"); },
+              style: {
+                padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 800, border: "none", cursor: "pointer",
+                background: !isCycle ? "#0F172A" : "transparent",
+                color: !isCycle ? "#FFFFFF" : T.textSub
+              }
+            },
+            "🌐 Semua"
+          )
+        )
+      ),
+
+      // Balance & Revolut Action Buttons Row
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 20, marginBottom: 22 } },
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "Total Saldo Bersih"),
+          React.createElement(
+            "div",
+            { style: { fontSize: 44, fontWeight: 900, letterSpacing: -1.2, color: T.text, marginTop: 4, display: "flex", alignItems: "baseline", gap: 8 } },
+            (saldo < 0 ? "-" : "") + fmt(Math.abs(saldo)),
+            React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: T.textSub, background: T.panel, padding: "3px 8px", borderRadius: 6 } }, "IDR")
+          ),
+          React.createElement("div", { style: { fontSize: 12, color: T.textSub, marginTop: 4 } }, "Pemasukan dikurangi seluruh pengeluaran siklus berjalan.")
+        ),
+
+        // 4 Revolut Quick Action Buttons
+        React.createElement(
+          "div",
+          { style: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" } },
+          React.createElement(
+            "button",
+            {
+              onClick: p.onAddIncome,
+              title: "Catat Pemasukan",
+              style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer" }
+            },
+            React.createElement(
+              "div",
+              { style: { width: 44, height: 44, borderRadius: 14, background: "#0F172A", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, boxShadow: "0 2px 6px rgba(15,23,42,0.18)", transition: "transform .15s ease" } },
+              "↓"
+            ),
+            React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: T.text } }, "Masuk")
+          ),
+          React.createElement(
+            "button",
+            {
+              onClick: p.onAddExpense,
+              title: "Catat Pengeluaran",
+              style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer" }
+            },
+            React.createElement(
+              "div",
+              { style: { width: 44, height: 44, borderRadius: 14, background: "#0F172A", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, boxShadow: "0 2px 6px rgba(15,23,42,0.18)", transition: "transform .15s ease" } },
+              "↑"
+            ),
+            React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: T.text } }, "Keluar")
+          ),
+          React.createElement(
+            "button",
+            {
+              onClick: function () { if (p.onAddSaving) p.onAddSaving("setoran"); },
+              title: "Catat Tabungan",
+              style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer" }
+            },
+            React.createElement(
+              "div",
+              { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.25)", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900 } },
+              "🏛️"
+            ),
+            React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: T.text } }, "Nabung")
+          ),
+          React.createElement(
+            "button",
+            {
+              onClick: function () {
+                var el = document.getElementById("tagihan-widget-section");
+                if (el) el.scrollIntoView({ behavior: "smooth" });
+              },
+              title: "Lihat Tagihan",
+              style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer" }
+            },
+            React.createElement(
+              "div",
+              { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.25)", color: "#D97706", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900 } },
+              "⚡"
+            ),
+            React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: T.text } }, "Tagihan")
+          )
+        )
+      ),
+
+      // Integrated 3-Metric Breakdown Strip
       React.createElement(
         "div",
         {
           style: {
-            padding: "14px 18px",
-            borderBottom: "1px solid " + T.border,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            background: "rgba(248, 250, 252, 0.7)"
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 12,
+            paddingTop: 18,
+            borderTop: "1px solid " + T.border
           }
         },
-        cp.iconTile && React.createElement(
+        React.createElement(
           "div",
-          {
-            style: {
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: cp.tileBg || T.panel,
-              color: cp.tileColor || T.teal,
-              border: "1px solid " + (cp.tileBorder || T.border),
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 14,
-              fontWeight: 900,
-              flexShrink: 0
-            }
-          },
-          cp.iconTile
+          { style: { padding: "10px 14px", background: "rgba(248, 250, 252, 0.8)", border: "1px solid " + T.border, borderRadius: 14 } },
+          React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontWeight: 800, textTransform: "uppercase" } }, "Pemasukan Siklus"),
+          React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: "#059669", marginTop: 2 } }, "+ " + fmt(tInc))
         ),
-        React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, cp.title),
-        cp.badge && React.createElement("span", { style: { marginLeft: "auto", fontSize: 11, fontWeight: 700, color: cp.badgeColor || T.textSub, background: T.panel, border: "1px solid " + T.border, padding: "2px 8px", borderRadius: 6 } }, cp.badge)
+        React.createElement(
+          "div",
+          { style: { padding: "10px 14px", background: "rgba(248, 250, 252, 0.8)", border: "1px solid " + T.border, borderRadius: 14 } },
+          React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontWeight: 800, textTransform: "uppercase" } }, "Pengeluaran Siklus (" + pct + "%)"),
+          React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: "#DC2626", marginTop: 2 } }, "- " + fmt(tExp))
+        ),
+        React.createElement(
+          "div",
+          { style: { padding: "10px 14px", background: "rgba(248, 250, 252, 0.8)", border: "1px solid " + T.border, borderRadius: 14 } },
+          React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontWeight: 800, textTransform: "uppercase" } }, "Total Tabungan (KROM)"),
+          React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.teal, marginTop: 2 } }, fmt(saldoTab))
+        )
       ),
-      React.createElement("div", { style: { padding: "16px 18px", flex: 1 } }, cp.children)
-    );
-  }
 
-  return React.createElement(
-    "div",
-    { style: { padding: "22px 26px", overflowY: "auto", height: "100%" } },
-    // Top Bar Selector: Cycle vs All Time + Payday indicator
-    React.createElement(
-      "div",
-      { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 } },
+      // Minimal Budget Progress Bar
       React.createElement(
         "div",
-        { style: { display: "inline-flex", background: T.card, padding: 3, borderRadius: 10, border: "1px solid " + T.border } },
-        React.createElement(
-          "button",
-          {
-            onClick: function () { setFilterMode("cycle"); },
-            style: {
-              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer",
-              background: isCycle ? "#0284C7" : "transparent",
-              color: isCycle ? "#FFFFFF" : T.textSub
-            }
-          },
-          "⚡ Siklus " + curPeriod.monthName + " (" + curPeriod.startDateStr.slice(0, 5) + " - " + curPeriod.endDateStr.slice(0, 5) + ")"
-        ),
-        React.createElement(
-          "button",
-          {
-            onClick: function () { setFilterMode("all"); },
-            style: {
-              padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer",
-              background: !isCycle ? "#0284C7" : "transparent",
-              color: !isCycle ? "#FFFFFF" : T.textSub
-            }
-          },
-          "🌐 Seluruh Waktu"
-        )
-      ),
-      p.onUpdatePayday && React.createElement(
-        "div",
-        { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: T.textSub, background: T.card, padding: "4px 10px", borderRadius: 8, border: "1px solid " + T.border } },
-        React.createElement("span", null, "🗓️ Gajian:"),
-        React.createElement(
-          "select",
-          {
-            value: paydayDate,
-            onChange: function (e) { p.onUpdatePayday(parseInt(e.target.value, 10)); },
-            style: { border: "none", background: "transparent", fontWeight: 800, color: T.teal, cursor: "pointer" }
-          },
-          Array.from({ length: 31 }, function (_, i) { return i + 1; }).map(function (d) {
-            return React.createElement("option", { key: d, value: d }, d === 1 ? "Tgl 1 (Kalender)" : "Tgl " + d);
-          })
-        )
-      )
-    ),
-    // Top Main Balance Banner (SALDO KEUANGAN = Pemasukan - Pengeluaran) — Swiss Linear Refined
-    React.createElement(
-      "div",
-      {
-        style: {
-          background: "linear-gradient(135deg, #0F172A 0%, #1E293B 55%, #0F172A 100%)",
-          borderRadius: 18,
-          padding: "24px 28px",
-          border: "1px solid rgba(255,255,255,0.14)",
-          marginBottom: 20,
-          color: "#FFFFFF",
-          position: "relative",
-          overflow: "hidden",
-          boxShadow: "0 12px 30px -10px rgba(15, 23, 42, 0.4)"
-        }
-      },
-      // Subtle ambient light glow circles
-      React.createElement("div", {
-        style: {
-          position: "absolute",
-          top: -30,
-          right: -30,
-          width: 140,
-          height: 140,
-          borderRadius: "50%",
-          background: "rgba(2, 132, 199, 0.18)",
-          filter: "blur(40px)",
-          pointerEvents: "none"
-        }
-      }),
-      React.createElement("div", {
-        style: {
-          position: "absolute",
-          bottom: -30,
-          left: "30%",
-          width: 120,
-          height: 120,
-          borderRadius: "50%",
-          background: "rgba(16, 185, 129, 0.14)",
-          filter: "blur(35px)",
-          pointerEvents: "none"
-        }
-      }),
-      React.createElement(
-        "div",
-        { style: { position: "relative", zIndex: 1 } },
+        { style: { marginTop: 14 } },
         React.createElement(
           "div",
-          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 } },
-          React.createElement(
-            "div",
-            { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
-            React.createElement("span", { style: { fontSize: 11, color: "#38BDF8", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.2 } }, isCycle ? ("SIKLUS " + curPeriod.monthName.toUpperCase()) : "SALDO KEUANGAN KESELURUHAN"),
-            isCycle && React.createElement("span", { style: { fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 600 } }, "• Gajian Tgl " + paydayDate + " (" + curPeriod.startDateStr.slice(0, 5) + " - " + curPeriod.endDateStr.slice(0, 5) + ")")
-          ),
-          isCycle && React.createElement(
-            "div",
-            { style: { fontSize: 11, color: "#E0F2FE", fontWeight: 700, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.15)", padding: "3px 10px", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 4 } },
-            "⏳ " + (diffDays !== null ? ("Sisa " + diffDays + " hari") : "Siklus Aktif")
-          )
-        ),
-        React.createElement("div", { style: { fontSize: 40, fontWeight: 900, letterSpacing: -1, color: "#FFFFFF", marginTop: 4, marginBottom: 8 } }, (saldo < 0 ? "-" : "") + fmt(Math.abs(saldo))),
-        React.createElement(
-          "div",
-          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#E2E8F0", marginBottom: 8, flexWrap: "wrap", gap: 6 } },
-          React.createElement("span", { style: { fontWeight: 600, color: "rgba(255,255,255,0.85)" } }, "Penggunaan dana " + (isCycle ? "siklus ini:" : ":")),
-          React.createElement("span", { style: { fontWeight: 800, color: pct > 85 ? "#F87171" : pct > 50 ? "#FDE047" : "#4ADE80" } }, pct + "% terpakai" + (isCycle && saldo > 0 ? (" · Sisa " + fmt(saldo)) : ""))
+          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: T.textSub, fontWeight: 700, marginBottom: 6 } },
+          React.createElement("span", null, "Bujet Siklus Terpakai: ", React.createElement("strong", { style: { color: T.text } }, pct + "%")),
+          React.createElement("span", null, "Sisa Kas: ", React.createElement("strong", { style: { color: saldo >= 0 ? "#059669" : "#DC2626" } }, fmt(Math.max(0, saldo))))
         ),
         React.createElement(
           "div",
-          { style: { height: 7, background: "rgba(255,255,255,0.15)", borderRadius: 4, overflow: "hidden", padding: 1 } },
+          { style: { height: 6, background: T.panel, borderRadius: 3, overflow: "hidden" } },
           React.createElement("div", {
             style: {
               height: "100%",
-              width: Math.min(100, Math.max(0, pct)) + "%",
+              width: pct + "%",
               borderRadius: 3,
-              background: pct > 85 ? "linear-gradient(90deg, #F59E0B, #EF4444)" : "linear-gradient(90deg, #10B981, #0284C7, #F59E0B)",
-              transition: "width 0.4s ease"
+              background: pct > 85 ? "#EF4444" : pct > 60 ? "#F59E0B" : "linear-gradient(90deg, #10B981, #0284C7)",
+              transition: "width .4s ease"
             }
           })
+        )
+      )
+    ),
+
+    // 2. MAIN 2-COLUMN GRID (STRIPE STYLE)
+    React.createElement(
+      "div",
+      { className: "fintech-2col-grid", style: { display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 24, alignItems: "start" } },
+
+      // LEFT COLUMN: TAGIHAN MENDATANG & TRANSAKSI TERKINI
+      React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 24 } },
+
+        // WIDGET TAGIHAN MENDATANG
+        React.createElement(
+          "div",
+          { id: "tagihan-widget-section" },
+          React.createElement(TagihanMendatangWidget, { onSaveExpense: p.onSaveExpense, showToast: p.showToast })
         ),
-        // 3 Integrated Financial Key Metrics
+
+        // TRANSAKSI TERKINI STREAM
         React.createElement(
           "div",
           {
             style: {
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: 12,
-              marginTop: 18,
-              paddingTop: 16,
-              borderTop: "1px solid rgba(255,255,255,0.12)"
+              background: "#FFFFFF",
+              borderRadius: 20,
+              border: "1px solid " + T.border,
+              padding: "20px 22px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
             }
           },
           React.createElement(
             "div",
-            null,
-            React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase" } }, "Pemasukan"),
-            React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: "#4ADE80", marginTop: 2 } }, "+ " + fmt(tInc))
+            { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid " + T.border } },
+            React.createElement(
+              "div",
+              null,
+              React.createElement("div", { style: { fontSize: 14, fontWeight: 900, color: T.text } }, "Aktivitas Transaksi Terkini"),
+              React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, "Aliran transaksi pemasukan & pengeluaran terbaru.")
+            ),
+            React.createElement(
+              "span",
+              { style: { fontSize: 11, fontWeight: 700, color: T.textSub } },
+              allRecent.length + " transaksi"
+            )
           ),
-          React.createElement(
-            "div",
-            null,
-            React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase" } }, "Pengeluaran"),
-            React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: "#F87171", marginTop: 2 } }, "- " + fmt(tExp))
-          ),
-          React.createElement(
-            "div",
-            null,
-            React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase" } }, "Tabungan"),
-            React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: "#38BDF8", marginTop: 2 } }, fmt(saldoTab))
-          )
-        )
-      )
-    ),
-
-    // 3 Cards Row
-    React.createElement(
-      "div",
-      { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 } },
-      // Card 1: Pemasukan
-      React.createElement(
-        Card,
-        {
-          title: "Pemasukan",
-          badge: activeIncome.length + " transaksi",
-          badgeColor: T.sage,
-          iconTile: "↓",
-          tileBg: "rgba(16, 185, 129, 0.12)",
-          tileColor: "#059669",
-          tileBorder: "rgba(16, 185, 129, 0.25)"
-        },
-        React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.teal, marginBottom: 14 } }, fmt(tInc)),
-        React.createElement(
-          "div",
-          { style: { display: "flex", flexDirection: "column", gap: 10 } },
-          incRows.length === 0
-            ? React.createElement("div", { style: { fontSize: 12, color: T.textDim } }, "Belum ada pemasukan")
-            : incRows.map(function (item) {
-                return React.createElement(
-                  "div",
-                  { key: item.id, style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
-                  React.createElement("span", { style: { fontSize: 13, color: T.textSub, fontWeight: 600 } }, item.sumber),
-                  React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.teal } }, "+ " + fmt(item.nominal))
-                );
-              })
+          allRecent.length === 0
+            ? React.createElement("div", { style: { padding: "24px 0", textAlign: "center", color: T.textSub, fontSize: 13 } }, "Belum ada transaksi di siklus ini.")
+            : React.createElement(
+                "div",
+                { style: { display: "flex", flexDirection: "column", gap: 10 } },
+                allRecent.map(function (tx) {
+                  var isInc = tx._type === "income";
+                  var catInfo = isInc ? { emoji: "💼" } : getCat(tx.kategori || "Lain-lain");
+                  return React.createElement(
+                    "div",
+                    {
+                      key: tx.id,
+                      style: {
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "10px 12px",
+                        borderRadius: 12,
+                        background: T.panel,
+                        border: "1px solid " + T.border
+                      }
+                    },
+                    React.createElement(
+                      "div",
+                      { style: { display: "flex", alignItems: "center", gap: 10 } },
+                      React.createElement(
+                        "div",
+                        {
+                          style: {
+                            width: 34,
+                            height: 34,
+                            borderRadius: 10,
+                            background: isInc ? "rgba(16, 185, 129, 0.12)" : "rgba(2, 132, 199, 0.1)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 15,
+                            flexShrink: 0
+                          }
+                        },
+                        catInfo.emoji
+                      ),
+                      React.createElement(
+                        "div",
+                        null,
+                        React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, tx.keperluan || tx.sumber || tx.kategori),
+                        React.createElement(
+                          "div",
+                          { style: { fontSize: 11, color: T.textSub, marginTop: 2, display: "flex", gap: 6, alignItems: "center" } },
+                          React.createElement("span", null, tx.tanggal),
+                          React.createElement("span", null, "•"),
+                          React.createElement("span", { style: { fontWeight: 600 } }, tx.kategori || "Pemasukan"),
+                          (tx.bayar || tx.metode) && React.createElement("span", { style: { color: T.teal, fontWeight: 700 } }, "• " + (tx.bayar || tx.metode))
+                        )
+                      )
+                    ),
+                    React.createElement(
+                      "div",
+                      { style: { fontSize: 14, fontWeight: 900, color: isInc ? "#059669" : "#DC2626" } },
+                      (isInc ? "+ " : "- ") + fmt(tx.nominal)
+                    )
+                  );
+                })
+              )
         )
       ),
 
-      // Card 2: Pengeluaran
+      // RIGHT COLUMN: SMART INSIGHTS & SAVINGS BREAKDOWN
       React.createElement(
-        Card,
-        {
-          title: "Pengeluaran",
-          badge: activeExpenses.length + " transaksi",
-          badgeColor: T.coral,
-          iconTile: "↑",
-          tileBg: "rgba(239, 68, 68, 0.12)",
-          tileColor: "#DC2626",
-          tileBorder: "rgba(239, 68, 68, 0.25)"
-        },
-        React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.coral, marginBottom: 14 } }, fmt(tExp)),
-        React.createElement(
-          "div",
-          { style: { display: "flex", flexDirection: "column", gap: 10 } },
-          expRows.length === 0
-            ? React.createElement("div", { style: { fontSize: 12, color: T.textDim } }, "Belum ada pengeluaran")
-            : expRows.map(function (item) {
-                return React.createElement(
-                  "div",
-                  { key: item.id, style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
-                  React.createElement("span", { style: { fontSize: 13, color: T.textSub, fontWeight: 600 } }, item.keperluan || item.kategori),
-                  React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.coral } }, "- " + fmt(item.nominal))
-                );
-              })
-        )
-      ),
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 24 } },
 
-      // Card 3: Tabungan
-      React.createElement(
-        Card,
-        {
-          title: "Tabungan",
-          badge: "Saldo " + fmt(saldoTab),
-          badgeColor: T.teal,
-          iconTile: "🏛️",
-          tileBg: "rgba(2, 132, 199, 0.12)",
-          tileColor: "#0284C7",
-          tileBorder: "rgba(2, 132, 199, 0.25)"
-        },
-        React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.teal, marginBottom: 14 } }, fmt(saldoTab)),
+        // 1. SMART FINANCIAL RATIO (NEED VS WANT)
         React.createElement(
           "div",
-          { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } },
+          {
+            style: {
+              background: "#FFFFFF",
+              borderRadius: 20,
+              border: "1px solid " + T.border,
+              padding: "20px 22px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
+            }
+          },
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "Smart Insight"),
+          React.createElement("div", { style: { fontSize: 14, fontWeight: 900, color: T.text, marginTop: 2, marginBottom: 14 } }, "Rasio Kebutuhan (Need) vs Keinginan (Want)"),
+
           React.createElement(
             "div",
-            { style: { background: T.panel, borderRadius: 10, padding: "10px 12px", border: "1px solid " + T.border } },
-            React.createElement("div", { style: { fontSize: 10, color: T.sage, fontWeight: 800, textTransform: "uppercase", marginBottom: 4 } }, "🔻 DITABUNG"),
-            React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, fmt(totalSetoran))
+            { style: { display: "flex", flexDirection: "column", gap: 12 } },
+            // Need bar
+            React.createElement(
+              "div",
+              null,
+              React.createElement(
+                "div",
+                { style: { display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, marginBottom: 5 } },
+                React.createElement("span", { style: { color: T.text } }, "🎯 Kebutuhan (Need)"),
+                React.createElement("span", { style: { fontWeight: 800, color: T.teal } }, needPct + "% (" + fmt(totalNeed) + ")")
+              ),
+              React.createElement(
+                "div",
+                { style: { height: 6, background: T.panel, borderRadius: 3, overflow: "hidden" } },
+                React.createElement("div", { style: { height: "100%", width: needPct + "%", background: T.teal, borderRadius: 3 } })
+              )
+            ),
+            // Want bar
+            React.createElement(
+              "div",
+              null,
+              React.createElement(
+                "div",
+                { style: { display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, marginBottom: 5 } },
+                React.createElement("span", { style: { color: T.text } }, "✨ Keinginan (Want)"),
+                React.createElement("span", { style: { fontWeight: 800, color: "#8B5CF6" } }, wantPct + "% (" + fmt(totalWant) + ")")
+              ),
+              React.createElement(
+                "div",
+                { style: { height: 6, background: T.panel, borderRadius: 3, overflow: "hidden" } },
+                React.createElement("div", { style: { height: "100%", width: wantPct + "%", background: "#8B5CF6", borderRadius: 3 } })
+              )
+            )
           ),
           React.createElement(
+            "p",
+            { style: { fontSize: 11, color: T.textSub, fontStyle: "italic", marginTop: 14, lineHeight: 1.5 } },
+            "💡 Proporsi pengeluaran ideal adalah 70–80% untuk kebutuhan dan maksimal 20–30% untuk keinginan."
+          )
+        ),
+
+        // 2. SAVINGS ALLOCATION CARD (KROM)
+        React.createElement(
+          "div",
+          {
+            style: {
+              background: "#FFFFFF",
+              borderRadius: 20,
+              border: "1px solid " + T.border,
+              padding: "20px 22px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
+            }
+          },
+          React.createElement(
             "div",
-            { style: { background: T.panel, borderRadius: 10, padding: "10px 12px", border: "1px solid " + T.border } },
-            React.createElement("div", { style: { fontSize: 10, color: T.amber, fontWeight: 800, textTransform: "uppercase", marginBottom: 4 } }, "🔸 DIGUNAKAN"),
-            React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, fmt(totalPenarikan))
+            { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 } },
+            React.createElement("span", { style: { fontSize: 14, fontWeight: 900, color: T.text } }, "Ringkasan Tabungan"),
+            React.createElement("span", { style: { fontSize: 11, fontWeight: 800, background: "rgba(2, 132, 199, 0.1)", color: T.teal, padding: "2px 8px", borderRadius: 6 } }, "KROM")
+          ),
+          React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.text, marginTop: 4 } }, fmt(saldoTab)),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, "Total akumulasi tabungan & dana darurat aktif."),
+
+          React.createElement(
+            "div",
+            { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 } },
+            React.createElement(
+              "div",
+              { style: { padding: "10px 12px", background: T.panel, borderRadius: 10, border: "1px solid " + T.border } },
+              React.createElement("div", { style: { fontSize: 10, color: "#059669", fontWeight: 800, textTransform: "uppercase" } }, "Total Setor"),
+              React.createElement("div", { style: { fontSize: 14, fontWeight: 900, color: T.text, marginTop: 2 } }, fmt(totalSetoran))
+            ),
+            React.createElement(
+              "div",
+              { style: { padding: "10px 12px", background: T.panel, borderRadius: 10, border: "1px solid " + T.border } },
+              React.createElement("div", { style: { fontSize: 10, color: "#D97706", fontWeight: 800, textTransform: "uppercase" } }, "Total Tarik"),
+              React.createElement("div", { style: { fontSize: 14, fontWeight: 900, color: T.text, marginTop: 2 } }, fmt(totalPenarikan))
+            )
           )
         )
-      )
-    ),
 
-    // Widget Tagihan Mendatang
-    React.createElement(TagihanMendatangWidget, { onSaveExpense: p.onSaveExpense, showToast: p.showToast })
+      )
+    )
   );
 }
 
@@ -2945,15 +3061,13 @@ function KalenderPengeluaranView(p) {
   );
 }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-function Sidebar(p) {
-  var navMain = [
+// ── Top Navigation Bar (Wise / Revolut Horizontal Fintech Header) ────────────
+function TopNavbar(p) {
+  var navItems = [
     { id: "dashboard", icon: "🏠", label: "Ringkasan" },
     { id: "pemasukan", icon: "👛", label: "Pemasukan" },
     { id: "pengeluaran", icon: "🧾", label: "Pengeluaran" },
-    { id: "kalender-harian", icon: "📅", label: "Kalender Harian" },
-  ];
-  var navAnalysis = [
+    { id: "kalender-harian", icon: "📅", label: "Kalender" },
     { id: "tabungan", icon: "🏛️", label: "Tabungan" },
     { id: "analisis-bulanan", icon: "🌖", label: "Analisis Bulanan" },
     { id: "analisis-tahunan", icon: "📊", label: "Analisis Tahunan" },
@@ -2961,92 +3075,211 @@ function Sidebar(p) {
 
   var initial = (p.user && p.user.name && p.user.name.trim()) ? p.user.name.trim().charAt(0).toUpperCase() : "U";
 
-  function renderNavItem(item) {
-    var active = p.view === item.id;
-    return React.createElement(
-      "button",
+  return React.createElement(
+    "header",
+    {
+      style: {
+        background: "#FFFFFF",
+        borderBottom: "1px solid " + T.border,
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+        userSelect: "none"
+      }
+    },
+    React.createElement(
+      "div",
       {
-        key: item.id,
-        onClick: function () { p.onView(item.id); },
         style: {
-          width: "100%",
-          padding: "9px 14px",
-          borderRadius: "0 8px 8px 0",
-          marginBottom: 2,
-          border: "none",
-          borderLeft: active ? "3px solid " + T.teal : "3px solid transparent",
-          background: active ? "rgba(2, 132, 199, 0.08)" : "transparent",
-          color: active ? T.teal : T.sidebarSub,
-          fontSize: 13,
-          fontWeight: active ? 800 : 600,
-          cursor: "pointer",
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: "0 20px",
+          height: 64,
           display: "flex",
           alignItems: "center",
-          gap: 10,
-          textAlign: "left",
-          transition: "all .12s ease",
-        },
+          justifyContent: "space-between",
+          gap: 16
+        }
       },
-      React.createElement("span", { style: { fontSize: 16 } }, item.icon),
-      item.label
-    );
-  }
-
-  return React.createElement(
-    "div",
-    { className: "sidebar-root", style: { width: 236, background: T.sidebar, borderRight: "1px solid " + T.border, display: "flex", flexDirection: "column", flexShrink: 0, userSelect: "none" } },
-    // Brand Header
-    React.createElement(
-      "div",
-      { style: { padding: "18px 20px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", gap: 11 } },
+      // Left: Logo & Nav tabs
       React.createElement(
         "div",
-        { style: { width: 34, height: 34, borderRadius: 10, background: "#0F172A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, boxShadow: "0 2px 6px rgba(15,23,42,0.15)", flexShrink: 0 } },
-        "💰"
-      ),
-      React.createElement(
-        "div",
-        null,
-        React.createElement("div", { style: { fontSize: 15, fontWeight: 900, color: T.text, letterSpacing: -0.4 } }, "KeuanganKu"),
-        React.createElement("div", { style: { fontSize: 9, color: T.sidebarSub, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "PERSONAL FINANCE")
-      )
-    ),
-    // Menu List
-    React.createElement(
-      "div",
-      { className: "sidebar-menu-list", style: { padding: "14px 10px 10px", flex: 1, overflowY: "auto" } },
-      React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", padding: "0 14px", marginBottom: 6 } }, "MENU UTAMA"),
-      navMain.map(renderNavItem),
-      React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", padding: "0 14px", marginTop: 16, marginBottom: 6 } }, "ANALISIS & TABUNGAN"),
-      navAnalysis.map(renderNavItem)
-    ),
-    // User Profile Footer
-    React.createElement(
-      "div",
-      { style: { padding: "12px 16px", borderTop: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(248, 250, 252, 0.5)" } },
-      React.createElement(
-        "div",
-        { style: { display: "flex", alignItems: "center", gap: 9, minWidth: 0 } },
+        { style: { display: "flex", alignItems: "center", gap: 20, overflowX: "auto" } },
+        // Brand
         React.createElement(
           "div",
-          { style: { width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #0284C7, #0EA5E9)", color: "#FFFFFF", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 } },
-          initial
+          {
+            onClick: function () { p.onView("dashboard"); },
+            style: { display: "flex", alignItems: "center", gap: 10, cursor: "pointer", flexShrink: 0 }
+          },
+          React.createElement(
+            "div",
+            { style: { width: 34, height: 34, borderRadius: 10, background: "#0F172A", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, boxShadow: "0 2px 6px rgba(15,23,42,0.15)" } },
+            "💰"
+          ),
+          React.createElement(
+            "div",
+            null,
+            React.createElement("div", { style: { fontSize: 15, fontWeight: 900, color: T.text, letterSpacing: -0.4, display: "flex", alignItems: "center", gap: 5 } },
+              "KeuanganKu",
+              React.createElement("span", { style: { width: 7, height: 7, borderRadius: "50%", background: "#10B981" } })
+            ),
+            React.createElement("div", { style: { fontSize: 9, color: T.textSub, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "FINTECH EDITION")
+          )
         ),
+        // Tabs
         React.createElement(
-          "div",
-          { style: { minWidth: 0, overflow: "hidden" } },
-          React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: T.text, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" } }, p.user.name),
-          React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" } }, "@" + (p.user.username || "user"))
+          "nav",
+          {
+            style: {
+              display: "flex",
+              alignItems: "center",
+              background: T.panel,
+              padding: "4px",
+              borderRadius: 12,
+              gap: 2,
+              flexShrink: 0
+            }
+          },
+          navItems.map(function (item) {
+            var active = p.view === item.id;
+            return React.createElement(
+              "button",
+              {
+                key: item.id,
+                onClick: function () { p.onView(item.id); },
+                style: {
+                  padding: "7px 12px",
+                  borderRadius: 9,
+                  border: "none",
+                  background: active ? "#FFFFFF" : "transparent",
+                  color: active ? T.text : T.textSub,
+                  fontSize: 12,
+                  fontWeight: active ? 800 : 600,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  boxShadow: active ? "0 1px 3px rgba(0,0,0,0.06)" : "none",
+                  transition: "all .12s ease"
+                }
+              },
+              React.createElement("span", { style: { fontSize: 13 } }, item.icon),
+              item.label
+            );
+          })
         )
       ),
+
+      // Right: Action Pills & User Profile
       React.createElement(
-        "button",
-        {
-          onClick: p.onLogout,
-          title: "Logout",
-          style: { background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.2)", color: T.coral, padding: "5px 9px", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 800, flexShrink: 0 }
-        },
-        "Keluar"
+        "div",
+        { style: { display: "flex", alignItems: "center", gap: 8, flexShrink: 0 } },
+        React.createElement(
+          "button",
+          {
+            onClick: p.onTogglePrivacy,
+            title: p.privacyMode ? "Nonaktifkan Mode Privasi" : "Aktifkan Mode Privasi",
+            style: {
+              padding: "6px 11px",
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              background: p.privacyMode ? "rgba(2, 132, 199, 0.1)" : T.panel,
+              border: "1px solid " + (p.privacyMode ? "rgba(2, 132, 199, 0.3)" : T.border),
+              color: p.privacyMode ? T.teal : T.textSub,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4
+            }
+          },
+          p.privacyMode ? "🙈 Privasi On" : "👁️ Privasi Off"
+        ),
+        React.createElement(
+          "button",
+          {
+            onClick: p.onPromptPayday,
+            title: "Ubah Tanggal Gajian",
+            style: {
+              padding: "6px 11px",
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              background: T.panel,
+              border: "1px solid " + T.border,
+              color: T.teal,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4
+            }
+          },
+          "🗓️ Tgl " + p.paydayDate
+        ),
+        React.createElement(
+          "button",
+          {
+            onClick: p.onOpenRepeat,
+            title: "Repeat Order",
+            style: {
+              padding: "6px 11px",
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              background: T.panel,
+              border: "1px solid " + T.border,
+              color: T.textSub,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4
+            }
+          },
+          "🔁 Repeat"
+        ),
+        React.createElement("div", { style: { width: 1, height: 24, background: T.border, margin: "0 2px" } }),
+        React.createElement(
+          "div",
+          { style: { display: "flex", alignItems: "center", gap: 7 } },
+          React.createElement(
+            "div",
+            {
+              style: {
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #0F172A, #334155)",
+                color: "#FFFFFF",
+                fontWeight: 800,
+                fontSize: 13,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }
+            },
+            initial
+          ),
+          React.createElement(
+            "button",
+            {
+              onClick: p.onLogout,
+              title: "Logout",
+              style: {
+                background: "rgba(239, 68, 68, 0.08)",
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+                color: T.coral,
+                padding: "5px 9px",
+                borderRadius: 7,
+                cursor: "pointer",
+                fontSize: 11,
+                fontWeight: 800
+              }
+            },
+            "Keluar"
+          )
+        )
       )
     )
   );
@@ -3530,119 +3763,49 @@ function App() {
 
   return React.createElement(
     "div",
-    { style: { background: T.bg, width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", color: T.text } },
+    { style: { background: T.bg, width: "100vw", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: T.text } },
+    React.createElement(TopNavbar, {
+      view: view,
+      onView: setView,
+      user: user,
+      onLogout: handleLogout,
+      privacyMode: privacyMode,
+      onTogglePrivacy: togglePrivacyMode,
+      paydayDate: paydayDate,
+      onPromptPayday: function () {
+        var res = prompt("Masukkan Tanggal Siklus Gajian (1 - 31):", String(paydayDate));
+        if (res !== null && res.trim()) {
+          updatePaydayDate(res);
+        }
+      },
+      onOpenRepeat: function () { setShowRepeatModal(true); }
+    }),
     React.createElement(
       "div",
-      { className: "app-main-layout", style: { flex: 1, display: "flex", overflow: "hidden" } },
-      React.createElement(Sidebar, { view: view, onView: setView, user: user, onLogout: handleLogout }),
-      React.createElement(
-        "div",
-        { style: { flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" } },
-        // Top Toolbar
-        // Top Toolbar (Refined Minimalist Header)
-        React.createElement(
-          "div",
-          { className: "top-toolbar", style: { padding: "12px 24px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FFFFFF", flexShrink: 0, boxShadow: "0 1px 2px rgba(0,0,0,0.02)" } },
-          React.createElement(
-            "div",
-            { style: { display: "flex", alignItems: "center", gap: 10 } },
-            React.createElement(
-              "div",
-              { style: { width: 30, height: 30, borderRadius: 8, background: "rgba(2, 132, 199, 0.08)", color: T.teal, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 } },
-              view === "dashboard" ? "🏠" : view === "pemasukan" ? "👛" : view === "pengeluaran" ? "🧾" : view === "kalender-harian" ? "📅" : view === "tabungan" ? "🏛️" : view === "analisis-bulanan" ? "🌖" : "📊"
-            ),
-            React.createElement("span", { style: { fontSize: 13, color: T.text, fontWeight: 900, letterSpacing: -0.2 } }, view === "dashboard" ? "Ringkasan Finansial" : view.replace("-", " ").replace(/\b\w/g, function(l){return l.toUpperCase();}))
-          ),
-          React.createElement(
-            "div",
-            { className: "top-toolbar-actions", style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
-            React.createElement(
-              "button",
-              {
-                style: {
-                  padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer",
-                  background: privacyMode ? "rgba(2, 132, 199, 0.1)" : "#FFFFFF",
-                  border: "1px solid " + (privacyMode ? "rgba(2, 132, 199, 0.3)" : T.border),
-                  color: privacyMode ? T.teal : T.textSub,
-                  fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 5,
-                  transition: "all .12s ease"
-                },
-                onClick: togglePrivacyMode,
-                title: privacyMode ? "Nonaktifkan Mode Privasi" : "Aktifkan Mode Privasi"
-              },
-              privacyMode ? "🙈 Privasi On" : "👁️ Privasi Off"
-            ),
-            React.createElement(
-              "button",
-              {
-                style: {
-                  padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer",
-                  background: "#FFFFFF", border: "1px solid " + T.border,
-                  color: T.teal, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 5,
-                  transition: "all .12s ease"
-                },
-                onClick: function () {
-                  var res = prompt("Masukkan Tanggal Siklus Gajian (1 - 31):", String(paydayDate));
-                  if (res !== null && res.trim()) {
-                    updatePaydayDate(res);
-                  }
-                },
-                title: "Klik untuk mengubah tanggal siklus gajian (Saat ini: Tgl " + paydayDate + ")"
-              },
-              "🗓️ Gajian: Tgl " + paydayDate
-            ),
-            React.createElement(
-              "button",
-              {
-                style: {
-                  padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer",
-                  background: "#FFFFFF", border: "1px solid " + T.border,
-                  color: T.textSub, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 5,
-                  transition: "all .12s ease"
-                },
-                onClick: function () { setShowRepeatModal(true); }
-              },
-              "🔁 Repeat"
-            ),
-            React.createElement(
-              "button",
-              {
-                style: {
-                  padding: "6px 14px", borderRadius: 8, fontSize: 12, cursor: "pointer",
-                  background: "#10B981", border: "none",
-                  color: "#FFFFFF", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 5,
-                  boxShadow: "0 1px 3px rgba(16, 185, 129, 0.25)"
-                },
-                onClick: function () { setEditInc(null); setSIF(true); }
-              },
-              "+ Pemasukan"
-            ),
-            React.createElement(
-              "button",
-              {
-                style: {
-                  padding: "6px 14px", borderRadius: 8, fontSize: 12, cursor: "pointer",
-                  background: "#EF4444", border: "none",
-                  color: "#FFFFFF", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 5,
-                  boxShadow: "0 1px 3px rgba(239, 68, 68, 0.25)"
-                },
-                onClick: function () { setEditExp(null); setSEF(true); }
-              },
-              "+ Pengeluaran"
-            )
-          )
-        ),
-        (function () {
-          if (view === "dashboard") return React.createElement(DashboardView, { key: "view-dash", expenses: expenses, income: income, savings: savings, paydayDate: paydayDate, onUpdatePayday: updatePaydayDate, onOpenRepeat: function () { setShowRepeatModal(true); }, onSaveExpense: saveExpense, showToast: tk.show });
-          if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, paydayDate: paydayDate, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
-          if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, paydayDate: paydayDate, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id, item) { var lbl = item ? (item.keperluan + " (" + fmt(item.nominal) + ")") : ""; setDT({ type: "expense", id: id, label: lbl }); }, onOpenRepeat: function () { setShowRepeatModal(true); } });
-          if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings, paydayDate: paydayDate, onEdit: function (item) { setEditExp(item); setSEF(true); }, onSave: saveExpense });
-          if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, paydayDate: paydayDate, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); } });
-          if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income, paydayDate: paydayDate, onUpdatePayday: updatePaydayDate });
-          if (view === "analisis-tahunan") return React.createElement(AnalisisTahunanView, { key: "view-amt", expenses: expenses, income: income, paydayDate: paydayDate });
-          return null;
-        })()
-      )
+      { style: { flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" } },
+      (function () {
+        if (view === "dashboard") return React.createElement(DashboardView, {
+          key: "view-dash",
+          expenses: expenses,
+          income: income,
+          savings: savings,
+          paydayDate: paydayDate,
+          onUpdatePayday: updatePaydayDate,
+          onOpenRepeat: function () { setShowRepeatModal(true); },
+          onSaveExpense: saveExpense,
+          showToast: tk.show,
+          onAddIncome: function () { setEditInc(null); setSIF(true); },
+          onAddExpense: function () { setEditExp(null); setSEF(true); },
+          onAddSaving: function (t) { setDST(t || "setoran"); setEditSav(null); setSSF(true); }
+        });
+        if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, paydayDate: paydayDate, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
+        if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, paydayDate: paydayDate, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id, item) { var lbl = item ? (item.keperluan + " (" + fmt(item.nominal) + ")") : ""; setDT({ type: "expense", id: id, label: lbl }); }, onOpenRepeat: function () { setShowRepeatModal(true); } });
+        if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings, paydayDate: paydayDate, onEdit: function (item) { setEditExp(item); setSEF(true); }, onSave: saveExpense });
+        if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, paydayDate: paydayDate, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); } });
+        if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income, paydayDate: paydayDate, onUpdatePayday: updatePaydayDate });
+        if (view === "analisis-tahunan") return React.createElement(AnalisisTahunanView, { key: "view-amt", expenses: expenses, income: income, paydayDate: paydayDate });
+        return null;
+      })()
     ),
     React.createElement(ExpenseForm, { key: "modal-exp", open: showExpForm, onClose: function () { setSEF(false); setEditExp(null); }, onSave: saveExpense, initial: editingExp, showToast: tk.show }),
     React.createElement(IncomeForm, { key: "modal-inc", open: showIncForm, onClose: function () { setSIF(false); setEditInc(null); }, onSave: saveIncome, initial: editingInc, showToast: tk.show }),
