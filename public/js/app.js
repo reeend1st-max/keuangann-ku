@@ -1607,8 +1607,9 @@ function TagihanMendatangWidget(p) {
     var isOverdue = days !== null && days < 0;
     var isToday = days === 0;
     var isSoon = days !== null && days > 0 && days <= 3;
-    var statusColor = isOverdue ? T.coral : (isToday || isSoon) ? T.amber : T.sage;
-    var statusBg = isOverdue ? T.coralDim : (isToday || isSoon) ? T.amberDim : T.sageDim;
+    var statusColor = isOverdue ? "#DC2626" : (isToday || isSoon) ? "#D97706" : "#475569";
+    var statusBg = isOverdue ? "rgba(239, 68, 68, 0.12)" : (isToday || isSoon) ? "rgba(245, 158, 11, 0.12)" : "rgba(100, 116, 139, 0.1)";
+    var statusBorder = isOverdue ? "1px solid rgba(239, 68, 68, 0.25)" : (isToday || isSoon) ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid rgba(100, 116, 139, 0.2)";
     var statusLabel = isOverdue
       ? ("Telat " + Math.abs(days) + " hari")
       : isToday ? "Hari Ini!"
@@ -1617,21 +1618,42 @@ function TagihanMendatangWidget(p) {
     var catInfo = getCat(b.kategori || "Tagihan");
     var repLabel = b.repeat === "monthly" ? "🔄 Bulanan" : b.repeat === "yearly" ? "📅 Tahunan" : "❌ Sekali";
 
+    var tileBg = isOverdue ? "rgba(239, 68, 68, 0.1)" : (isToday || isSoon) ? "rgba(245, 158, 11, 0.1)" : "rgba(2, 132, 199, 0.1)";
+    var tileBorder = isOverdue ? "1px solid rgba(239, 68, 68, 0.2)" : (isToday || isSoon) ? "1px solid rgba(245, 158, 11, 0.2)" : "1px solid rgba(2, 132, 199, 0.2)";
+
     return React.createElement(
       "div",
       {
         key: b.id,
         style: {
           background: T.card,
-          border: "1.5px solid " + (isOverdue ? T.coral + "60" : isToday || isSoon ? T.amber + "60" : T.border),
+          border: "1px solid " + (isOverdue ? "rgba(239, 68, 68, 0.4)" : isToday || isSoon ? "rgba(245, 158, 11, 0.4)" : T.border),
           borderRadius: 12,
           padding: "12px 14px",
           display: "flex",
           alignItems: "center",
-          gap: 12
+          gap: 12,
+          boxShadow: "0 1px 2px rgba(0,0,0,0.03)"
         }
       },
-      React.createElement("span", { style: { fontSize: 24, flexShrink: 0 } }, catInfo.emoji),
+      React.createElement(
+        "div",
+        {
+          style: {
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: tileBg,
+            border: tileBorder,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 18,
+            flexShrink: 0
+          }
+        },
+        catInfo.emoji
+      ),
       React.createElement(
         "div",
         { style: { flex: 1, minWidth: 0 } },
@@ -1639,25 +1661,26 @@ function TagihanMendatangWidget(p) {
           "div",
           { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" } },
           React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, b.nama),
-          React.createElement("span", { style: { fontSize: 10, fontWeight: 700, background: statusBg, color: statusColor, padding: "2px 7px", borderRadius: 6 } }, statusLabel)
+          React.createElement("span", { style: { fontSize: 10, fontWeight: 700, background: statusBg, color: statusColor, border: statusBorder, padding: "2px 7px", borderRadius: 6 } }, statusLabel)
         ),
         React.createElement(
           "div",
           { style: { display: "flex", gap: 8, marginTop: 3, flexWrap: "wrap", alignItems: "center" } },
-          React.createElement("span", { style: { fontSize: 14, fontWeight: 900, color: T.coral } }, fmt(b.nominal)),
+          React.createElement("span", { style: { fontSize: 14, fontWeight: 900, color: isOverdue ? T.coral : T.text } }, fmt(b.nominal)),
           React.createElement("span", { style: { fontSize: 10, color: T.textSub } }, "· " + (b.tanggal || "-")),
-          React.createElement("span", { style: { fontSize: 10, color: T.textSub } }, "· " + repLabel)
+          React.createElement("span", { style: { fontSize: 10, color: T.textSub } }, "· " + repLabel),
+          b.metode && React.createElement("span", { style: { fontSize: 10, color: T.teal, fontWeight: 700 } }, "· " + b.metode)
         )
       ),
       React.createElement(
         "div",
-        { style: { display: "flex", gap: 4, flexShrink: 0 } },
+        { style: { display: "flex", gap: 5, flexShrink: 0 } },
         React.createElement(
           "button",
           {
             onClick: function () { setBayarBill(b); },
             title: "Bayar tagihan ini",
-            style: { background: T.sage, border: "none", color: "#fff", padding: "5px 10px", borderRadius: 7, fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }
+            style: { background: "#10B981", border: "none", color: "#FFFFFF", padding: "6px 12px", borderRadius: 7, fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 4px rgba(16, 185, 129, 0.25)" }
           },
           "💳 Bayar"
         ),
@@ -1703,19 +1726,19 @@ function TagihanMendatangWidget(p) {
 
   return React.createElement(
     "div",
-    { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, overflow: "hidden", marginTop: 20 } },
+    { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, overflow: "hidden", marginTop: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" } },
     // Header
     React.createElement(
       "div",
-      { style: { padding: "14px 18px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between" } },
+      { style: { padding: "14px 18px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(248, 250, 252, 0.7)" } },
       React.createElement(
         "div",
         { style: { display: "flex", alignItems: "center", gap: 8 } },
-        React.createElement("span", { style: { fontSize: 16 } }, "📅"),
+        React.createElement("div", { style: { width: 30, height: 30, borderRadius: 8, background: "rgba(245, 158, 11, 0.15)", color: "#D97706", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800 } }, "📅"),
         React.createElement("span", { style: { fontSize: 14, fontWeight: 800, color: T.text } }, "Tagihan Mendatang"),
         overdueCount > 0 && React.createElement(
           "span",
-          { style: { background: T.coral, color: "#fff", fontSize: 11, fontWeight: 800, padding: "2px 7px", borderRadius: 10, marginLeft: 4 } },
+          { style: { background: "#EF4444", color: "#fff", fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 10, marginLeft: 4 } },
           overdueCount + " harus bayar!"
         ),
         pendingBills.length > 0 && React.createElement(
@@ -1799,16 +1822,67 @@ function DashboardView(p) {
   var incRows = sortNewestFirst(activeIncome).slice(0, 3);
   var expRows = sortNewestFirst(activeExpenses).slice(0, 3);
 
+  var diffDays = null;
+  if (curPeriod && curPeriod.endDateStr) {
+    try {
+      var endParts = curPeriod.endDateStr.split("/");
+      if (endParts.length === 3) {
+        var endD = new Date(parseInt(endParts[2], 10), parseInt(endParts[1], 10) - 1, parseInt(endParts[0], 10));
+        var nD = new Date();
+        var tD = new Date(nD.getFullYear(), nD.getMonth(), nD.getDate());
+        diffDays = Math.max(0, Math.ceil((endD.getTime() - tD.getTime()) / (1000 * 60 * 60 * 24)));
+      }
+    } catch(e) {}
+  }
+
   function Card(cp) {
     return React.createElement(
       "div",
-      { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, overflow: "hidden", display: "flex", flexDirection: "column" } },
+      {
+        style: {
+          background: T.card,
+          borderRadius: 16,
+          border: "1px solid " + T.border,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
+        }
+      },
       React.createElement(
         "div",
-        { style: { padding: "14px 18px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", gap: 8 } },
-        React.createElement("span", { style: { fontSize: 16 } }, cp.icon),
-        React.createElement("span", { style: { fontSize: 14, fontWeight: 700, color: T.text } }, cp.title),
-        cp.badge && React.createElement("span", { style: { marginLeft: "auto", fontSize: 11, fontWeight: 700, color: cp.badgeColor || T.textSub } }, cp.badge)
+        {
+          style: {
+            padding: "14px 18px",
+            borderBottom: "1px solid " + T.border,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            background: "rgba(248, 250, 252, 0.7)"
+          }
+        },
+        cp.iconTile && React.createElement(
+          "div",
+          {
+            style: {
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: cp.tileBg || T.panel,
+              color: cp.tileColor || T.teal,
+              border: "1px solid " + (cp.tileBorder || T.border),
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 14,
+              fontWeight: 900,
+              flexShrink: 0
+            }
+          },
+          cp.iconTile
+        ),
+        React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, cp.title),
+        cp.badge && React.createElement("span", { style: { marginLeft: "auto", fontSize: 11, fontWeight: 700, color: cp.badgeColor || T.textSub, background: T.panel, border: "1px solid " + T.border, padding: "2px 8px", borderRadius: 6 } }, cp.badge)
       ),
       React.createElement("div", { style: { padding: "16px 18px", flex: 1 } }, cp.children)
     );
@@ -1866,20 +1940,87 @@ function DashboardView(p) {
         )
       )
     ),
-    // Top Main Balance Banner (SALDO KEUANGAN = Pemasukan - Pengeluaran)
+    // Top Main Balance Banner (SALDO KEUANGAN = Pemasukan - Pengeluaran) — Swiss Linear Refined
     React.createElement(
       "div",
-      { style: { background: "linear-gradient(135deg, #1E3A8A, #0284C7)", borderRadius: 16, padding: "24px 28px", border: "1px solid " + T.border, marginBottom: 20, color: "#FFFFFF" } },
+      {
+        style: {
+          background: "linear-gradient(135deg, #0F172A 0%, #1E293B 55%, #0F172A 100%)",
+          borderRadius: 18,
+          padding: "24px 28px",
+          border: "1px solid rgba(255,255,255,0.14)",
+          marginBottom: 20,
+          color: "#FFFFFF",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 12px 30px -10px rgba(15, 23, 42, 0.4)"
+        }
+      },
+      // Subtle ambient light glow circles
+      React.createElement("div", {
+        style: {
+          position: "absolute",
+          top: -30,
+          right: -30,
+          width: 140,
+          height: 140,
+          borderRadius: "50%",
+          background: "rgba(2, 132, 199, 0.18)",
+          filter: "blur(40px)",
+          pointerEvents: "none"
+        }
+      }),
+      React.createElement("div", {
+        style: {
+          position: "absolute",
+          bottom: -30,
+          left: "30%",
+          width: 120,
+          height: 120,
+          borderRadius: "50%",
+          background: "rgba(16, 185, 129, 0.14)",
+          filter: "blur(35px)",
+          pointerEvents: "none"
+        }
+      }),
       React.createElement(
         "div",
-        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
-        React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 } }, isCycle ? ("SALDO SIKLUS " + curPeriod.monthName.toUpperCase() + " (GAJIAN TGL " + paydayDate + ")") : "SALDO KEUANGAN KESELURUHAN"),
-        isCycle && React.createElement("div", { style: { fontSize: 11, color: "#E0F2FE", fontWeight: 700, background: "rgba(255,255,255,0.15)", padding: "2px 8px", borderRadius: 6 } }, curPeriod.startDateStr + " - " + curPeriod.endDateStr)
-      ),
-      React.createElement("div", { style: { fontSize: 40, fontWeight: 900, letterSpacing: -1, color: "#FFFFFF", marginBottom: 6 } }, (saldo < 0 ? "-" : "") + "Rp " + new Intl.NumberFormat("id-ID").format(Math.abs(saldo))),
-      React.createElement("div", { style: { fontSize: 12, color: "#FDE047", fontWeight: 700, marginBottom: 14 } }, pct + "% pemasukan " + (isCycle ? "siklus ini" : "") + " sudah terpakai"),
-      React.createElement("div", { style: { height: 6, background: "rgba(255,255,255,0.2)", borderRadius: 3, overflow: "hidden" } },
-        React.createElement("div", { style: { height: "100%", width: pct + "%", borderRadius: 3, background: "#FDE047" } })
+        { style: { position: "relative", zIndex: 1 } },
+        React.createElement(
+          "div",
+          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 } },
+          React.createElement(
+            "div",
+            { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
+            React.createElement("span", { style: { fontSize: 11, color: "#38BDF8", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1.2 } }, isCycle ? ("SIKLUS " + curPeriod.monthName.toUpperCase()) : "SALDO KEUANGAN KESELURUHAN"),
+            isCycle && React.createElement("span", { style: { fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 600 } }, "• Gajian Tgl " + paydayDate + " (" + curPeriod.startDateStr.slice(0, 5) + " - " + curPeriod.endDateStr.slice(0, 5) + ")")
+          ),
+          isCycle && React.createElement(
+            "div",
+            { style: { fontSize: 11, color: "#E0F2FE", fontWeight: 700, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.15)", padding: "3px 10px", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 4 } },
+            "⏳ " + (diffDays !== null ? ("Sisa " + diffDays + " hari") : "Siklus Aktif")
+          )
+        ),
+        React.createElement("div", { style: { fontSize: 40, fontWeight: 900, letterSpacing: -1, color: "#FFFFFF", marginTop: 4, marginBottom: 8 } }, (saldo < 0 ? "-" : "") + fmt(Math.abs(saldo))),
+        React.createElement(
+          "div",
+          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#E2E8F0", marginBottom: 8, flexWrap: "wrap", gap: 6 } },
+          React.createElement("span", { style: { fontWeight: 600, color: "rgba(255,255,255,0.85)" } }, "Penggunaan dana " + (isCycle ? "siklus ini:" : ":")),
+          React.createElement("span", { style: { fontWeight: 800, color: pct > 85 ? "#F87171" : pct > 50 ? "#FDE047" : "#4ADE80" } }, pct + "% terpakai" + (isCycle && saldo > 0 ? (" · Sisa " + fmt(saldo)) : ""))
+        ),
+        React.createElement(
+          "div",
+          { style: { height: 7, background: "rgba(255,255,255,0.15)", borderRadius: 4, overflow: "hidden", padding: 1 } },
+          React.createElement("div", {
+            style: {
+              height: "100%",
+              width: Math.min(100, Math.max(0, pct)) + "%",
+              borderRadius: 3,
+              background: pct > 85 ? "linear-gradient(90deg, #F59E0B, #EF4444)" : "linear-gradient(90deg, #10B981, #0284C7, #F59E0B)",
+              transition: "width 0.4s ease"
+            }
+          })
+        )
       )
     ),
 
@@ -1890,7 +2031,15 @@ function DashboardView(p) {
       // Card 1: Pemasukan
       React.createElement(
         Card,
-        { icon: "🟢", title: "Pemasukan", badge: activeIncome.length + " transaksi", badgeColor: T.sage },
+        {
+          title: "Pemasukan",
+          badge: activeIncome.length + " transaksi",
+          badgeColor: T.sage,
+          iconTile: "↓",
+          tileBg: "rgba(16, 185, 129, 0.12)",
+          tileColor: "#059669",
+          tileBorder: "rgba(16, 185, 129, 0.25)"
+        },
         React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.teal, marginBottom: 14 } }, fmt(tInc)),
         React.createElement(
           "div",
@@ -1911,7 +2060,15 @@ function DashboardView(p) {
       // Card 2: Pengeluaran
       React.createElement(
         Card,
-        { icon: "🔴", title: "Pengeluaran", badge: activeExpenses.length + " transaksi", badgeColor: T.coral },
+        {
+          title: "Pengeluaran",
+          badge: activeExpenses.length + " transaksi",
+          badgeColor: T.coral,
+          iconTile: "↑",
+          tileBg: "rgba(239, 68, 68, 0.12)",
+          tileColor: "#DC2626",
+          tileBorder: "rgba(239, 68, 68, 0.25)"
+        },
         React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.coral, marginBottom: 14 } }, fmt(tExp)),
         React.createElement(
           "div",
@@ -1932,7 +2089,15 @@ function DashboardView(p) {
       // Card 3: Tabungan
       React.createElement(
         Card,
-        { icon: "🏛️", title: "Tabungan", badge: "Saldo " + fmt(saldoTab), badgeColor: T.teal },
+        {
+          title: "Tabungan",
+          badge: "Saldo " + fmt(saldoTab),
+          badgeColor: T.teal,
+          iconTile: "🏛️",
+          tileBg: "rgba(2, 132, 199, 0.12)",
+          tileColor: "#0284C7",
+          tileBorder: "rgba(2, 132, 199, 0.25)"
+        },
         React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.teal, marginBottom: 14 } }, fmt(saldoTab)),
         React.createElement(
           "div",
