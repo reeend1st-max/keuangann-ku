@@ -6,31 +6,31 @@ var useState = React.useState;
 var useEffect = React.useEffect;
 var useCallback = React.useCallback;
 
-// ── Theme Design Tokens (Soft Light Slate & Cyan Theme — Non-glare) ─────────
+// ── Theme Design Tokens (Professional Minimalist Swiss Slate) ────────────────
 var T = {
-  bg: "#F1F5F9",
-  surface: "#F8FAFC",
+  bg: "#F8FAFC",
+  surface: "#FFFFFF",
   card: "#FFFFFF",
-  panel: "#F8FAFC",
-  border: "#CBD5E1",
-  sidebar: "#E2E8F0",
+  panel: "#F1F5F9",
+  border: "#E2E8F0",
+  sidebar: "#FFFFFF",
   sidebarText: "#0F172A",
-  sidebarSub: "#475569",
+  sidebarSub: "#64748B",
   teal: "#0284C7",
-  tealDim: "rgba(2, 132, 199, 0.12)",
+  tealDim: "rgba(2, 132, 199, 0.08)",
   sage: "#10B981",
-  sageDim: "rgba(16, 185, 129, 0.12)",
+  sageDim: "rgba(16, 185, 129, 0.08)",
   coral: "#EF4444",
-  coralDim: "rgba(239, 68, 68, 0.12)",
+  coralDim: "rgba(239, 68, 68, 0.08)",
   amber: "#F59E0B",
-  amberDim: "rgba(245, 158, 11, 0.12)",
+  amberDim: "rgba(245, 158, 11, 0.08)",
   sky: "#0284C7",
-  skyDim: "rgba(2, 132, 199, 0.12)",
+  skyDim: "rgba(2, 132, 199, 0.08)",
   violet: "#8B5CF6",
-  violetDim: "rgba(139, 92, 246, 0.12)",
+  violetDim: "rgba(139, 92, 246, 0.08)",
   text: "#0F172A",
-  textSub: "#475569",
-  textDim: "#64748B",
+  textSub: "#64748B",
+  textDim: "#94A3B8",
 };
 
 // ── Categories configuration ──────────────────────────────────────────────────
@@ -2020,6 +2020,38 @@ function DashboardView(p) {
               transition: "width 0.4s ease"
             }
           })
+        ),
+        // 3 Integrated Financial Key Metrics
+        React.createElement(
+          "div",
+          {
+            style: {
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: 12,
+              marginTop: 18,
+              paddingTop: 16,
+              borderTop: "1px solid rgba(255,255,255,0.12)"
+            }
+          },
+          React.createElement(
+            "div",
+            null,
+            React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase" } }, "Pemasukan"),
+            React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: "#4ADE80", marginTop: 2 } }, "+ " + fmt(tInc))
+          ),
+          React.createElement(
+            "div",
+            null,
+            React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase" } }, "Pengeluaran"),
+            React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: "#F87171", marginTop: 2 } }, "- " + fmt(tExp))
+          ),
+          React.createElement(
+            "div",
+            null,
+            React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.6)", fontWeight: 700, textTransform: "uppercase" } }, "Tabungan"),
+            React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: "#38BDF8", marginTop: 2 } }, fmt(saldoTab))
+          )
         )
       )
     ),
@@ -2915,63 +2947,107 @@ function KalenderPengeluaranView(p) {
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 function Sidebar(p) {
-  var nav = [
+  var navMain = [
     { id: "dashboard", icon: "🏠", label: "Ringkasan" },
     { id: "pemasukan", icon: "👛", label: "Pemasukan" },
     { id: "pengeluaran", icon: "🧾", label: "Pengeluaran" },
     { id: "kalender-harian", icon: "📅", label: "Kalender Harian" },
+  ];
+  var navAnalysis = [
     { id: "tabungan", icon: "🏛️", label: "Tabungan" },
     { id: "analisis-bulanan", icon: "🌖", label: "Analisis Bulanan" },
     { id: "analisis-tahunan", icon: "📊", label: "Analisis Tahunan" },
   ];
 
+  var initial = (p.user && p.user.name && p.user.name.trim()) ? p.user.name.trim().charAt(0).toUpperCase() : "U";
+
+  function renderNavItem(item) {
+    var active = p.view === item.id;
+    return React.createElement(
+      "button",
+      {
+        key: item.id,
+        onClick: function () { p.onView(item.id); },
+        style: {
+          width: "100%",
+          padding: "9px 14px",
+          borderRadius: "0 8px 8px 0",
+          marginBottom: 2,
+          border: "none",
+          borderLeft: active ? "3px solid " + T.teal : "3px solid transparent",
+          background: active ? "rgba(2, 132, 199, 0.08)" : "transparent",
+          color: active ? T.teal : T.sidebarSub,
+          fontSize: 13,
+          fontWeight: active ? 800 : 600,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          textAlign: "left",
+          transition: "all .12s ease",
+        },
+      },
+      React.createElement("span", { style: { fontSize: 16 } }, item.icon),
+      item.label
+    );
+  }
+
   return React.createElement(
     "div",
-    { className: "sidebar-root", style: { width: 224, background: T.sidebar, borderRight: "1px solid " + T.border, display: "flex", flexDirection: "column", flexShrink: 0, userSelect: "none" } },
+    { className: "sidebar-root", style: { width: 236, background: T.sidebar, borderRight: "1px solid " + T.border, display: "flex", flexDirection: "column", flexShrink: 0, userSelect: "none" } },
+    // Brand Header
     React.createElement(
       "div",
-      { style: { padding: "16px 18px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between" } },
+      { style: { padding: "18px 20px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", gap: 11 } },
       React.createElement(
         "div",
-        { style: { display: "flex", alignItems: "center", gap: 10 } },
-        React.createElement("div", { style: { fontSize: 22 } }, "💰"),
+        { style: { width: 34, height: 34, borderRadius: 10, background: "#0F172A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, boxShadow: "0 2px 6px rgba(15,23,42,0.15)", flexShrink: 0 } },
+        "💰"
+      ),
+      React.createElement(
+        "div",
+        null,
+        React.createElement("div", { style: { fontSize: 15, fontWeight: 900, color: T.text, letterSpacing: -0.4 } }, "KeuanganKu"),
+        React.createElement("div", { style: { fontSize: 9, color: T.sidebarSub, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "PERSONAL FINANCE")
+      )
+    ),
+    // Menu List
+    React.createElement(
+      "div",
+      { className: "sidebar-menu-list", style: { padding: "14px 10px 10px", flex: 1, overflowY: "auto" } },
+      React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", padding: "0 14px", marginBottom: 6 } }, "MENU UTAMA"),
+      navMain.map(renderNavItem),
+      React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", padding: "0 14px", marginTop: 16, marginBottom: 6 } }, "ANALISIS & TABUNGAN"),
+      navAnalysis.map(renderNavItem)
+    ),
+    // User Profile Footer
+    React.createElement(
+      "div",
+      { style: { padding: "12px 16px", borderTop: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(248, 250, 252, 0.5)" } },
+      React.createElement(
+        "div",
+        { style: { display: "flex", alignItems: "center", gap: 9, minWidth: 0 } },
         React.createElement(
           "div",
-          null,
-          React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: T.teal, letterSpacing: -0.5 } }, "Keuangan"),
-          React.createElement("div", { style: { fontSize: 9, color: T.sidebarSub, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "PERSONAL FINANCE")
+          { style: { width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #0284C7, #0EA5E9)", color: "#FFFFFF", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 } },
+          initial
+        ),
+        React.createElement(
+          "div",
+          { style: { minWidth: 0, overflow: "hidden" } },
+          React.createElement("div", { style: { fontSize: 12, fontWeight: 800, color: T.text, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" } }, p.user.name),
+          React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub, whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" } }, "@" + (p.user.username || "user"))
         )
       ),
-      React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: T.coralDim, border: "1px solid " + T.coral + "55", color: T.coral, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", gap: 4 } }, "🚪 Keluar")
-    ),
-    React.createElement(
-      "div",
-      { className: "sidebar-menu-list", style: { padding: "12px 8px 6px", flex: 1, overflowY: "auto" } },
-      React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", padding: "0 10px", marginBottom: 8 } }, "MENU"),
-      nav.map(function (item) {
-        var active = p.view === item.id;
-        return React.createElement(
-          "button",
-          {
-            key: item.id,
-            onClick: function () { p.onView(item.id); },
-            style: {
-              width: "100%", padding: "10px 14px", borderRadius: 10, marginBottom: 4, border: active ? "1px solid #0284C7" : "none",
-              background: active ? "#0284C7" : "transparent",
-              color: active ? "#FFFFFF" : T.sidebarSub, fontSize: 13, fontWeight: 700, cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 12, textAlign: "left",
-              transition: "all .12s ease",
-            },
-          },
-          React.createElement("span", { style: { fontSize: 16 } }, item.icon), item.label
-        );
-      })
-    ),
-    React.createElement(
-      "div",
-      { style: { padding: "12px 14px", borderTop: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between" } },
-      React.createElement("div", null, React.createElement("div", { style: { fontSize: 12, fontWeight: 700, color: T.sidebarText } }, p.user.name), React.createElement("div", { style: { fontSize: 10, color: T.sidebarSub } }, "@" + (p.user.username || "user"))),
-      React.createElement("button", { onClick: p.onLogout, title: "Logout", style: { background: T.coralDim, border: "1px solid " + T.coral + "55", color: T.coral, padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 800 } }, "Keluar")
+      React.createElement(
+        "button",
+        {
+          onClick: p.onLogout,
+          title: "Logout",
+          style: { background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.2)", color: T.coral, padding: "5px 9px", borderRadius: 7, cursor: "pointer", fontSize: 11, fontWeight: 800, flexShrink: 0 }
+        },
+        "Keluar"
+      )
     )
   );
 }
@@ -3463,27 +3539,33 @@ function App() {
         "div",
         { style: { flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" } },
         // Top Toolbar
+        // Top Toolbar (Refined Minimalist Header)
         React.createElement(
           "div",
-          { className: "top-toolbar", style: { padding: "12px 20px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between", background: T.surface, flexShrink: 0 } },
+          { className: "top-toolbar", style: { padding: "12px 24px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FFFFFF", flexShrink: 0, boxShadow: "0 1px 2px rgba(0,0,0,0.02)" } },
           React.createElement(
             "div",
             { style: { display: "flex", alignItems: "center", gap: 10 } },
-            React.createElement("span", { style: { fontSize: 16 } }, view === "dashboard" ? "🏠" : view === "pemasukan" ? "👛" : view === "pengeluaran" ? "🧾" : view === "kalender-harian" ? "📅" : view === "tabungan" ? "🏛️" : view === "analisis-bulanan" ? "🌖" : "📊"),
-            React.createElement("span", { style: { fontSize: 12, color: T.textSub, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 } }, view === "dashboard" ? "RINGKASAN" : view.replace("-", " ").toUpperCase())
+            React.createElement(
+              "div",
+              { style: { width: 30, height: 30, borderRadius: 8, background: "rgba(2, 132, 199, 0.08)", color: T.teal, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 } },
+              view === "dashboard" ? "🏠" : view === "pemasukan" ? "👛" : view === "pengeluaran" ? "🧾" : view === "kalender-harian" ? "📅" : view === "tabungan" ? "🏛️" : view === "analisis-bulanan" ? "🌖" : "📊"
+            ),
+            React.createElement("span", { style: { fontSize: 13, color: T.text, fontWeight: 900, letterSpacing: -0.2 } }, view === "dashboard" ? "Ringkasan Finansial" : view.replace("-", " ").replace(/\b\w/g, function(l){return l.toUpperCase();}))
           ),
           React.createElement(
             "div",
-            { className: "top-toolbar-actions", style: { display: "flex", gap: 8, alignItems: "center" } },
+            { className: "top-toolbar-actions", style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
             React.createElement(
-              Btn,
+              "button",
               {
-                color: privacyMode ? T.teal : T.textSub,
                 style: {
-                  background: privacyMode ? "#E0F2FE" : T.surface,
-                  border: "1px solid " + (privacyMode ? T.teal : T.border),
+                  padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer",
+                  background: privacyMode ? "rgba(2, 132, 199, 0.1)" : "#FFFFFF",
+                  border: "1px solid " + (privacyMode ? "rgba(2, 132, 199, 0.3)" : T.border),
                   color: privacyMode ? T.teal : T.textSub,
-                  fontWeight: 800
+                  fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 5,
+                  transition: "all .12s ease"
                 },
                 onClick: togglePrivacyMode,
                 title: privacyMode ? "Nonaktifkan Mode Privasi" : "Aktifkan Mode Privasi"
@@ -3494,9 +3576,10 @@ function App() {
               "button",
               {
                 style: {
-                  padding: "7px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer",
-                  background: "#E0F2FE", border: "1px solid " + T.teal + "50",
-                  color: T.teal, fontWeight: 800, display: "flex", alignItems: "center", gap: 5
+                  padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer",
+                  background: "#FFFFFF", border: "1px solid " + T.border,
+                  color: T.teal, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 5,
+                  transition: "all .12s ease"
                 },
                 onClick: function () {
                   var res = prompt("Masukkan Tanggal Siklus Gajian (1 - 31):", String(paydayDate));
@@ -3508,10 +3591,45 @@ function App() {
               },
               "🗓️ Gajian: Tgl " + paydayDate
             ),
-            React.createElement(Btn, { color: T.teal, style: { background: "#E0F2FE", border: "1px solid " + T.teal + "50", color: T.teal, fontWeight: 800 }, onClick: function () { setShowRepeatModal(true); } }, "🔁 Repeat Order"),
-            React.createElement(Btn, { color: T.sage, onClick: function () { setEditInc(null); setSIF(true); } }, "+ Pemasukan"),
-            React.createElement(Btn, { color: T.coral, onClick: function () { setEditExp(null); setSEF(true); } }, "+ Pengeluaran"),
-            React.createElement(Btn, { color: T.coralDim, style: { border: "1px solid " + T.coral + "55", color: T.coral }, onClick: handleLogout }, "🚪 Keluar")
+            React.createElement(
+              "button",
+              {
+                style: {
+                  padding: "6px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer",
+                  background: "#FFFFFF", border: "1px solid " + T.border,
+                  color: T.textSub, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 5,
+                  transition: "all .12s ease"
+                },
+                onClick: function () { setShowRepeatModal(true); }
+              },
+              "🔁 Repeat"
+            ),
+            React.createElement(
+              "button",
+              {
+                style: {
+                  padding: "6px 14px", borderRadius: 8, fontSize: 12, cursor: "pointer",
+                  background: "#10B981", border: "none",
+                  color: "#FFFFFF", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 5,
+                  boxShadow: "0 1px 3px rgba(16, 185, 129, 0.25)"
+                },
+                onClick: function () { setEditInc(null); setSIF(true); }
+              },
+              "+ Pemasukan"
+            ),
+            React.createElement(
+              "button",
+              {
+                style: {
+                  padding: "6px 14px", borderRadius: 8, fontSize: 12, cursor: "pointer",
+                  background: "#EF4444", border: "none",
+                  color: "#FFFFFF", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 5,
+                  boxShadow: "0 1px 3px rgba(239, 68, 68, 0.25)"
+                },
+                onClick: function () { setEditExp(null); setSEF(true); }
+              },
+              "+ Pengeluaran"
+            )
           )
         ),
         (function () {
