@@ -6,8 +6,8 @@ var useState = React.useState;
 var useEffect = React.useEffect;
 var useCallback = React.useCallback;
 
-// ── Theme Design Tokens (Professional Minimalist Swiss Slate) ────────────────
-var T = {
+// ── Theme Design Tokens (Light & Dark Fintech Palette) ──────────────────────
+var LIGHT_THEME = {
   bg: "#F8FAFC",
   surface: "#FFFFFF",
   card: "#FFFFFF",
@@ -31,7 +31,60 @@ var T = {
   text: "#0F172A",
   textSub: "#64748B",
   textDim: "#94A3B8",
+  inputBg: "#FFFFFF"
 };
+
+var DARK_THEME = {
+  bg: "#0B0F19",
+  surface: "#131C2E",
+  card: "#131C2E",
+  panel: "#1A2438",
+  border: "rgba(255, 255, 255, 0.1)",
+  sidebar: "#131C2E",
+  sidebarText: "#F8FAFC",
+  sidebarSub: "#94A3B8",
+  teal: "#38BDF8",
+  tealDim: "rgba(56, 189, 248, 0.15)",
+  sage: "#34D399",
+  sageDim: "rgba(52, 211, 153, 0.15)",
+  coral: "#F87171",
+  coralDim: "rgba(248, 113, 113, 0.15)",
+  amber: "#FBBF24",
+  amberDim: "rgba(251, 191, 36, 0.15)",
+  sky: "#38BDF8",
+  skyDim: "rgba(56, 189, 248, 0.15)",
+  violet: "#A78BFA",
+  violetDim: "rgba(167, 139, 250, 0.15)",
+  text: "#F8FAFC",
+  textSub: "#94A3B8",
+  textDim: "#64748B",
+  inputBg: "#1A2438"
+};
+
+var initialDarkMode = false;
+try {
+  initialDarkMode = localStorage.getItem("keuangan_dark_mode") === "true";
+} catch (e) {}
+window.darkMode = initialDarkMode;
+
+var T = Object.assign({}, initialDarkMode ? DARK_THEME : LIGHT_THEME);
+
+function applyTheme(isDark) {
+  window.darkMode = !!isDark;
+  try {
+    localStorage.setItem("keuangan_dark_mode", String(isDark));
+  } catch (e) {}
+  Object.assign(T, isDark ? DARK_THEME : LIGHT_THEME);
+  if (typeof document !== "undefined" && document.body) {
+    document.body.style.background = T.bg;
+    document.body.style.color = T.text;
+    if (isDark) {
+      document.body.classList.add("dark-mode");
+    } else {
+      document.body.classList.remove("dark-mode");
+    }
+  }
+}
 
 // ── Categories configuration ──────────────────────────────────────────────────
 var CATS = {
@@ -404,6 +457,291 @@ function DInput(p) {
       placeholder: p.placeholder, autoFocus: p.autoFocus,
       style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 9, padding: "9px 12px", color: T.text, fontSize: 13, outline: "none", fontFamily: "inherit" },
     })
+  );
+}
+
+// ── Interactive Date Picker with Month & Year Selectors ───────────────────────
+function DDatePicker(p) {
+  var _open = useState(false), isOpen = _open[0], setIsOpen = _open[1];
+
+  var raw = p.value || todayStr();
+  var parts = String(raw).split("/");
+  var initD = parseInt(parts[0], 10) || new Date().getDate();
+  var initM = parseInt(parts[1], 10) || (new Date().getMonth() + 1);
+  var initY = parseInt(parts[2], 10) || new Date().getFullYear();
+
+  var _vm = useState(initM), viewMonth = _vm[0], setViewMonth = _vm[1];
+  var _vy = useState(initY), viewYear = _vy[0], setViewYear = _vy[1];
+
+  var monthsList = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+  var daysHeader = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+
+  function handleToggleOpen() {
+    if (!isOpen) {
+      var pParts = String(p.value || todayStr()).split("/");
+      var pM = parseInt(pParts[1], 10) || (new Date().getMonth() + 1);
+      var pY = parseInt(pParts[2], 10) || new Date().getFullYear();
+      setViewMonth(pM);
+      setViewYear(pY);
+    }
+    setIsOpen(!isOpen);
+  }
+
+  function handleSelectDay(d) {
+    var formatted = String(d).padStart(2, "0") + "/" + String(viewMonth).padStart(2, "0") + "/" + viewYear;
+    p.onChange(formatted);
+    setIsOpen(false);
+  }
+
+  function handleSetToday() {
+    var now = new Date();
+    var formatted = String(now.getDate()).padStart(2, "0") + "/" + String(now.getMonth() + 1).padStart(2, "0") + "/" + now.getFullYear();
+    p.onChange(formatted);
+    setIsOpen(false);
+  }
+
+  function handleSetYesterday() {
+    var now = new Date();
+    now.setDate(now.getDate() - 1);
+    var formatted = String(now.getDate()).padStart(2, "0") + "/" + String(now.getMonth() + 1).padStart(2, "0") + "/" + now.getFullYear();
+    p.onChange(formatted);
+    setIsOpen(false);
+  }
+
+  function prevMonth() {
+    if (viewMonth === 1) {
+      setViewMonth(12);
+      setViewYear(viewYear - 1);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  }
+
+  function nextMonth() {
+    if (viewMonth === 12) {
+      setViewMonth(1);
+      setViewYear(viewYear + 1);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  }
+
+  var daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
+  var firstDayIndex = new Date(viewYear, viewMonth - 1, 1).getDay();
+
+  var displayMonthName = monthsList[initM - 1] || "";
+  var displayFormatted = initD + " " + displayMonthName + " " + initY;
+  var isToday = (raw === todayStr());
+
+  var yearOptions = [];
+  for (var y = 2020; y <= 2035; y++) {
+    yearOptions.push(y);
+  }
+
+  return React.createElement(
+    "div",
+    { style: { display: "flex", flexDirection: "column", gap: 5, position: "relative" } },
+    p.label && React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, p.label),
+    
+    // Trigger Input Button
+    React.createElement(
+      "div",
+      {
+        onClick: handleToggleOpen,
+        style: {
+          background: T.panel,
+          border: isOpen ? "1.5px solid " + T.teal : "1.5px solid " + T.border,
+          borderRadius: 9,
+          padding: "9px 12px",
+          color: T.text,
+          fontSize: 13,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          userSelect: "none",
+          transition: "all 0.15s ease",
+          boxShadow: isOpen ? "0 0 0 3px " + T.tealDim : "none"
+        }
+      },
+      React.createElement(
+        "div",
+        { style: { display: "flex", alignItems: "center", gap: 8 } },
+        React.createElement("span", { style: { fontSize: 15 } }, "📅"),
+        React.createElement("span", { style: { fontWeight: 800 } }, displayFormatted),
+        isToday && React.createElement("span", { style: { fontSize: 10, fontWeight: 800, background: T.tealDim, color: T.teal, padding: "2px 6px", borderRadius: 6 } }, "Hari Ini")
+      ),
+      React.createElement("span", { style: { fontSize: 11, color: T.textSub } }, isOpen ? "▲" : "▼")
+    ),
+
+    // Popover Calendar
+    isOpen && React.createElement(
+      React.Fragment,
+      null,
+      // Backdrop to close when clicking outside
+      React.createElement("div", {
+        onClick: function () { setIsOpen(false); },
+        style: { position: "fixed", inset: 0, zIndex: 9998 }
+      }),
+      // Calendar Popover Box
+      React.createElement(
+        "div",
+        {
+          style: {
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            zIndex: 9999,
+            background: T.card,
+            border: "1.5px solid " + T.border,
+            borderRadius: 16,
+            padding: "14px 16px",
+            boxShadow: "0 12px 36px rgba(0,0,0,0.25)",
+            width: 310,
+            maxWidth: "92vw",
+            color: T.text
+          }
+        },
+        // Month & Year Selector Header
+        React.createElement(
+          "div",
+          { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, marginBottom: 12 } },
+          React.createElement(
+            "button",
+            {
+              type: "button",
+              onClick: prevMonth,
+              style: { background: T.panel, border: "1px solid " + T.border, color: T.text, width: 28, height: 28, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }
+            },
+            "◀"
+          ),
+          React.createElement(
+            "div",
+            { style: { display: "flex", gap: 6, flex: 1, justifyContent: "center" } },
+            // Month Dropdown
+            React.createElement(
+              "select",
+              {
+                value: viewMonth,
+                onChange: function (e) { setViewMonth(parseInt(e.target.value, 10)); },
+                style: { background: T.panel, border: "1px solid " + T.border, color: T.text, padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", outline: "none" }
+              },
+              monthsList.map(function (mName, idx) {
+                return React.createElement("option", { key: idx + 1, value: idx + 1 }, mName);
+              })
+            ),
+            // Year Dropdown
+            React.createElement(
+              "select",
+              {
+                value: viewYear,
+                onChange: function (e) { setViewYear(parseInt(e.target.value, 10)); },
+                style: { background: T.panel, border: "1px solid " + T.border, color: T.text, padding: "4px 8px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", outline: "none" }
+              },
+              yearOptions.map(function (yr) {
+                return React.createElement("option", { key: yr, value: yr }, yr);
+              })
+            )
+          ),
+          React.createElement(
+            "button",
+            {
+              type: "button",
+              onClick: nextMonth,
+              style: { background: T.panel, border: "1px solid " + T.border, color: T.text, width: 28, height: 28, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }
+            },
+            "▶"
+          )
+        ),
+
+        // Day of week labels
+        React.createElement(
+          "div",
+          { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontSize: 10.5, fontWeight: 800, color: T.textSub, marginBottom: 8 } },
+          daysHeader.map(function (dh, dIdx) {
+            return React.createElement("div", { key: dh, style: { color: dIdx === 0 ? T.coral : T.textSub } }, dh);
+          })
+        ),
+
+        // Days Grid
+        React.createElement(
+          "div",
+          { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, marginBottom: 12 } },
+          Array.from({ length: firstDayIndex }).map(function (_, eIdx) {
+            return React.createElement("div", { key: "emp-" + eIdx, style: { height: 32 } });
+          }),
+          Array.from({ length: daysInMonth }).map(function (_, dayIdx) {
+            var dayNum = dayIdx + 1;
+            var isSelected = (dayNum === initD && viewMonth === initM && viewYear === initY);
+            var isSunday = (new Date(viewYear, viewMonth - 1, dayNum).getDay() === 0);
+
+            return React.createElement(
+              "button",
+              {
+                key: "day-" + dayNum,
+                type: "button",
+                onClick: function () { handleSelectDay(dayNum); },
+                style: {
+                  height: 32,
+                  borderRadius: 8,
+                  border: isSelected ? "1.5px solid " + T.teal : "1px solid transparent",
+                  background: isSelected ? T.teal : "transparent",
+                  color: isSelected ? "#FFFFFF" : isSunday ? T.coral : T.text,
+                  fontWeight: isSelected ? 900 : 700,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.12s ease"
+                }
+              },
+              dayNum
+            );
+          })
+        ),
+
+        // Quick Shortcut Buttons Footer
+        React.createElement(
+          "div",
+          { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, paddingTop: 10, borderTop: "1px solid " + T.border } },
+          React.createElement(
+            "div",
+            { style: { display: "flex", gap: 4 } },
+            React.createElement(
+              "button",
+              {
+                type: "button",
+                onClick: handleSetToday,
+                style: { background: T.panel, border: "1px solid " + T.border, color: T.text, fontSize: 11, fontWeight: 700, padding: "4px 8px", borderRadius: 6, cursor: "pointer" }
+              },
+              "⚡ Hari Ini"
+            ),
+            React.createElement(
+              "button",
+              {
+                type: "button",
+                onClick: handleSetYesterday,
+                style: { background: T.panel, border: "1px solid " + T.border, color: T.text, fontSize: 11, fontWeight: 700, padding: "4px 8px", borderRadius: 6, cursor: "pointer" }
+              },
+              "⏪ Kemarin"
+            )
+          ),
+          React.createElement(
+            "button",
+            {
+              type: "button",
+              onClick: function () { setIsOpen(false); },
+              style: { background: "transparent", border: "none", color: T.textSub, fontSize: 11, fontWeight: 700, cursor: "pointer", padding: "4px 6px" }
+            },
+            "Tutup"
+          )
+        )
+      )
+    )
   );
 }
 
@@ -931,7 +1269,7 @@ function ExpenseForm(p) {
       Modal,
       { open: p.open, onClose: p.onClose, title: p.initial ? "✏️ Edit Pengeluaran" : "➕ Tambah Pengeluaran", width: 500 },
       React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
-        React.createElement(DInput, { label: "Tanggal (DD/MM/YYYY)", value: tanggal, onChange: setTanggal }),
+        React.createElement(DDatePicker, { label: "Tanggal Pengeluaran", value: tanggal, onChange: setTanggal }),
         React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: function (v) { setNominal(formatRupiahInput(v)); }, placeholder: "0" })
       ),
       React.createElement("div", { style: { marginBottom: 14 } }, React.createElement(DInput, { label: "Keperluan / Deskripsi", value: keperluan, onChange: setKeperluan, placeholder: "Contoh: Makan siang, Beli baju...", autoFocus: true })),
@@ -1078,7 +1416,7 @@ function IncomeForm(p) {
     Modal,
     { open: p.open, onClose: p.onClose, title: p.initial ? "✏️ Edit Pemasukan" : "💵 Tambah Pemasukan", width: 480 },
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
-      React.createElement(DInput, { label: "Tanggal (DD/MM/YYYY)", value: tanggal, onChange: setTanggal }),
+      React.createElement(DDatePicker, { label: "Tanggal Pemasukan", value: tanggal, onChange: setTanggal }),
       React.createElement(DInput, { label: "Nominal (Rp)", value: nominal, onChange: function (v) { setNominal(formatRupiahInput(v)); }, placeholder: "0" })
     ),
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 } },
@@ -1173,7 +1511,7 @@ function SavingForm(p) {
       "div",
       { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 } },
       React.createElement(DSelect, { label: "Lokasi / Platform Tabungan", value: lokasi, onChange: setLokasi, options: ["KROM", "JAGO", "BIBIT", "BCA", "SEABANK", "Lainnya"] }),
-      React.createElement(DInput, { label: "Tanggal (DD/MM/YYYY)", value: tanggal, onChange: setTanggal, placeholder: "DD/MM/YYYY" })
+      React.createElement(DDatePicker, { label: "Tanggal Tabungan", value: tanggal, onChange: setTanggal })
     ),
     React.createElement(
       "div",
@@ -1412,7 +1750,7 @@ function TabunganView(p) {
       "div",
       {
         style: {
-          background: "#FFFFFF",
+          background: T.card,
           border: "1px solid " + T.border,
           borderRadius: 20,
           padding: "20px 24px",
@@ -1452,7 +1790,7 @@ function TabunganView(p) {
             {
               key: d.name,
               style: {
-                background: "#F8FAFC",
+                background: T.panel,
                 border: "1px solid " + T.border,
                 borderRadius: 14,
                 padding: "12px 14px",
@@ -1494,7 +1832,7 @@ function TabunganView(p) {
           onChange: function (e) { setSearch(e.target.value); },
           placeholder: "🔍 Cari catatan atau tanggal...",
           style: {
-            background: "#FFFFFF",
+            background: T.panel,
             border: "1px solid " + T.border,
             borderRadius: 10,
             padding: "8px 14px",
@@ -1529,7 +1867,7 @@ function TabunganView(p) {
               fontSize: 12,
               fontWeight: 700,
               color: T.text,
-              background: "#FFFFFF",
+              background: T.panel,
               outline: "none",
               cursor: "pointer"
             }
@@ -1546,7 +1884,7 @@ function TabunganView(p) {
       "div",
       {
         style: {
-          background: "#FFFFFF",
+          background: T.card,
           borderRadius: 20,
           border: "1px solid " + T.border,
           overflow: "hidden",
@@ -1562,7 +1900,7 @@ function TabunganView(p) {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            background: "#FAFAFA"
+            background: T.panel
           }
         },
         React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "📋 Riwayat Mutasi Tabungan"),
@@ -1679,7 +2017,7 @@ function TabunganView(p) {
                       onClick: function () { p.onEdit(item); },
                       title: "Edit transaksi",
                       style: {
-                        background: "#F8FAFC",
+                        background: T.panel,
                         border: "1px solid " + T.border,
                         color: T.textSub,
                         width: 32,
@@ -1792,7 +2130,7 @@ function TagihanForm(p) {
             style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 9, padding: "9px 12px", color: T.coral, fontSize: 15, fontWeight: 800, outline: "none", fontFamily: "inherit" }
           })
         ),
-        React.createElement(DInput, { label: "Tanggal Jatuh Tempo (DD/MM/YYYY)", value: tanggal, onChange: setTanggal, placeholder: "DD/MM/YYYY" })
+        React.createElement(DDatePicker, { label: "Tanggal Jatuh Tempo", value: tanggal, onChange: setTanggal })
       ),
       React.createElement(
         "div",
@@ -1877,7 +2215,7 @@ function BayarTagihanModal(p) {
         "div",
         { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } },
         React.createElement(DSelect, { label: "Metode Pembayaran", value: metode, onChange: setMetode, options: ["Transfer", "M-Banking", "E-Wallet", "Cash", "QRIS", "Debit", "Kredit"] }),
-        React.createElement(DInput, { label: "Tanggal Bayar (DD/MM/YYYY)", value: tanggal, onChange: setTanggal })
+        React.createElement(DDatePicker, { label: "Tanggal Pembayaran", value: tanggal, onChange: setTanggal })
       ),
       React.createElement(
         "div",
@@ -2244,7 +2582,7 @@ function DashboardView(p) {
       "div",
       {
         style: {
-          background: "#FFFFFF",
+          background: T.card,
           border: "1px solid " + T.border,
           borderRadius: 24,
           padding: "26px 30px",
@@ -2465,7 +2803,7 @@ function DashboardView(p) {
           "div",
           {
             style: {
-              background: "#FFFFFF",
+              background: T.card,
               borderRadius: 20,
               border: "1px solid " + T.border,
               padding: "20px 22px",
@@ -2564,7 +2902,7 @@ function DashboardView(p) {
           "div",
           {
             style: {
-              background: "#FFFFFF",
+              background: T.card,
               borderRadius: 20,
               border: "1px solid " + T.border,
               padding: "20px 22px",
@@ -2622,7 +2960,7 @@ function DashboardView(p) {
           "div",
           {
             style: {
-              background: "#FFFFFF",
+              background: T.card,
               borderRadius: 20,
               border: "1px solid " + T.border,
               padding: "20px 22px",
@@ -2749,7 +3087,7 @@ function PemasukanView(p) {
         "div",
         {
           style: {
-            background: "#FFFFFF",
+            background: T.card,
             borderRadius: 20,
             border: "1px solid " + T.border,
             padding: "20px 24px",
@@ -2778,7 +3116,7 @@ function PemasukanView(p) {
         "div",
         {
           style: {
-            background: "#FFFFFF",
+            background: T.card,
             borderRadius: 20,
             border: "1px solid " + T.border,
             padding: "20px 24px",
@@ -2865,7 +3203,7 @@ function PemasukanView(p) {
           onChange: function (e) { setSearch(e.target.value); },
           placeholder: "🔍 Cari sumber atau catatan pemasukan...",
           style: {
-            background: "#FFFFFF",
+            background: T.panel,
             border: "1px solid " + T.border,
             borderRadius: 10,
             padding: "8px 14px",
@@ -2898,7 +3236,7 @@ function PemasukanView(p) {
       "div",
       {
         style: {
-          background: "#FFFFFF",
+          background: T.card,
           borderRadius: 20,
           border: "1px solid " + T.border,
           overflow: "hidden",
@@ -2914,7 +3252,7 @@ function PemasukanView(p) {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            background: "#FAFAFA"
+            background: T.panel
           }
         },
         React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "📋 Daftar Riwayat Pemasukan"),
@@ -2945,7 +3283,7 @@ function PemasukanView(p) {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "10px 22px",
-                    background: "#F8FAFC",
+                    background: T.panel,
                     borderTop: "1px solid " + T.border,
                     borderBottom: "1px solid " + T.border
                   }
@@ -3057,7 +3395,7 @@ function PemasukanView(p) {
                           onClick: function () { p.onEdit(item); },
                           title: "Edit transaksi",
                           style: {
-                            background: "#F8FAFC",
+                            background: T.panel,
                             border: "1px solid " + T.border,
                             color: T.textSub,
                             width: 32,
@@ -3191,7 +3529,7 @@ function PengeluaranView(p) {
         "div",
         {
           style: {
-            background: "#FFFFFF",
+            background: T.card,
             borderRadius: 20,
             border: "1px solid " + T.border,
             padding: "20px 24px",
@@ -3220,7 +3558,7 @@ function PengeluaranView(p) {
         "div",
         {
           style: {
-            background: "#FFFFFF",
+            background: T.card,
             borderRadius: 20,
             border: "1px solid " + T.border,
             padding: "20px 24px",
@@ -3249,7 +3587,7 @@ function PengeluaranView(p) {
         "div",
         {
           style: {
-            background: "#FFFFFF",
+            background: T.card,
             borderRadius: 20,
             border: "1px solid " + T.border,
             padding: "20px 24px",
@@ -3302,7 +3640,7 @@ function PengeluaranView(p) {
           onChange: function (e) { sSearch(e.target.value); },
           placeholder: "🔍 Cari keperluan atau catatan...",
           style: {
-            background: "#FFFFFF",
+            background: T.panel,
             border: "1px solid " + T.border,
             borderRadius: 10,
             padding: "8px 14px",
@@ -3328,7 +3666,7 @@ function PengeluaranView(p) {
           {
             onClick: p.onOpenRepeat,
             style: {
-              background: "#F8FAFC",
+              background: T.panel,
               border: "1px solid " + T.border,
               color: T.text,
               borderRadius: 12,
@@ -3403,7 +3741,7 @@ function PengeluaranView(p) {
       "div",
       {
         style: {
-          background: "#FFFFFF",
+          background: T.card,
           borderRadius: 20,
           border: "1px solid " + T.border,
           overflow: "hidden",
@@ -3419,7 +3757,7 @@ function PengeluaranView(p) {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            background: "#FAFAFA"
+            background: T.panel
           }
         },
         React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "📋 Daftar Catatan Pengeluaran"),
@@ -3450,7 +3788,7 @@ function PengeluaranView(p) {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "10px 22px",
-                    background: "#F8FAFC",
+                    background: T.panel,
                     borderTop: "1px solid " + T.border,
                     borderBottom: "1px solid " + T.border
                   }
@@ -3598,7 +3936,7 @@ function PengeluaranView(p) {
                           onClick: function () { p.onEdit(item); },
                           title: "Edit transaksi",
                           style: {
-                            background: "#F8FAFC",
+                            background: T.panel,
                             border: "1px solid " + T.border,
                             color: T.textSub,
                             width: 32,
@@ -3732,7 +4070,7 @@ function AnalisisBulananView(p) {
             display: "flex",
             alignItems: "center",
             gap: 10,
-            background: "#FFFFFF",
+            background: T.card,
             padding: "8px 16px",
             borderRadius: 14,
             border: "1px solid " + T.border,
@@ -3752,7 +4090,7 @@ function AnalisisBulananView(p) {
               fontSize: 12,
               fontWeight: 800,
               color: T.teal,
-              background: "#F8FAFC",
+              background: T.panel,
               cursor: "pointer",
               outline: "none"
             }
@@ -3780,7 +4118,7 @@ function AnalisisBulananView(p) {
         "div",
         {
           style: {
-            background: "#FFFFFF",
+            background: T.card,
             borderRadius: 20,
             border: "1px solid " + T.border,
             padding: "20px 24px",
@@ -3809,7 +4147,7 @@ function AnalisisBulananView(p) {
         "div",
         {
           style: {
-            background: "#FFFFFF",
+            background: T.card,
             borderRadius: 20,
             border: "1px solid " + T.border,
             padding: "20px 24px",
@@ -3838,7 +4176,7 @@ function AnalisisBulananView(p) {
         "div",
         {
           style: {
-            background: "#FFFFFF",
+            background: T.card,
             borderRadius: 20,
             border: "1px solid " + T.border,
             padding: "20px 24px",
@@ -3899,7 +4237,7 @@ function AnalisisBulananView(p) {
           {
             key: mKey,
             style: {
-              background: "#FFFFFF",
+              background: T.card,
               borderRadius: 22,
               border: isCurrent ? "2px solid " + T.teal : "1px solid " + T.border,
               padding: "24px 28px",
@@ -3971,19 +4309,19 @@ function AnalisisBulananView(p) {
             { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: topCats.length > 0 ? 18 : 0 } },
             React.createElement(
               "div",
-              { style: { background: "#F8FAFC", padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
+              { style: { background: T.panel, padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
               React.createElement("div", { style: { fontSize: 11, color: "#059669", fontWeight: 800, textTransform: "uppercase" } }, "Pemasukan (" + mInc.length + " tx)"),
               React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.text, marginTop: 4 } }, "+" + fmt(tInc))
             ),
             React.createElement(
               "div",
-              { style: { background: "#F8FAFC", padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
+              { style: { background: T.panel, padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
               React.createElement("div", { style: { fontSize: 11, color: "#E11D48", fontWeight: 800, textTransform: "uppercase" } }, "Pengeluaran (" + mExp.length + " tx)"),
               React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.text, marginTop: 4 } }, "-" + fmt(tExp))
             ),
             React.createElement(
               "div",
-              { style: { background: "#F8FAFC", padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
+              { style: { background: T.panel, padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
               React.createElement("div", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase" } }, "Sisa Saldo Kas"),
               React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: net >= 0 ? "#059669" : "#E11D48", marginTop: 4 } }, (net >= 0 ? "+" : "") + fmt(net))
             )
@@ -4008,7 +4346,7 @@ function AnalisisBulananView(p) {
                   {
                     key: c.name,
                     style: {
-                      background: "#F8FAFC",
+                      background: T.panel,
                       borderRadius: 12,
                       padding: "10px 14px",
                       border: "1px solid " + T.border,
@@ -4285,7 +4623,7 @@ function KalenderPengeluaranView(p) {
         "div",
         {
           style: {
-            background: "#FFFFFF",
+            background: T.card,
             border: "1px solid " + T.border,
             borderRadius: 14,
             padding: "8px 16px",
@@ -4310,7 +4648,7 @@ function KalenderPengeluaranView(p) {
       "div",
       {
         style: {
-          background: "#FFFFFF",
+          background: T.card,
           borderRadius: 18,
           border: "1px solid " + T.border,
           padding: "12px 18px",
@@ -4331,7 +4669,7 @@ function KalenderPengeluaranView(p) {
           {
             onClick: prevMonth,
             style: {
-              background: "#F8FAFC",
+              background: T.panel,
               border: "1px solid " + T.border,
               borderRadius: 10,
               padding: "6px 14px",
@@ -4375,7 +4713,7 @@ function KalenderPengeluaranView(p) {
         {
           onClick: nextMonth,
           style: {
-            background: "#F8FAFC",
+            background: T.panel,
             border: "1px solid " + T.border,
             borderRadius: 10,
             padding: "6px 14px",
@@ -4403,7 +4741,7 @@ function KalenderPengeluaranView(p) {
         {
           style: {
             flex: "1 1 540px",
-            background: "#FFFFFF",
+            background: T.card,
             borderRadius: 22,
             border: "1px solid " + T.border,
             padding: "20px 22px",
@@ -4568,7 +4906,7 @@ function KalenderPengeluaranView(p) {
         {
           style: {
             flex: "1 1 340px",
-            background: "#FFFFFF",
+            background: T.card,
             borderRadius: 22,
             border: "1px solid " + T.border,
             padding: "22px 24px",
@@ -4615,7 +4953,7 @@ function KalenderPengeluaranView(p) {
               "div",
               {
                 style: {
-                  background: "#F8FAFC",
+                  background: T.panel,
                   padding: "14px 18px",
                   borderRadius: 16,
                   border: "1px solid " + T.border
@@ -4654,7 +4992,7 @@ function KalenderPengeluaranView(p) {
                       flexDirection: "column",
                       gap: 8,
                       padding: "12px 14px",
-                      background: "#FFFFFF",
+                      background: T.surface,
                       borderRadius: 14,
                       border: "1px solid " + T.border,
                       cursor: "pointer",
@@ -4704,7 +5042,7 @@ function KalenderPengeluaranView(p) {
                   // Memo Details Box
                   memoLines.length > 0 && React.createElement(
                     "div",
-                    { style: { background: "#F8FAFC", border: "1px solid " + T.border, borderRadius: 8, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3, marginTop: 2 } },
+                    { style: { background: T.panel, border: "1px solid " + T.border, borderRadius: 8, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3, marginTop: 2 } },
                     React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: T.teal, display: "flex", alignItems: "center", gap: 4 } }, "📌 Memo Rincian:"),
                     memoLines.map(function (line, li) {
                       return React.createElement("div", { key: li, style: { fontSize: 11, color: T.text, lineHeight: 1.4 } }, "• " + line);
@@ -4759,7 +5097,7 @@ function TopNavbar(p) {
     "header",
     {
       style: {
-        background: "#FFFFFF",
+        background: T.surface,
         borderBottom: "1px solid " + T.border,
         position: "sticky",
         top: 0,
@@ -4815,6 +5153,29 @@ function TopNavbar(p) {
         React.createElement(
           "div",
           { style: { display: "flex", alignItems: "center", gap: 6, flexShrink: 0 } },
+          // Theme Switcher (Mode Siang / Mode Malam)
+          React.createElement(
+            "button",
+            {
+              onClick: p.onToggleTheme,
+              title: p.isDark ? "Ganti ke Mode Terang (Siang)" : "Ganti ke Mode Gelap (Malam)",
+              style: {
+                padding: "5px 9px",
+                borderRadius: 7,
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: "pointer",
+                background: p.isDark ? "rgba(251, 191, 36, 0.15)" : T.panel,
+                border: "1px solid " + (p.isDark ? "rgba(251, 191, 36, 0.35)" : T.border),
+                color: p.isDark ? "#FBBF24" : T.textSub,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                transition: "all 0.15s ease"
+              }
+            },
+            p.isDark ? "🌙 Gelap" : "☀️ Terang"
+          ),
           React.createElement(
             "button",
             {
@@ -4945,9 +5306,9 @@ function TopNavbar(p) {
                 flex: 1,
                 padding: "10px 0",
                 border: "none",
-                borderBottom: active ? "2.5px solid #0284C7" : "2.5px solid transparent",
+                borderBottom: active ? ("2.5px solid " + T.teal) : "2.5px solid transparent",
                 background: "transparent",
-                color: active ? "#0284C7" : T.textSub,
+                color: active ? T.teal : T.textSub,
                 fontSize: 12,
                 fontWeight: active ? 800 : 600,
                 cursor: "pointer",
@@ -5045,7 +5406,7 @@ function QuickExecuteRepeatModal(p) {
         React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontStyle: "italic" } }, "💡 Ubah angka di atas jika terjadi kenaikan atau penurunan harga.")
       ),
 
-      React.createElement(DInput, { label: "Tanggal Pengeluaran", value: tanggal, onChange: setTanggal }),
+      React.createElement(DDatePicker, { label: "Tanggal Pengeluaran", value: tanggal, onChange: setTanggal }),
 
       React.createElement(
         "div",
@@ -5305,6 +5666,7 @@ function App() {
   var _dst = useState("setoran"), defaultSavTipe = _dst[0], setDST = _dst[1];
   var _dt = useState(null), deleteTarget = _dt[0], setDT = _dt[1];
   var _pm = useState(window.privacyMode || false), privacyMode = _pm[0], setPrivacyMode = _pm[1];
+  var _thm = useState(function () { return !!window.darkMode; }), isDark = _thm[0], setIsDark = _thm[1];
   var _sro = useState(false), showRepeatModal = _sro[0], setShowRepeatModal = _sro[1];
   var _pdd = useState(function () {
     try {
@@ -5335,6 +5697,17 @@ function App() {
     } catch (e) {}
     tk.show(next ? "Mode Privasi Aktif (Nominal Disamarkan)" : "Mode Privasi Nonaktif", "info");
   };
+
+  var toggleTheme = useCallback(function () {
+    var next = !isDark;
+    setIsDark(next);
+    applyTheme(next);
+    tk.show(next ? "🌙 Mode Malam aktif" : "☀️ Mode Terang aktif", "info");
+  }, [isDark, tk]);
+
+  useEffect(function () {
+    applyTheme(isDark);
+  }, []);
 
   useEffect(function () {
     window.Api.getSession().then(function (u) {
@@ -5454,6 +5827,8 @@ function App() {
       onLogout: handleLogout,
       privacyMode: privacyMode,
       onTogglePrivacy: togglePrivacyMode,
+      isDark: isDark,
+      onToggleTheme: toggleTheme,
       paydayDate: paydayDate,
       onPromptPayday: function () {
         var res = prompt("Masukkan Tanggal Siklus Gajian (1 - 31):", String(paydayDate));

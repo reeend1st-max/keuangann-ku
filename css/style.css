@@ -15,6 +15,33 @@ button{font-family:inherit;}
 #boot-error pre{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:16px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#475569;margin-top:12px;}
 
 /* Responsive styles for mobile screens */
+body.dark-mode {
+  background: #0B0F19 !important;
+  color: #F8FAFC !important;
+}
+body.dark-mode select {
+  color-scheme: dark !important;
+  background: #1A2438 !important;
+  color: #F8FAFC !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+body.dark-mode input,
+body.dark-mode textarea {
+  color: #F8FAFC !important;
+  background: #1A2438 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #64748B !important;
+}
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: #334155 !important;
+}
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #475569 !important;
+}
+
 @media (max-width: 768px) {
   html, body {
     overflow-y: auto !important;
