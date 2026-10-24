@@ -1385,7 +1385,7 @@ function TabunganView(p) {
         React.createElement(
           "div",
           { style: { display: "flex", alignItems: "center", gap: 10 } },
-          React.createElement("div", { width: 34, height: 34, borderRadius: 10, background: "rgba(245, 158, 11, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } }, "↘"),
+          React.createElement("div", { style: { width: 34, height: 34, borderRadius: 10, background: "rgba(245, 158, 11, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } }, "↘"),
           React.createElement(
             "div",
             null,
@@ -1396,7 +1396,7 @@ function TabunganView(p) {
         React.createElement(
           "div",
           { style: { display: "flex", alignItems: "center", gap: 10 } },
-          React.createElement("div", { width: 34, height: 34, borderRadius: 10, background: "rgba(2, 132, 199, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } }, "🏦"),
+          React.createElement("div", { style: { width: 34, height: 34, borderRadius: 10, background: "rgba(2, 132, 199, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } }, "🏦"),
           React.createElement(
             "div",
             null,
@@ -4452,12 +4452,12 @@ function KalenderPengeluaranView(p) {
 function TopNavbar(p) {
   var navItems = [
     { id: "dashboard", icon: "🏠", label: "Ringkasan" },
-    { id: "pemasukan", icon: "👛", label: "Pemasukan" },
-    { id: "pengeluaran", icon: "🧾", label: "Pengeluaran" },
+    { id: "pemasukan", icon: "💵", label: "Masuk" },
+    { id: "pengeluaran", icon: "💸", label: "Keluar" },
     { id: "kalender-harian", icon: "📅", label: "Kalender" },
-    { id: "tabungan", icon: "🏛️", label: "Tabungan" },
-    { id: "analisis-bulanan", icon: "🌖", label: "Analisis Bulanan" },
-    { id: "analisis-tahunan", icon: "📊", label: "Analisis Tahunan" },
+    { id: "tabungan", icon: "💎", label: "Tabungan" },
+    { id: "analisis-bulanan", icon: "📈", label: "Bulanan" },
+    { id: "analisis-tahunan", icon: "📊", label: "Tahunan" },
   ];
 
   var initial = (p.user && p.user.name && p.user.name.trim()) ? p.user.name.trim().charAt(0).toUpperCase() : "U";
@@ -4471,7 +4471,7 @@ function TopNavbar(p) {
         position: "sticky",
         top: 0,
         zIndex: 100,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         userSelect: "none"
       }
     },
@@ -4481,192 +4481,195 @@ function TopNavbar(p) {
         style: {
           maxWidth: 1280,
           margin: "0 auto",
-          padding: "0 20px",
-          height: 64,
+          padding: "0 16px",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16
+          flexDirection: "column"
         }
       },
-      // Left: Logo & Nav tabs
+      // Row 1: Brand + Action Pills + Profile
       React.createElement(
         "div",
-        { style: { display: "flex", alignItems: "center", gap: 20, overflowX: "auto" } },
+        {
+          style: {
+            height: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12
+          }
+        },
         // Brand
         React.createElement(
           "div",
           {
             onClick: function () { p.onView("dashboard"); },
-            style: { display: "flex", alignItems: "center", gap: 10, cursor: "pointer", flexShrink: 0 }
+            style: { display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }
           },
           React.createElement(
             "div",
-            { style: { width: 34, height: 34, borderRadius: 10, background: "#0F172A", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, boxShadow: "0 2px 6px rgba(15,23,42,0.15)" } },
+            { style: { width: 30, height: 30, borderRadius: 8, background: "#0F172A", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, boxShadow: "0 2px 6px rgba(15,23,42,0.15)" } },
             "💰"
           ),
           React.createElement(
             "div",
             null,
-            React.createElement("div", { style: { fontSize: 15, fontWeight: 900, color: T.text, letterSpacing: -0.4, display: "flex", alignItems: "center", gap: 5 } },
-              "KeuanganKu",
-              React.createElement("span", { style: { width: 7, height: 7, borderRadius: "50%", background: "#10B981" } })
-            ),
-            React.createElement("div", { style: { fontSize: 9, color: T.textSub, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "FINTECH EDITION")
+            React.createElement("div", { style: { fontSize: 14, fontWeight: 900, color: T.text, letterSpacing: -0.4, lineHeight: 1.1 } }, "KeuanganKu"),
+            React.createElement("div", { style: { fontSize: 8, color: T.textSub, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase" } }, "FINTECH EDITION")
           )
         ),
-        // Tabs
-        React.createElement(
-          "nav",
-          {
-            style: {
-              display: "flex",
-              alignItems: "center",
-              background: T.panel,
-              padding: "4px",
-              borderRadius: 12,
-              gap: 2,
-              flexShrink: 0
-            }
-          },
-          navItems.map(function (item) {
-            var active = p.view === item.id;
-            return React.createElement(
-              "button",
-              {
-                key: item.id,
-                onClick: function () { p.onView(item.id); },
-                style: {
-                  padding: "7px 12px",
-                  borderRadius: 9,
-                  border: "none",
-                  background: active ? "#FFFFFF" : "transparent",
-                  color: active ? T.text : T.textSub,
-                  fontSize: 12,
-                  fontWeight: active ? 800 : 600,
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  boxShadow: active ? "0 1px 3px rgba(0,0,0,0.06)" : "none",
-                  transition: "all .12s ease"
-                }
-              },
-              React.createElement("span", { style: { fontSize: 13 } }, item.icon),
-              item.label
-            );
-          })
-        )
-      ),
 
-      // Right: Action Pills & User Profile
-      React.createElement(
-        "div",
-        { style: { display: "flex", alignItems: "center", gap: 8, flexShrink: 0 } },
-        React.createElement(
-          "button",
-          {
-            onClick: p.onTogglePrivacy,
-            title: p.privacyMode ? "Nonaktifkan Mode Privasi" : "Aktifkan Mode Privasi",
-            style: {
-              padding: "6px 11px",
-              borderRadius: 8,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              background: p.privacyMode ? "rgba(2, 132, 199, 0.1)" : T.panel,
-              border: "1px solid " + (p.privacyMode ? "rgba(2, 132, 199, 0.3)" : T.border),
-              color: p.privacyMode ? T.teal : T.textSub,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4
-            }
-          },
-          p.privacyMode ? "🙈 Privasi On" : "👁️ Privasi Off"
-        ),
-        React.createElement(
-          "button",
-          {
-            onClick: p.onPromptPayday,
-            title: "Ubah Tanggal Gajian",
-            style: {
-              padding: "6px 11px",
-              borderRadius: 8,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              background: T.panel,
-              border: "1px solid " + T.border,
-              color: T.teal,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4
-            }
-          },
-          "🗓️ Tgl " + p.paydayDate
-        ),
-        React.createElement(
-          "button",
-          {
-            onClick: p.onOpenRepeat,
-            title: "Repeat Order",
-            style: {
-              padding: "6px 11px",
-              borderRadius: 8,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: "pointer",
-              background: T.panel,
-              border: "1px solid " + T.border,
-              color: T.textSub,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4
-            }
-          },
-          "🔁 Repeat"
-        ),
-        React.createElement("div", { style: { width: 1, height: 24, background: T.border, margin: "0 2px" } }),
+        // Right: Action Pills & User Profile
         React.createElement(
           "div",
-          { style: { display: "flex", alignItems: "center", gap: 7 } },
+          { style: { display: "flex", alignItems: "center", gap: 6, flexShrink: 0 } },
           React.createElement(
-            "div",
+            "button",
             {
+              onClick: p.onTogglePrivacy,
+              title: p.privacyMode ? "Nonaktifkan Mode Privasi" : "Aktifkan Mode Privasi",
               style: {
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #0F172A, #334155)",
-                color: "#FFFFFF",
-                fontWeight: 800,
-                fontSize: 13,
-                display: "flex",
+                padding: "5px 9px",
+                borderRadius: 7,
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: "pointer",
+                background: p.privacyMode ? "rgba(2, 132, 199, 0.1)" : T.panel,
+                border: "1px solid " + (p.privacyMode ? "rgba(2, 132, 199, 0.3)" : T.border),
+                color: p.privacyMode ? T.teal : T.textSub,
+                display: "inline-flex",
                 alignItems: "center",
-                justifyContent: "center"
+                gap: 3
               }
             },
-            initial
+            p.privacyMode ? "🙈 On" : "👁️ Off"
           ),
           React.createElement(
             "button",
             {
-              onClick: p.onLogout,
-              title: "Logout",
+              onClick: p.onPromptPayday,
+              title: "Ubah Tanggal Gajian",
               style: {
-                background: "rgba(239, 68, 68, 0.08)",
-                border: "1px solid rgba(239, 68, 68, 0.2)",
-                color: T.coral,
                 padding: "5px 9px",
                 borderRadius: 7,
-                cursor: "pointer",
                 fontSize: 11,
-                fontWeight: 800
+                fontWeight: 700,
+                cursor: "pointer",
+                background: T.panel,
+                border: "1px solid " + T.border,
+                color: T.teal,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3
               }
             },
-            "Keluar"
+            "🗓️ " + p.paydayDate
+          ),
+          React.createElement(
+            "button",
+            {
+              onClick: p.onOpenRepeat,
+              title: "Repeat Order",
+              style: {
+                padding: "5px 9px",
+                borderRadius: 7,
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: "pointer",
+                background: T.panel,
+                border: "1px solid " + T.border,
+                color: T.textSub,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3
+              }
+            },
+            "🔁"
+          ),
+          React.createElement("div", { style: { width: 1, height: 20, background: T.border, margin: "0 2px" } }),
+          React.createElement(
+            "div",
+            { style: { display: "flex", alignItems: "center", gap: 6 } },
+            React.createElement(
+              "div",
+              {
+                style: {
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #0F172A, #334155)",
+                  color: "#FFFFFF",
+                  fontWeight: 800,
+                  fontSize: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }
+              },
+              initial
+            ),
+            React.createElement(
+              "button",
+              {
+                onClick: p.onLogout,
+                title: "Logout",
+                style: {
+                  background: "rgba(239, 68, 68, 0.08)",
+                  border: "1px solid rgba(239, 68, 68, 0.2)",
+                  color: T.coral,
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 10,
+                  fontWeight: 800
+                }
+              },
+              "Keluar"
+            )
           )
         )
+      ),
+
+      // Row 2: Navigation Tabs (full width, no scroll)
+      React.createElement(
+        "nav",
+        {
+          style: {
+            display: "flex",
+            alignItems: "center",
+            gap: 0,
+            paddingBottom: 0,
+            width: "100%"
+          }
+        },
+        navItems.map(function (item) {
+          var active = p.view === item.id;
+          return React.createElement(
+            "button",
+            {
+              key: item.id,
+              onClick: function () { p.onView(item.id); },
+              style: {
+                flex: 1,
+                padding: "10px 0",
+                border: "none",
+                borderBottom: active ? "2.5px solid #0284C7" : "2.5px solid transparent",
+                background: "transparent",
+                color: active ? "#0284C7" : T.textSub,
+                fontSize: 12,
+                fontWeight: active ? 800 : 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 5,
+                transition: "all .15s ease",
+                whiteSpace: "nowrap"
+              }
+            },
+            React.createElement("span", { style: { fontSize: 14 } }, item.icon),
+            item.label
+          );
+        })
       )
     )
   );
