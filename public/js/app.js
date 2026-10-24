@@ -1193,136 +1193,526 @@ function SavingForm(p) {
 
 // ── Tabungan View ─────────────────────────────────────────────────────────────
 function TabunganView(p) {
-  var setoran = p.savings.filter(function (s) { return s.tipe === "setoran"; });
-  var penarikan = p.savings.filter(function (s) { return s.tipe === "penarikan"; });
-  var tSetor = setoran.reduce(function (a, s) { return a + s.nominal; }, 0);
-  var tTarik = penarikan.reduce(function (a, s) { return a + s.nominal; }, 0);
+  var setoran = (p.savings || []).filter(function (s) { return s.tipe === "setoran"; });
+  var penarikan = (p.savings || []).filter(function (s) { return s.tipe === "penarikan"; });
+  var tSetor = setoran.reduce(function (a, s) { return a + (s.nominal || 0); }, 0);
+  var tTarik = penarikan.reduce(function (a, s) { return a + (s.nominal || 0); }, 0);
   var saldo = tSetor - tTarik;
 
-  // Calculate allocation percentages per active platform
+  var _fTipe = useState("Semua"), fTipe = _fTipe[0], setFTipe = _fTipe[1];
+  var _fLoc = useState("Semua"), fLoc = _fLoc[0], setFLoc = _fLoc[1];
+  var _search = useState(""), search = _search[0], setSearch = _search[1];
+
   var ALL_LOCS = ["KROM", "JAGO", "BIBIT", "BCA", "SEABANK", "Lainnya"];
-  var LOC_COLORS = {
-    KROM: "#3B82F6",
-    JAGO: "#F59E0B",
-    BIBIT: "#10B981",
-    BCA: "#0284C7",
-    SEABANK: "#8B5CF6",
-    Lainnya: "#64748B"
+  var LOC_META = {
+    KROM: { color: "#2563EB", bg: "rgba(37, 99, 235, 0.1)", icon: "🏛️" },
+    JAGO: { color: "#D97706", bg: "rgba(217, 119, 6, 0.1)", icon: "🦊" },
+    BIBIT: { color: "#059669", bg: "rgba(5, 150, 105, 0.1)", icon: "🌱" },
+    BCA: { color: "#0284C7", bg: "rgba(2, 132, 199, 0.1)", icon: "🏦" },
+    SEABANK: { color: "#7C3AED", bg: "rgba(124, 58, 237, 0.1)", icon: "🌊" },
+    Lainnya: { color: "#475569", bg: "rgba(71, 85, 105, 0.1)", icon: "📁" }
   };
 
   var locAlloc = ALL_LOCS.map(function (loc) {
-    var s = p.savings.filter(function (x) { return (x.lokasi || "KROM") === loc && x.tipe === "setoran"; }).reduce(function (a, x) { return a + x.nominal; }, 0);
-    var t = p.savings.filter(function (x) { return (x.lokasi || "KROM") === loc && x.tipe === "penarikan"; }).reduce(function (a, x) { return a + x.nominal; }, 0);
+    var s = (p.savings || []).filter(function (x) { return (x.lokasi || "KROM") === loc && x.tipe === "setoran"; }).reduce(function (a, x) { return a + (x.nominal || 0); }, 0);
+    var t = (p.savings || []).filter(function (x) { return (x.lokasi || "KROM") === loc && x.tipe === "penarikan"; }).reduce(function (a, x) { return a + (x.nominal || 0); }, 0);
     return { name: loc, net: s - t };
-  }).filter(function (d) { return d.net > 0; });
+  });
 
-  var totalAllocNet = locAlloc.reduce(function (a, d) { return a + d.net; }, 0);
+  var activeAlloc = locAlloc.filter(function (d) { return d.net > 0; });
+  var totalAllocNet = activeAlloc.reduce(function (a, d) { return a + d.net; }, 0);
+
+  var filteredSavings = (p.savings || []).filter(function (item) {
+    if (fTipe !== "Semua" && item.tipe !== fTipe) return false;
+    if (fLoc !== "Semua" && (item.lokasi || "KROM") !== fLoc) return false;
+    if (search) {
+      var q = search.toLowerCase();
+      var matchCatatan = (item.catatan || "").toLowerCase().indexOf(q) >= 0;
+      var matchLokasi = (item.lokasi || "KROM").toLowerCase().indexOf(q) >= 0;
+      var matchTanggal = (item.tanggal || "").indexOf(q) >= 0;
+      if (!matchCatatan && !matchLokasi && !matchTanggal) return false;
+    }
+    return true;
+  });
+
+  var sortedSavings = sortNewestFirst(filteredSavings);
+
+  function pill(label, active, col, fn) {
+    return React.createElement(
+      "button",
+      {
+        key: label,
+        onClick: fn,
+        style: {
+          padding: "6px 14px",
+          borderRadius: 20,
+          fontSize: 12,
+          fontWeight: 700,
+          border: active ? "1.5px solid " + col : "1px solid " + T.border,
+          background: active ? col : "#FFFFFF",
+          color: active ? "#FFFFFF" : T.textSub,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          transition: "all 0.15s ease",
+          boxShadow: active ? "0 2px 6px " + col + "40" : "none"
+        }
+      },
+      label
+    );
+  }
 
   return React.createElement(
     "div",
-    { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
-    // 1. Banner Saldo Utama Tabungan
+    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
+
+    // 1. HERO VAULT CARD (Wise / Revolut Dark Theme)
     React.createElement(
       "div",
-      { style: { background: "linear-gradient(135deg, #1E3A8A, #0284C7)", borderRadius: 18, padding: "24px 28px", border: "1px solid " + T.border, marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, color: "#FFFFFF" } },
+      {
+        style: {
+          background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
+          borderRadius: 24,
+          padding: "26px 30px",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          marginBottom: 24,
+          boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1)",
+          color: "#FFFFFF"
+        }
+      },
+      // Header Label & Status Tag
       React.createElement(
         "div",
-        null,
-        React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 } }, "Total Saldo Tabungan Keseluruhan"),
-        React.createElement("div", { style: { fontSize: 36, fontWeight: 900, color: "#FFFFFF", marginTop: 4 } }, fmt(saldo)),
+        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 } },
         React.createElement(
-          "div",
-          { style: { display: "flex", gap: 20, marginTop: 12, fontSize: 12, color: "rgba(255,255,255,0.9)" } },
-          React.createElement("span", null, "💚 Total Ditabung: ", React.createElement("strong", { style: { color: "#4ADE80" } }, fmt(tSetor))),
-          React.createElement("span", null, "🟡 Total Ditarik: ", React.createElement("strong", { style: { color: "#FBBF24" } }, fmt(tTarik)))
+          "span",
+          { style: { fontSize: 11, color: "rgba(255, 255, 255, 0.7)", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2 } },
+          "PORTOFOLIO TABUNGAN & SIMPANAN"
+        ),
+        React.createElement(
+          "span",
+          { style: { background: "rgba(16, 185, 129, 0.15)", color: "#34D399", border: "1px solid rgba(16, 185, 129, 0.3)", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20 } },
+          "💎 Dana Cadangan Aktif"
         )
       ),
+
+      // Balance & Action Buttons Row
       React.createElement(
         "div",
-        { style: { display: "flex", gap: 10, flexWrap: "wrap" } },
-        React.createElement(Btn, { color: T.sage, onClick: function () { p.onAdd("setoran"); } }, "💚 + Setor Tabungan"),
-        React.createElement(Btn, { color: T.amber, onClick: function () { p.onAdd("penarikan"); } }, "🟡 - Tarik Tabungan")
+        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 18 } },
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 34, fontWeight: 900, letterSpacing: -0.5, color: "#FFFFFF" } }, fmt(saldo)),
+          React.createElement(
+            "div",
+            { style: { fontSize: 12, color: "rgba(255, 255, 255, 0.7)", marginTop: 4 } },
+            "Total saldo bersih yang disimpan di " + activeAlloc.length + " platform perbankan / investasi"
+          )
+        ),
+        React.createElement(
+          "div",
+          { style: { display: "flex", gap: 10, flexWrap: "wrap" } },
+          React.createElement(
+            "button",
+            {
+              onClick: function () { p.onAdd("setoran"); },
+              style: {
+                background: "#059669",
+                color: "#FFFFFF",
+                border: "none",
+                borderRadius: 12,
+                padding: "10px 18px",
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                boxShadow: "0 4px 12px rgba(5, 150, 105, 0.3)",
+                transition: "all 0.15s ease"
+              }
+            },
+            "💚 + Setor Tabungan"
+          ),
+          React.createElement(
+            "button",
+            {
+              onClick: function () { p.onAdd("penarikan"); },
+              style: {
+                background: "rgba(255, 255, 255, 0.12)",
+                color: "#FFFFFF",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: 12,
+                padding: "10px 18px",
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                transition: "all 0.15s ease"
+              }
+            },
+            "🟡 - Tarik Tabungan"
+          )
+        )
+      ),
+
+      // Integrated Stats Strip
+      React.createElement(
+        "div",
+        {
+          style: {
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: 14,
+            marginTop: 22,
+            paddingTop: 18,
+            borderTop: "1px solid rgba(255, 255, 255, 0.1)"
+          }
+        },
+        React.createElement(
+          "div",
+          { style: { display: "flex", alignItems: "center", gap: 10 } },
+          React.createElement("div", { style: { width: 34, height: 34, borderRadius: 10, background: "rgba(16, 185, 129, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } }, "↗"),
+          React.createElement(
+            "div",
+            null,
+            React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: 700 } }, "TOTAL DISETOR"),
+            React.createElement("div", { style: { fontSize: 15, fontWeight: 800, color: "#34D399", marginTop: 1 } }, "+" + fmt(tSetor))
+          )
+        ),
+        React.createElement(
+          "div",
+          { style: { display: "flex", alignItems: "center", gap: 10 } },
+          React.createElement("div", { width: 34, height: 34, borderRadius: 10, background: "rgba(245, 158, 11, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } }, "↘"),
+          React.createElement(
+            "div",
+            null,
+            React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: 700 } }, "TOTAL DITARIK"),
+            React.createElement("div", { style: { fontSize: 15, fontWeight: 800, color: "#FBBF24", marginTop: 1 } }, "-" + fmt(tTarik))
+          )
+        ),
+        React.createElement(
+          "div",
+          { style: { display: "flex", alignItems: "center", gap: 10 } },
+          React.createElement("div", { width: 34, height: 34, borderRadius: 10, background: "rgba(2, 132, 199, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 } }, "🏦"),
+          React.createElement(
+            "div",
+            null,
+            React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.65)", fontWeight: 700 } }, "JUMLAH TRANSAKSI"),
+            React.createElement("div", { style: { fontSize: 15, fontWeight: 800, color: "#38BDF8", marginTop: 1 } }, (p.savings || []).length + " Mutasi")
+          )
+        )
       )
     ),
 
-    // 2. Widget Mini "Alokasi Tabungan (%)" (Ringkasan ~75px)
-    locAlloc.length > 0 && React.createElement(
+    // 2. ASSET ALLOCATION GRID & STACKED BAR
+    activeAlloc.length > 0 && React.createElement(
       "div",
-      { style: { background: T.card, border: "1px solid " + T.border, borderRadius: 14, padding: "12px 18px", marginBottom: 16 } },
+      {
+        style: {
+          background: "#FFFFFF",
+          border: "1px solid " + T.border,
+          borderRadius: 20,
+          padding: "20px 24px",
+          marginBottom: 24,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+        }
+      },
       React.createElement(
         "div",
-        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
-        React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: T.textSub, textTransform: "uppercase", letterSpacing: 0.8 } }, "📊 Alokasi Tabungan (%)"),
-        React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: T.teal } }, locAlloc.length + " Platform Aktif")
+        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
+        React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "📊 Distribusi Aset per Platform"),
+        React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: T.teal } }, activeAlloc.length + " Platform Terhubung")
       ),
-      // Stacked Progress Bar (14px)
+      // Multi-segment progress bar
       React.createElement(
         "div",
-        { style: { height: 14, background: T.panel, borderRadius: 7, overflow: "hidden", display: "flex", marginBottom: 10 } },
-        locAlloc.map(function (d) {
+        { style: { height: 10, background: "#F1F5F9", borderRadius: 5, overflow: "hidden", display: "flex", marginBottom: 16 } },
+        activeAlloc.map(function (d) {
           var pct = totalAllocNet > 0 ? (d.net / totalAllocNet) * 100 : 0;
+          var meta = LOC_META[d.name] || LOC_META.Lainnya;
           return React.createElement("div", {
             key: d.name,
             title: d.name + ": " + Math.round(pct) + "% (" + fmt(d.net) + ")",
-            style: { height: "100%", width: pct + "%", background: LOC_COLORS[d.name] || "#0284C7", transition: "width .3s ease" }
+            style: { height: "100%", width: pct + "%", background: meta.color, transition: "width .3s ease" }
           });
         })
       ),
-      // Horizontal Chips
+      // Platform Cards Grid
       React.createElement(
         "div",
-        { style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" } },
-        locAlloc.map(function (d) {
-          var pct = totalAllocNet > 0 ? Math.round((d.net / totalAllocNet) * 100) : 0;
-          var col = LOC_COLORS[d.name] || "#0284C7";
+        { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 } },
+        activeAlloc.map(function (d) {
+          var pct = totalAllocNet > 0 ? ((d.net / totalAllocNet) * 100).toFixed(1) : 0;
+          var meta = LOC_META[d.name] || LOC_META.Lainnya;
           return React.createElement(
             "div",
-            { key: d.name, style: { display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, background: T.panel, border: "1px solid " + T.border, borderRadius: 8, padding: "3px 9px", color: T.text } },
-            React.createElement("span", { style: { width: 8, height: 8, borderRadius: "50%", background: col } }),
-            React.createElement("span", null, d.name + ": "),
-            React.createElement("span", { style: { color: col, fontWeight: 800 } }, pct + "%"),
-            React.createElement("span", { style: { color: T.textSub, fontSize: 10 } }, "(" + fmt(d.net) + ")")
+            {
+              key: d.name,
+              style: {
+                background: "#F8FAFC",
+                border: "1px solid " + T.border,
+                borderRadius: 14,
+                padding: "12px 14px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 4
+              }
+            },
+            React.createElement(
+              "div",
+              { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
+              React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: T.text, display: "flex", alignItems: "center", gap: 5 } }, meta.icon, " ", d.name),
+              React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: meta.color } }, pct + "%")
+            ),
+            React.createElement("div", { style: { fontSize: 15, fontWeight: 900, color: T.text, marginTop: 4 } }, fmt(d.net))
           );
         })
       )
     ),
 
-    // 3. Tabel Riwayat Mutasi Tabungan
+    // 3. ACTION BAR: Search & Platform/Type Filters
     React.createElement(
       "div",
-      { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, overflow: "hidden" } },
-      React.createElement("div", { style: { padding: "16px 20px", borderBottom: "1px solid " + T.border, fontWeight: 700, fontSize: 15, display: "flex", justifyContent: "space-between", alignItems: "center" } },
-        React.createElement("span", null, "📋 Riwayat Mutasi Tabungan"),
-        React.createElement("span", { style: { fontSize: 12, color: T.textSub } }, p.savings.length + " transaksi")
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+          marginBottom: 16
+        }
+      },
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 8, alignItems: "center", flex: 1, minWidth: 260, flexWrap: "wrap" } },
+        React.createElement("input", {
+          value: search,
+          onChange: function (e) { setSearch(e.target.value); },
+          placeholder: "🔍 Cari catatan atau tanggal...",
+          style: {
+            background: "#FFFFFF",
+            border: "1px solid " + T.border,
+            borderRadius: 10,
+            padding: "8px 14px",
+            color: T.text,
+            fontSize: 12,
+            outline: "none",
+            width: 220,
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+          }
+        }),
+        React.createElement(
+          "div",
+          { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
+          pill("Semua Mutasi", fTipe === "Semua", T.teal, function () { setFTipe("Semua"); }),
+          pill("💚 Setoran", fTipe === "setoran", "#059669", function () { setFTipe("setoran"); }),
+          pill("🟡 Penarikan", fTipe === "penarikan", "#D97706", function () { setFTipe("penarikan"); })
+        )
       ),
-      p.savings.length === 0
-        ? React.createElement("div", { style: { padding: 32, textAlign: "center", color: T.textSub } }, "Belum ada transaksi tabungan.")
-        : sortNewestFirst(p.savings).map(function (item) {
+      React.createElement(
+        "div",
+        { style: { display: "flex", alignItems: "center", gap: 6 } },
+        React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: T.textSub } }, "Platform:"),
+        React.createElement(
+          "select",
+          {
+            value: fLoc,
+            onChange: function (e) { setFLoc(e.target.value); },
+            style: {
+              padding: "6px 12px",
+              borderRadius: 8,
+              border: "1px solid " + T.border,
+              fontSize: 12,
+              fontWeight: 700,
+              color: T.text,
+              background: "#FFFFFF",
+              outline: "none",
+              cursor: "pointer"
+            }
+          },
+          ["Semua"].concat(ALL_LOCS).map(function (loc) {
+            return React.createElement("option", { key: loc, value: loc }, loc === "Semua" ? "Semua Platform" : loc);
+          })
+        )
+      )
+    ),
+
+    // 4. TRANSACTION MUTATION LIST
+    React.createElement(
+      "div",
+      {
+        style: {
+          background: "#FFFFFF",
+          borderRadius: 20,
+          border: "1px solid " + T.border,
+          overflow: "hidden",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+        }
+      },
+      React.createElement(
+        "div",
+        {
+          style: {
+            padding: "16px 22px",
+            borderBottom: "1px solid " + T.border,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            background: "#FAFAFA"
+          }
+        },
+        React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "📋 Riwayat Mutasi Tabungan"),
+        React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: T.textSub } }, sortedSavings.length + " transaksi")
+      ),
+      sortedSavings.length === 0
+        ? React.createElement(
+            "div",
+            { style: { padding: "40px 20px", textAlign: "center", color: T.textSub } },
+            React.createElement("div", { style: { fontSize: 36, marginBottom: 8 } }, "💎"),
+            React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: T.text } }, "Tidak ada data mutasi tabungan."),
+            React.createElement("div", { style: { fontSize: 12, color: T.textSub, marginTop: 4 } }, "Gunakan tombol di atas untuk menambah setoran atau penarikan.")
+          )
+        : sortedSavings.map(function (item, idx) {
             var isStor = item.tipe === "setoran";
             var loc = item.lokasi || "KROM";
+            var meta = LOC_META[loc] || LOC_META.Lainnya;
+
             return React.createElement(
               "div",
-              { key: item.id, style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: "1px solid " + T.border } },
-              React.createElement(
-                "div",
-                null,
-                React.createElement(
-                  "div",
-                  { style: { display: "flex", alignItems: "center", gap: 8 } },
-                  React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: isStor ? T.sage : T.amber } }, isStor ? "💚 Setoran Tabungan" : "🟡 Penarikan Tabungan"),
-                  React.createElement("span", { style: { fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 8, background: T.panel, border: "1px solid " + T.border, color: T.teal } }, "🏦 " + loc)
-                ),
-                React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 4 } }, item.tanggal, item.catatan ? " · " + item.catatan : "")
-              ),
+              {
+                key: item.id || idx,
+                style: {
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "14px 22px",
+                  borderBottom: idx === sortedSavings.length - 1 ? "none" : "1px solid " + T.border,
+                  transition: "background 0.15s ease"
+                }
+              },
+              // Left: Icon + Title + Metadata
               React.createElement(
                 "div",
                 { style: { display: "flex", alignItems: "center", gap: 14 } },
-                React.createElement("div", { style: { fontSize: 15, fontWeight: 800, color: isStor ? T.sage : T.amber } }, (isStor ? "+" : "-") + fmt(item.nominal)),
                 React.createElement(
                   "div",
-                  { style: { display: "flex", gap: 4 } },
-                  React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.panel, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
-                  React.createElement("button", { onClick: function () { p.onDelete(item.id); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
+                  {
+                    style: {
+                      width: 42,
+                      height: 42,
+                      borderRadius: 12,
+                      background: isStor ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)",
+                      border: "1px solid " + (isStor ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)"),
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 18,
+                      fontWeight: 900,
+                      color: isStor ? "#059669" : "#D97706",
+                      flexShrink: 0
+                    }
+                  },
+                  isStor ? "↗" : "↘"
+                ),
+                React.createElement(
+                  "div",
+                  null,
+                  React.createElement(
+                    "div",
+                    { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
+                    React.createElement(
+                      "span",
+                      { style: { fontSize: 13, fontWeight: 800, color: T.text } },
+                      isStor ? "Setoran Tabungan" : "Penarikan Tabungan"
+                    ),
+                    React.createElement(
+                      "span",
+                      {
+                        style: {
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: "2px 8px",
+                          borderRadius: 6,
+                          background: meta.bg,
+                          color: meta.color,
+                          border: "1px solid " + meta.color + "30"
+                        }
+                      },
+                      meta.icon + " " + loc
+                    )
+                  ),
+                  React.createElement(
+                    "div",
+                    { style: { fontSize: 11, color: T.textSub, marginTop: 3, display: "flex", gap: 6, alignItems: "center" } },
+                    React.createElement("span", null, item.tanggal),
+                    item.catatan && React.createElement("span", null, "· " + item.catatan)
+                  )
+                )
+              ),
+
+              // Right: Amount + Action Buttons
+              React.createElement(
+                "div",
+                { style: { display: "flex", alignItems: "center", gap: 14 } },
+                React.createElement(
+                  "div",
+                  {
+                    style: {
+                      fontSize: 15,
+                      fontWeight: 900,
+                      color: isStor ? "#059669" : "#D97706",
+                      textAlign: "right"
+                    }
+                  },
+                  (isStor ? "+" : "-") + fmt(item.nominal)
+                ),
+                React.createElement(
+                  "div",
+                  { style: { display: "flex", gap: 6 } },
+                  React.createElement(
+                    "button",
+                    {
+                      onClick: function () { p.onEdit(item); },
+                      title: "Edit transaksi",
+                      style: {
+                        background: "#F8FAFC",
+                        border: "1px solid " + T.border,
+                        color: T.textSub,
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }
+                    },
+                    "✏"
+                  ),
+                  React.createElement(
+                    "button",
+                    {
+                      onClick: function () { p.onDelete(item.id); },
+                      title: "Hapus transaksi",
+                      style: {
+                        background: "rgba(239, 68, 68, 0.08)",
+                        border: "1px solid rgba(239, 68, 68, 0.2)",
+                        color: "#DC2626",
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }
+                    },
+                    "✕"
+                  )
                 )
               )
             );
@@ -2274,72 +2664,440 @@ function DashboardView(p) {
 // ── Pemasukan View ────────────────────────────────────────────────────────────
 function PemasukanView(p) {
   var paydayDate = p.paydayDate || 28;
-  var rows = sortNewestFirst(p.income);
-  var total = rows.reduce(function (s, i) { return s + i.nominal; }, 0);
-  var mc = { Transfer: T.teal, "M-Banking": "#0EA5E9", "E-Wallet": T.violet, Cash: T.amber, QRIS: T.sky, Debit: T.sage, Kredit: T.coral };
+  var curPeriod = getFinancialPeriod(new Date(), paydayDate);
+  var _search = useState(""), search = _search[0], setSearch = _search[1];
+  var _fMet = useState("Semua"), fMet = _fMet[0], setFMet = _fMet[1];
+  var _fCycle = useState("all"), fCycle = _fCycle[0], setFCycle = _fCycle[1];
+
+  var allIncome = p.income || [];
+  var totalAll = allIncome.reduce(function (s, i) { return s + (i.nominal || 0); }, 0);
+
+  var cycleIncome = allIncome.filter(function (i) {
+    return getFinancialPeriod(i.tanggal || i.date, paydayDate).cycleKey === curPeriod.cycleKey;
+  });
+  var totalCycle = cycleIncome.reduce(function (s, i) { return s + (i.nominal || 0); }, 0);
+
+  var mc = {
+    Transfer: { color: "#0284C7", bg: "rgba(2, 132, 199, 0.1)" },
+    "M-Banking": { color: "#0EA5E9", bg: "rgba(14, 165, 233, 0.1)" },
+    "E-Wallet": { color: "#8B5CF6", bg: "rgba(139, 92, 246, 0.1)" },
+    Cash: { color: "#D97706", bg: "rgba(217, 119, 6, 0.1)" },
+    QRIS: { color: "#06B6D4", bg: "rgba(6, 182, 212, 0.1)" },
+    Debit: { color: "#059669", bg: "rgba(5, 150, 105, 0.1)" },
+    Kredit: { color: "#E11D48", bg: "rgba(225, 29, 72, 0.1)" }
+  };
+
+  var filtered = allIncome.filter(function (item) {
+    if (fCycle === "cycle") {
+      if (getFinancialPeriod(item.tanggal || item.date, paydayDate).cycleKey !== curPeriod.cycleKey) return false;
+    }
+    if (fMet !== "Semua" && item.metode !== fMet) return false;
+    if (search) {
+      var q = search.toLowerCase();
+      var matchSumber = (item.sumber || "").toLowerCase().indexOf(q) >= 0;
+      var matchCatatan = (item.catatan || "").toLowerCase().indexOf(q) >= 0;
+      var matchTanggal = (item.tanggal || "").indexOf(q) >= 0;
+      if (!matchSumber && !matchCatatan && !matchTanggal) return false;
+    }
+    return true;
+  });
+
+  var rows = sortNewestFirst(filtered);
   var grouped = groupByMonth(rows, paydayDate);
+
+  function pill(label, active, col, fn) {
+    return React.createElement(
+      "button",
+      {
+        key: label,
+        onClick: fn,
+        style: {
+          padding: "6px 14px",
+          borderRadius: 20,
+          fontSize: 12,
+          fontWeight: 700,
+          border: active ? "1.5px solid " + col : "1px solid " + T.border,
+          background: active ? col : "#FFFFFF",
+          color: active ? "#FFFFFF" : T.textSub,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          transition: "all 0.15s ease",
+          boxShadow: active ? "0 2px 6px " + col + "40" : "none"
+        }
+      },
+      label
+    );
+  }
 
   return React.createElement(
     "div",
-    { style: { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" } },
+    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
+
+    // 1. TOP STAT CARDS + PRIMARY ACTION
     React.createElement(
       "div",
-      { style: { padding: "24px 32px 20px", borderBottom: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 } },
+      {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: 16,
+          marginBottom: 24
+        }
+      },
+      // Card 1: Siklus Berjalan
       React.createElement(
         "div",
-        null,
-        React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 } }, "Pemasukan Utama"),
-        React.createElement("div", { style: { fontSize: 28, fontWeight: 900, color: T.sage, marginTop: 4 } }, fmt(total)),
-        React.createElement("div", { style: { fontSize: 13, color: T.textSub, marginTop: 4 } }, rows.length + " total transaksi")
-      ),
-      React.createElement(Btn, { color: T.sage, onClick: p.onAdd }, "💵 + Tambah Pemasukan")
-    ),
-    rows.length === 0
-      ? React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, color: T.textSub, gap: 10 } }, React.createElement("div", { style: { fontSize: 48 } }, "💵"), React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: T.text } }, "Belum ada pemasukan"))
-      : React.createElement(
+        {
+          style: {
+            background: "#FFFFFF",
+            borderRadius: 20,
+            border: "1px solid " + T.border,
+            padding: "20px 24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }
+        },
+        React.createElement(
           "div",
-          { style: { flex: 1, overflowY: "auto" } },
-          React.createElement(
+          null,
+          React.createElement("div", { style: { fontSize: 11, color: "#059669", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "SIKLUS INI (" + curPeriod.monthName.toUpperCase() + ")"),
+          React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: "#059669", marginTop: 4 } }, "+" + fmt(totalCycle)),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, cycleIncome.length + " transaksi pada siklus saat ini")
+        ),
+        React.createElement(
+          "div",
+          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(5, 150, 105, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          "⚡"
+        )
+      ),
+
+      // Card 2: Total Akumulatif
+      React.createElement(
+        "div",
+        {
+          style: {
+            background: "#FFFFFF",
+            borderRadius: 20,
+            border: "1px solid " + T.border,
+            padding: "20px 24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }
+        },
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "TOTAL PEMASUKAN KESELURUHAN"),
+          React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.text, marginTop: 4 } }, "+" + fmt(totalAll)),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, allIncome.length + " total transaksi tercatat")
+        ),
+        React.createElement(
+          "div",
+          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(2, 132, 199, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          "💰"
+        )
+      ),
+
+      // Card 3: Action Panel
+      React.createElement(
+        "div",
+        {
+          style: {
+            background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
+            borderRadius: 20,
+            padding: "20px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            color: "#FFFFFF"
+          }
+        },
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 13, fontWeight: 800 } }, "Catat Arus Kas"),
+          React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 2 } }, "Gaji, bonus, profit usaha & lainnya")
+        ),
+        React.createElement(
+          "button",
+          {
+            onClick: p.onAdd,
+            style: {
+              background: "#059669",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: 12,
+              padding: "10px 18px",
+              fontSize: 13,
+              fontWeight: 800,
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(5, 150, 105, 0.4)",
+              whiteSpace: "nowrap"
+            }
+          },
+          "💵 + Tambah"
+        )
+      )
+    ),
+
+    // 2. TOOLBAR: Search & Filters
+    React.createElement(
+      "div",
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+          marginBottom: 16
+        }
+      },
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 8, alignItems: "center", flex: 1, minWidth: 260, flexWrap: "wrap" } },
+        React.createElement("input", {
+          value: search,
+          onChange: function (e) { setSearch(e.target.value); },
+          placeholder: "🔍 Cari sumber atau catatan pemasukan...",
+          style: {
+            background: "#FFFFFF",
+            border: "1px solid " + T.border,
+            borderRadius: 10,
+            padding: "8px 14px",
+            color: T.text,
+            fontSize: 12,
+            outline: "none",
+            width: 240,
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+          }
+        }),
+        React.createElement(
+          "div",
+          { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
+          pill("Semua Waktu", fCycle === "all", T.teal, function () { setFCycle("all"); }),
+          pill("⚡ Siklus Ini Saja", fCycle === "cycle", "#059669", function () { setFCycle("cycle"); })
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 5, overflowX: "auto", paddingBottom: 2 } },
+        ["Semua", "Transfer", "M-Banking", "E-Wallet", "Cash", "QRIS", "Debit"].map(function (met) {
+          var cfg = mc[met] || { color: T.teal };
+          return pill(met, fMet === met, cfg.color, function () { setFMet(met); });
+        })
+      )
+    ),
+
+    // 3. TRANSACTION LIST
+    React.createElement(
+      "div",
+      {
+        style: {
+          background: "#FFFFFF",
+          borderRadius: 20,
+          border: "1px solid " + T.border,
+          overflow: "hidden",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+        }
+      },
+      React.createElement(
+        "div",
+        {
+          style: {
+            padding: "16px 22px",
+            borderBottom: "1px solid " + T.border,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            background: "#FAFAFA"
+          }
+        },
+        React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "📋 Daftar Riwayat Pemasukan"),
+        React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: T.textSub } }, rows.length + " transaksi")
+      ),
+
+      rows.length === 0
+        ? React.createElement(
             "div",
-            { style: { display: "grid", gridTemplateColumns: "130px 1fr 140px 180px 60px", padding: "10px 32px", background: T.surface, borderBottom: "1px solid " + T.border, position: "sticky", top: 0, zIndex: 10 } },
-            ["Tanggal", "Sumber", "Metode", "Nominal", ""].map(function (h) { return React.createElement("div", { key: h, style: { fontSize: 11, fontWeight: 700, color: T.textSub, textTransform: "uppercase" } }, h); })
-          ),
-          grouped.map(function (g) {
-            var mTotal = g.items.reduce(function (s, i) { return s + i.nominal; }, 0);
+            { style: { padding: "40px 20px", textAlign: "center", color: T.textSub } },
+            React.createElement("div", { style: { fontSize: 36, marginBottom: 8 } }, "💵"),
+            React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: T.text } }, "Tidak ada data pemasukan."),
+            React.createElement("div", { style: { fontSize: 12, color: T.textSub, marginTop: 4 } }, "Gunakan tombol Tambah Pemasukan untuk mencatat pemasukan baru.")
+          )
+        : grouped.map(function (g) {
+            var mTotal = g.items.reduce(function (s, i) { return s + (i.nominal || 0); }, 0);
             var mLabel = g.label || (MONTH_NAMES[g.month] + " " + g.year);
+
             return React.createElement(
               "div",
               { key: g.key },
-              // Sekat Pergantian Bulan / Siklus
+              // Header Siklus / Bulan
               React.createElement(
                 "div",
-                { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 32px", background: "linear-gradient(90deg, #10B98122, transparent)", borderTop: "1.5px solid " + T.sage + "40", borderBottom: "1.5px solid " + T.sage + "40" } },
-                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.teal, display: "flex", alignItems: "center", gap: 8 } },
-                  React.createElement("span", { style: { fontSize: 16 } }, "📅"),
-                  React.createElement("span", null, mLabel),
-                  React.createElement("span", { style: { fontSize: 11, color: T.textSub, fontWeight: 600 } }, "(" + g.items.length + " transaksi)")
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 22px",
+                    background: "#F8FAFC",
+                    borderTop: "1px solid " + T.border,
+                    borderBottom: "1px solid " + T.border
+                  }
+                },
+                React.createElement(
+                  "div",
+                  { style: { display: "flex", alignItems: "center", gap: 8 } },
+                  React.createElement("span", { style: { fontSize: 14 } }, "📅"),
+                  React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: T.text } }, mLabel),
+                  React.createElement(
+                    "span",
+                    { style: { fontSize: 10, fontWeight: 700, background: "#E2E8F0", color: "#475569", padding: "1px 7px", borderRadius: 10 } },
+                    g.items.length + " transaksi"
+                  )
                 ),
-                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.sage } }, "Total " + (g.cycleName || mLabel) + ": " + fmt(mTotal))
+                React.createElement(
+                  "div",
+                  { style: { fontSize: 12, fontWeight: 800, color: "#059669" } },
+                  "Subtotal: +" + fmt(mTotal)
+                )
               ),
+
+              // Items
               g.items.map(function (item, i) {
+                var mMeta = mc[item.metode] || { color: T.teal, bg: "rgba(2, 132, 199, 0.1)" };
+
                 return React.createElement(
                   "div",
-                  { key: item.id, style: { display: "grid", gridTemplateColumns: "130px 1fr 140px 180px 60px", padding: "13px 32px", alignItems: "center", borderBottom: "1px solid " + T.border, background: i % 2 === 0 ? "transparent" : T.panel } },
-                  React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontFamily: "monospace" } }, item.tanggal),
-                  React.createElement("div", null, React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: T.text } }, item.sumber), item.catatan && React.createElement("div", { style: { fontSize: 11, color: T.textDim } }, item.catatan)),
-                  React.createElement(Chip, { label: item.metode, color: mc[item.metode] || T.textSub }),
-                  React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.sage } }, "+" + fmt(item.nominal)),
+                  {
+                    key: item.id || i,
+                    style: {
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "14px 22px",
+                      borderBottom: "1px solid " + T.border,
+                      transition: "background 0.15s ease"
+                    }
+                  },
+                  // Left: Icon + Sumber + Date/Notes
                   React.createElement(
                     "div",
-                    { style: { display: "flex", gap: 4 } },
-                    React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.card, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
-                    React.createElement("button", { onClick: function () { p.onDelete(item.id); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
+                    { style: { display: "flex", alignItems: "center", gap: 14 } },
+                    React.createElement(
+                      "div",
+                      {
+                        style: {
+                          width: 42,
+                          height: 42,
+                          borderRadius: 12,
+                          background: "rgba(5, 150, 105, 0.1)",
+                          border: "1px solid rgba(5, 150, 105, 0.2)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 18,
+                          flexShrink: 0
+                        }
+                      },
+                      "💵"
+                    ),
+                    React.createElement(
+                      "div",
+                      null,
+                      React.createElement(
+                        "div",
+                        { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
+                        React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, item.sumber),
+                        React.createElement(
+                          "span",
+                          {
+                            style: {
+                              fontSize: 11,
+                              fontWeight: 700,
+                              padding: "2px 8px",
+                              borderRadius: 6,
+                              background: mMeta.bg,
+                              color: mMeta.color,
+                              border: "1px solid " + mMeta.color + "30"
+                            }
+                          },
+                          item.metode
+                        )
+                      ),
+                      React.createElement(
+                        "div",
+                        { style: { fontSize: 11, color: T.textSub, marginTop: 3, display: "flex", gap: 6, alignItems: "center" } },
+                        React.createElement("span", null, item.tanggal),
+                        item.catatan && React.createElement("span", null, "· " + item.catatan)
+                      )
+                    )
+                  ),
+
+                  // Right: Nominal + Action Buttons
+                  React.createElement(
+                    "div",
+                    { style: { display: "flex", alignItems: "center", gap: 14 } },
+                    React.createElement(
+                      "div",
+                      { style: { fontSize: 15, fontWeight: 900, color: "#059669", textAlign: "right" } },
+                      "+" + fmt(item.nominal)
+                    ),
+                    React.createElement(
+                      "div",
+                      { style: { display: "flex", gap: 6 } },
+                      React.createElement(
+                        "button",
+                        {
+                          onClick: function () { p.onEdit(item); },
+                          title: "Edit transaksi",
+                          style: {
+                            background: "#F8FAFC",
+                            border: "1px solid " + T.border,
+                            color: T.textSub,
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }
+                        },
+                        "✏"
+                      ),
+                      React.createElement(
+                        "button",
+                        {
+                          onClick: function () { p.onDelete(item.id); },
+                          title: "Hapus transaksi",
+                          style: {
+                            background: "rgba(239, 68, 68, 0.08)",
+                            border: "1px solid rgba(239, 68, 68, 0.2)",
+                            color: "#DC2626",
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }
+                        },
+                        "✕"
+                      )
+                    )
                   )
                 );
               })
             );
           })
-        )
+    )
   );
 }
 
@@ -2351,36 +3109,62 @@ function PengeluaranView(p) {
   var _fc = useState("Semua"), fCat = _fc[0], sFCat = _fc[1];
   var _fn = useState("Semua"), fNW = _fn[0], sFNW = _fn[1];
   var _fs = useState(""), search = _fs[0], sSearch = _fs[1];
+  var _fCycle = useState("all"), fCycle = _fCycle[0], setFCycle = _fCycle[1];
   var _mmi = useState(null), memoModalItem = _mmi[0], setMemoModalItem = _mmi[1];
 
   var all = p.expenses || [];
   var total = all.reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
 
-  var thisCycleExp = all.filter(function (e) {
+  var thisCycleExpList = all.filter(function (e) {
     return getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey === curPeriod.cycleKey;
-  }).reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
+  });
+  var thisCycleExp = thisCycleExpList.reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
 
   var usedCats = [].concat([], all.map(function (e) { return e.kategori; })).filter(function (v, i, a) { return a.indexOf(v) === i; });
+
   var filtered = [].concat(all).filter(function (e) {
+    if (fCycle === "cycle") {
+      if (getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey !== curPeriod.cycleKey) return false;
+    }
     if (fCat !== "Semua" && e.kategori !== fCat) return false;
     if (fNW !== "Semua" && e.nw !== fNW) return false;
-    if (search && e.keperluan.toLowerCase().indexOf(search.toLowerCase()) < 0) return false;
+    if (search) {
+      var q = search.toLowerCase();
+      var matchKeperluan = (e.keperluan || "").toLowerCase().indexOf(q) >= 0;
+      var matchCatatan = (e.catatan || "").toLowerCase().indexOf(q) >= 0;
+      var matchTanggal = (e.tanggal || "").indexOf(q) >= 0;
+      if (!matchKeperluan && !matchCatatan && !matchTanggal) return false;
+    }
     return true;
   });
-  var rows = sortNewestFirst(filtered);
 
+  var rows = sortNewestFirst(filtered);
   var grouped = groupByMonth(rows, paydayDate);
+
+  var totalNeed = filtered.filter(function (e) { return (e.nw || "Need") === "Need"; }).reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
+  var totalWant = filtered.filter(function (e) { return (e.nw || "Need") === "Want"; }).reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
+  var filteredTotal = totalNeed + totalWant;
+  var needPct = filteredTotal > 0 ? Math.round((totalNeed / filteredTotal) * 100) : 0;
+  var wantPct = filteredTotal > 0 ? (100 - needPct) : 0;
 
   function pill(label, active, col, fn) {
     return React.createElement(
       "button",
       {
-        key: label, onClick: fn,
+        key: label,
+        onClick: fn,
         style: {
-          padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
-          border: "1.5px solid " + (active ? col : T.border),
-          background: active ? col + "22" : "transparent",
-          color: active ? col : T.textSub, cursor: "pointer", whiteSpace: "nowrap"
+          padding: "6px 14px",
+          borderRadius: 20,
+          fontSize: 12,
+          fontWeight: 700,
+          border: active ? "1.5px solid " + col : "1px solid " + T.border,
+          background: active ? col : "#FFFFFF",
+          color: active ? "#FFFFFF" : T.textSub,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          transition: "all 0.15s ease",
+          boxShadow: active ? "0 2px 6px " + col + "40" : "none"
         }
       },
       label
@@ -2389,114 +3173,472 @@ function PengeluaranView(p) {
 
   return React.createElement(
     "div",
-    { style: { display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" } },
+    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
+
+    // 1. TOP 3 STAT CARDS
     React.createElement(
       "div",
-      { style: { padding: "20px 32px 16px", borderBottom: "1px solid " + T.border, flexShrink: 0, display: "flex", flexDirection: "column", gap: 14 } },
-      
-      // Top 3 Stat Cards Row
+      {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: 16,
+          marginBottom: 24
+        }
+      },
+      // Card 1: Siklus Ini
       React.createElement(
         "div",
-        { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 } },
+        {
+          style: {
+            background: "#FFFFFF",
+            borderRadius: 20,
+            border: "1px solid " + T.border,
+            padding: "20px 24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }
+        },
         React.createElement(
           "div",
-          { style: { background: T.card, borderRadius: 14, border: "1px solid " + T.border, padding: "12px 18px" } },
-          React.createElement("div", { style: { fontSize: 10, color: T.coral, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 } }, "🔴 TOTAL PENGELUARAN"),
-          React.createElement("div", { style: { fontSize: 24, fontWeight: 900, color: T.coral, marginTop: 2 } }, fmt(total))
+          null,
+          React.createElement("div", { style: { fontSize: 11, color: "#E11D48", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "SIKLUS INI (" + curPeriod.monthName.toUpperCase() + ")"),
+          React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: "#E11D48", marginTop: 4 } }, "-" + fmt(thisCycleExp)),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, thisCycleExpList.length + " transaksi siklus berjalan")
         ),
         React.createElement(
           "div",
-          { style: { background: T.card, borderRadius: 14, border: "1px solid " + T.border, padding: "12px 18px" } },
-          React.createElement("div", { style: { fontSize: 10, color: T.teal, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 } }, "🔵 TOTAL TRANSAKSI"),
-          React.createElement("div", { style: { fontSize: 24, fontWeight: 900, color: T.teal, marginTop: 2 } }, all.length + " Transaksi")
-        ),
-        React.createElement(
-          "div",
-          { style: { background: T.card, borderRadius: 14, border: "1px solid " + T.border, padding: "12px 18px" } },
-          React.createElement("div", { style: { fontSize: 10, color: T.violet, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 } }, "📊 SIKLUS INI (" + curPeriod.monthName.toUpperCase() + ")"),
-          React.createElement("div", { style: { fontSize: 24, fontWeight: 900, color: T.violet, marginTop: 2 } }, fmt(thisCycleExp))
+          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(225, 29, 72, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          "⚡"
         )
       ),
 
-      // Action Bar: Search & Compact Scrollable Category Filters
+      // Card 2: Total Akumulatif
       React.createElement(
         "div",
-        { style: { display: "flex", gap: 10, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" } },
+        {
+          style: {
+            background: "#FFFFFF",
+            borderRadius: 20,
+            border: "1px solid " + T.border,
+            padding: "20px 24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }
+        },
         React.createElement(
           "div",
-          { style: { display: "flex", gap: 8, alignItems: "center", flex: 1, minWidth: 260 } },
-          React.createElement("input", { value: search, onChange: function (e) { sSearch(e.target.value); }, placeholder: "🔍 Cari pengeluaran...", style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 8, padding: "7px 12px", color: T.text, fontSize: 12, outline: "none", width: 180 } }),
-          React.createElement(
-            "div",
-            { style: { display: "flex", gap: 5, overflowX: "auto", paddingBottom: 2, flex: 1 } },
-            ["Semua"].concat(usedCats).map(function (c) { var cfg = getCat(c); return pill(c === "Semua" ? "Semua" : cfg.emoji + " " + c, fCat === c, cfg.color || T.teal, function () { sFCat(c); }); }),
-            ["Semua", "Need", "Want"].map(function (n) { return pill(n === "Need" ? "🎯 Kebutuhan" : n === "Want" ? "✨ Keinginan" : "Semua K/K", fNW === n, n === "Need" ? T.sky : n === "Want" ? T.violet : T.textSub, function () { sFNW(n); }); })
-          )
+          null,
+          React.createElement("div", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "TOTAL PENGELUARAN"),
+          React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.text, marginTop: 4 } }, "-" + fmt(total)),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, all.length + " total transaksi tercatat")
         ),
-        React.createElement(Btn, { color: T.coral, onClick: p.onAdd }, "➕ Tambah Pengeluaran")
+        React.createElement(
+          "div",
+          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(2, 132, 199, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          "💸"
+        )
+      ),
+
+      // Card 3: Rasio Kebutuhan (Need vs Want)
+      React.createElement(
+        "div",
+        {
+          style: {
+            background: "#FFFFFF",
+            borderRadius: 20,
+            border: "1px solid " + T.border,
+            padding: "20px 24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between"
+          }
+        },
+        React.createElement(
+          "div",
+          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
+          React.createElement("div", { style: { fontSize: 11, color: T.violet, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "RASIO KEBUTUHAN (NEED/WANT)"),
+          React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: T.textSub } }, needPct + "% / " + wantPct + "%")
+        ),
+        // Mini Segmented Bar
+        React.createElement(
+          "div",
+          { style: { height: 8, background: "#F1F5F9", borderRadius: 4, overflow: "hidden", display: "flex", marginBottom: 10 } },
+          React.createElement("div", { style: { width: needPct + "%", background: "#0284C7", transition: "width .3s ease" } }),
+          React.createElement("div", { style: { width: wantPct + "%", background: "#8B5CF6", transition: "width .3s ease" } })
+        ),
+        React.createElement(
+          "div",
+          { style: { display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700 } },
+          React.createElement("span", { style: { color: "#0284C7" } }, "🎯 Need: " + fmt(totalNeed)),
+          React.createElement("span", { style: { color: "#8B5CF6" } }, "✨ Want: " + fmt(totalWant))
+        )
       )
     ),
-    rows.length === 0
-      ? React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, color: T.textSub, gap: 10 } }, React.createElement("div", { style: { fontSize: 48 } }, "💸"), React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: T.text } }, "Belum ada pengeluaran"))
-      : React.createElement(
+
+    // 2. TOOLBAR: Search, Scope & Actions
+    React.createElement(
+      "div",
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+          marginBottom: 12
+        }
+      },
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 8, alignItems: "center", flex: 1, minWidth: 260, flexWrap: "wrap" } },
+        React.createElement("input", {
+          value: search,
+          onChange: function (e) { sSearch(e.target.value); },
+          placeholder: "🔍 Cari keperluan atau catatan...",
+          style: {
+            background: "#FFFFFF",
+            border: "1px solid " + T.border,
+            borderRadius: 10,
+            padding: "8px 14px",
+            color: T.text,
+            fontSize: 12,
+            outline: "none",
+            width: 240,
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+          }
+        }),
+        React.createElement(
           "div",
-          { style: { flex: 1, overflowY: "auto" } },
-          React.createElement(
+          { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
+          pill("Semua Waktu", fCycle === "all", T.teal, function () { setFCycle("all"); }),
+          pill("⚡ Siklus Ini Saja", fCycle === "cycle", "#0284C7", function () { setFCycle("cycle"); })
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 8, alignItems: "center" } },
+        p.onOpenRepeat && React.createElement(
+          "button",
+          {
+            onClick: p.onOpenRepeat,
+            style: {
+              background: "#F8FAFC",
+              border: "1px solid " + T.border,
+              color: T.text,
+              borderRadius: 12,
+              padding: "10px 14px",
+              fontSize: 13,
+              fontWeight: 800,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6
+            }
+          },
+          "🔁 Repeat"
+        ),
+        React.createElement(
+          "button",
+          {
+            onClick: p.onAdd,
+            style: {
+              background: "#E11D48",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: 12,
+              padding: "10px 18px",
+              fontSize: 13,
+              fontWeight: 800,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              boxShadow: "0 4px 12px rgba(225, 29, 72, 0.35)",
+              whiteSpace: "nowrap"
+            }
+          },
+          "➕ Tambah Pengeluaran"
+        )
+      )
+    ),
+
+    // Filter Bar Row 2: Categories & Need/Want
+    React.createElement(
+      "div",
+      {
+        style: {
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          marginBottom: 16
+        }
+      },
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2, flex: 1 } },
+        ["Semua"].concat(usedCats).map(function (c) {
+          var cfg = getCat(c);
+          return pill(c === "Semua" ? "Semua Kategori" : cfg.emoji + " " + c, fCat === c, cfg.color || T.teal, function () { sFCat(c); });
+        })
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "flex", gap: 6 } },
+        ["Semua", "Need", "Want"].map(function (n) {
+          return pill(n === "Need" ? "🎯 Kebutuhan" : n === "Want" ? "✨ Keinginan" : "Semua K/K", fNW === n, n === "Need" ? "#0284C7" : n === "Want" ? "#8B5CF6" : T.textSub, function () { sFNW(n); });
+        })
+      )
+    ),
+
+    // 3. TRANSACTION LIST
+    React.createElement(
+      "div",
+      {
+        style: {
+          background: "#FFFFFF",
+          borderRadius: 20,
+          border: "1px solid " + T.border,
+          overflow: "hidden",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+        }
+      },
+      React.createElement(
+        "div",
+        {
+          style: {
+            padding: "16px 22px",
+            borderBottom: "1px solid " + T.border,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            background: "#FAFAFA"
+          }
+        },
+        React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "📋 Daftar Catatan Pengeluaran"),
+        React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: T.textSub } }, rows.length + " transaksi")
+      ),
+
+      rows.length === 0
+        ? React.createElement(
             "div",
-            { style: { display: "grid", gridTemplateColumns: "120px 1fr 150px 100px 160px 80px 60px", padding: "10px 32px", background: T.surface, borderBottom: "1px solid " + T.border, position: "sticky", top: 0, zIndex: 10 } },
-            ["Tanggal", "Keperluan", "Kategori", "NW", "Nominal", "Bayar", ""].map(function (h) { return React.createElement("div", { key: h, style: { fontSize: 11, fontWeight: 700, color: T.textSub, textTransform: "uppercase" } }, h); })
-          ),
-          grouped.map(function (g) {
-            var mTotal = g.items.reduce(function (s, e) { return s + e.nominal; }, 0);
+            { style: { padding: "40px 20px", textAlign: "center", color: T.textSub } },
+            React.createElement("div", { style: { fontSize: 36, marginBottom: 8 } }, "💸"),
+            React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: T.text } }, "Tidak ada data pengeluaran yang sesuai filter."),
+            React.createElement("div", { style: { fontSize: 12, color: T.textSub, marginTop: 4 } }, "Coba ubah kata kunci pencarian atau tambah pengeluaran baru.")
+          )
+        : grouped.map(function (g) {
+            var mTotal = g.items.reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
             var mLabel = g.label || (MONTH_NAMES[g.month] + " " + g.year);
+
             return React.createElement(
               "div",
               { key: g.key },
+              // Header Siklus / Bulan
               React.createElement(
                 "div",
-                { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 32px", background: "linear-gradient(90deg, " + T.coral + "15, transparent)", borderLeft: "4px solid " + T.coral, borderBottom: "1px solid " + T.border } },
-                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.coral, display: "flex", alignItems: "center", gap: 8 } },
-                  React.createElement("span", { style: { fontSize: 16 } }, "📅"),
-                  React.createElement("span", null, mLabel),
-                  React.createElement("span", { style: { fontSize: 11, color: T.textSub, fontWeight: 600 } }, "(" + g.items.length + " transaksi)")
+                {
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 22px",
+                    background: "#F8FAFC",
+                    borderTop: "1px solid " + T.border,
+                    borderBottom: "1px solid " + T.border
+                  }
+                },
+                React.createElement(
+                  "div",
+                  { style: { display: "flex", alignItems: "center", gap: 8 } },
+                  React.createElement("span", { style: { fontSize: 14 } }, "📅"),
+                  React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: T.text } }, mLabel),
+                  React.createElement(
+                    "span",
+                    { style: { fontSize: 10, fontWeight: 700, background: "#E2E8F0", color: "#475569", padding: "1px 7px", borderRadius: 10 } },
+                    g.items.length + " transaksi"
+                  )
                 ),
-                React.createElement("div", { style: { fontSize: 13, fontWeight: 900, color: T.coral } }, "Total " + (g.cycleName || mLabel) + ": " + fmt(mTotal))
+                React.createElement(
+                  "div",
+                  { style: { fontSize: 12, fontWeight: 800, color: "#E11D48" } },
+                  "Subtotal: -" + fmt(mTotal)
+                )
               ),
+
+              // Items
               g.items.map(function (item, i) {
                 var cfg = getCat(item.kategori);
                 var hasMemo = !!(item.memo_detail || item.catatan);
+
                 return React.createElement(
                   "div",
-                  { key: item.id, style: { display: "grid", gridTemplateColumns: "120px 1fr 150px 100px 160px 80px 60px", padding: "12px 32px", alignItems: "center", borderBottom: "1px solid " + T.border, background: i % 2 === 0 ? "transparent" : T.panel } },
-                  React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontFamily: "monospace" } }, item.tanggal),
-                  React.createElement(
-                    "div", null,
-                    React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: T.text } }, item.keperluan),
-                    item.catatan && React.createElement("div", { style: { fontSize: 11, color: T.textDim } }, item.catatan),
-                    hasMemo ? React.createElement(
-                      "button",
-                      {
-                        onClick: function (ev) { ev.stopPropagation(); setMemoModalItem(item); },
-                        style: { background: T.tealDim, border: "1px solid " + T.teal + "50", color: T.teal, padding: "2px 7px", borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: "pointer", marginTop: 4, display: "inline-flex", alignItems: "center", gap: 3 }
-                      },
-                      "📌 Memo Rincian"
-                    ) : null
-                  ),
-                  React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, React.createElement("span", null, cfg.emoji), React.createElement("span", { style: { fontSize: 12, color: T.text } }, item.kategori === "Fashion" ? "Pakaian & Outfit" : item.kategori)),
-                  React.createElement(Chip, { label: item.nw, color: item.nw === "Need" ? T.sky : T.violet }),
-                  React.createElement("div", { style: { fontSize: 14, fontWeight: 800, color: T.coral } }, "-" + fmt(item.nominal)),
-                  React.createElement(Chip, { label: item.bayar, color: T.textSub }),
+                  {
+                    key: item.id || i,
+                    style: {
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "14px 22px",
+                      borderBottom: "1px solid " + T.border,
+                      transition: "background 0.15s ease"
+                    }
+                  },
+                  // Left: Emoji Tile + Keperluan + Badges
                   React.createElement(
                     "div",
-                    { style: { display: "flex", gap: 4 } },
-                    React.createElement("button", { onClick: function () { p.onEdit(item); }, style: { background: T.card, border: "1px solid " + T.border, color: T.textSub, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✏"),
-                    React.createElement("button", { onClick: function () { p.onDelete(item.id, item); }, style: { background: T.coralDim, border: "1px solid " + T.coral + "30", color: T.coral, width: 28, height: 28, borderRadius: 6, cursor: "pointer" } }, "✕")
+                    { style: { display: "flex", alignItems: "center", gap: 14 } },
+                    React.createElement(
+                      "div",
+                      {
+                        style: {
+                          width: 42,
+                          height: 42,
+                          borderRadius: 12,
+                          background: "#F1F5F9",
+                          border: "1px solid " + T.border,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 20,
+                          flexShrink: 0
+                        }
+                      },
+                      cfg.emoji
+                    ),
+                    React.createElement(
+                      "div",
+                      null,
+                      React.createElement(
+                        "div",
+                        { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
+                        React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, item.keperluan),
+                        hasMemo && React.createElement(
+                          "button",
+                          {
+                            onClick: function (ev) { ev.stopPropagation(); setMemoModalItem(item); },
+                            style: {
+                              background: "rgba(2, 132, 199, 0.08)",
+                              border: "1px solid rgba(2, 132, 199, 0.25)",
+                              color: "#0284C7",
+                              padding: "2px 8px",
+                              borderRadius: 6,
+                              fontSize: 10,
+                              fontWeight: 800,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 3
+                            }
+                          },
+                          "📌 Memo Rincian"
+                        )
+                      ),
+                      React.createElement(
+                        "div",
+                        { style: { display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" } },
+                        React.createElement("span", { style: { fontSize: 11, color: T.textSub } }, item.tanggal),
+                        React.createElement(
+                          "span",
+                          {
+                            style: {
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "1px 6px",
+                              borderRadius: 5,
+                              background: item.nw === "Need" ? "rgba(2, 132, 199, 0.08)" : "rgba(139, 92, 246, 0.08)",
+                              color: item.nw === "Need" ? "#0284C7" : "#8B5CF6",
+                              border: "1px solid " + (item.nw === "Need" ? "rgba(2, 132, 199, 0.2)" : "rgba(139, 92, 246, 0.2)")
+                            }
+                          },
+                          item.nw === "Need" ? "🎯 Need" : "✨ Want"
+                        ),
+                        React.createElement(
+                          "span",
+                          {
+                            style: {
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "1px 6px",
+                              borderRadius: 5,
+                              background: "#F1F5F9",
+                              color: "#475569",
+                              border: "1px solid " + T.border
+                            }
+                          },
+                          item.bayar || "Cash"
+                        ),
+                        item.catatan && React.createElement("span", { style: { fontSize: 11, color: T.textDim } }, "· " + item.catatan)
+                      )
+                    )
+                  ),
+
+                  // Right: Nominal + Action Buttons
+                  React.createElement(
+                    "div",
+                    { style: { display: "flex", alignItems: "center", gap: 14 } },
+                    React.createElement(
+                      "div",
+                      { style: { fontSize: 15, fontWeight: 900, color: "#E11D48", textAlign: "right" } },
+                      "-" + fmt(item.nominal)
+                    ),
+                    React.createElement(
+                      "div",
+                      { style: { display: "flex", gap: 6 } },
+                      React.createElement(
+                        "button",
+                        {
+                          onClick: function () { p.onEdit(item); },
+                          title: "Edit transaksi",
+                          style: {
+                            background: "#F8FAFC",
+                            border: "1px solid " + T.border,
+                            color: T.textSub,
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }
+                        },
+                        "✏"
+                      ),
+                      React.createElement(
+                        "button",
+                        {
+                          onClick: function () { p.onDelete(item.id, item); },
+                          title: "Hapus transaksi",
+                          style: {
+                            background: "rgba(239, 68, 68, 0.08)",
+                            border: "1px solid rgba(239, 68, 68, 0.2)",
+                            color: "#DC2626",
+                            width: 32,
+                            height: 32,
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }
+                        },
+                        "✕"
+                      )
+                    )
                   )
                 );
               })
             );
           })
-        ),
+    ),
 
     React.createElement(MemoDetailModal, {
       open: !!memoModalItem,
@@ -2532,28 +3674,88 @@ function AnalisisBulananView(p) {
     return b.localeCompare(a);
   });
 
+  // Calculate overall metrics
+  var curInc = (p.income || []).filter(function (i) {
+    return getFinancialPeriod(i.tanggal || i.date, paydayDate).cycleKey === curP.cycleKey;
+  }).reduce(function (s, i) { return s + (i.nominal || 0); }, 0);
+
+  var curExp = (p.expenses || []).filter(function (e) {
+    return getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey === curP.cycleKey;
+  }).reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
+
+  var curNet = curInc - curExp;
+
+  var totalAllInc = 0;
+  var totalAllExp = 0;
+  var cycleRates = [];
+
+  sortedKeys.forEach(function (k) {
+    var inc = (p.income || []).filter(function (i) { return getFinancialPeriod(i.tanggal || i.date, paydayDate).cycleKey === k; }).reduce(function (s, i) { return s + (i.nominal || 0); }, 0);
+    var exp = (p.expenses || []).filter(function (e) { return getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey === k; }).reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
+    totalAllInc += inc;
+    totalAllExp += exp;
+    if (inc > 0) {
+      cycleRates.push(Math.max(0, Math.round(((inc - exp) / inc) * 100)));
+    }
+  });
+
+  var avgSavingsRate = cycleRates.length > 0 ? Math.round(cycleRates.reduce(function (a, b) { return a + b; }, 0) / cycleRates.length) : 0;
+  var overallSurplus = totalAllInc - totalAllExp;
+
   return React.createElement(
     "div",
-    { style: { padding: "24px 32px", overflowY: "auto", height: "100%" } },
+    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
+
+    // 1. TOP HEADER & PAYDAY PICKER
     React.createElement(
       "div",
-      { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 } },
+      {
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+          flexWrap: "wrap",
+          gap: 16
+        }
+      },
       React.createElement(
         "div",
         null,
-        React.createElement("h2", { style: { margin: "0 0 4px", fontSize: 20, fontWeight: 900, color: T.text } }, "📈 Analisis Keuangan Per Siklus Gajian"),
-        React.createElement("div", { style: { fontSize: 12, color: T.textSub } }, "Data dihitung otomatis berdasarkan tanggal gajian dan siklus cashflow")
+        React.createElement("h2", { style: { margin: "0 0 4px", fontSize: 22, fontWeight: 900, color: T.text, letterSpacing: -0.5 } }, "📈 Analisis Siklus Keuangan & Cashflow"),
+        React.createElement("div", { style: { fontSize: 13, color: T.textSub } }, "Evaluasi cashflow per siklus gajian, tingkat tabungan, dan alokasi pos pengeluaran")
       ),
       p.onUpdatePayday && React.createElement(
         "div",
-        { style: { display: "flex", alignItems: "center", gap: 8, background: T.card, padding: "8px 14px", borderRadius: 12, border: "1px solid " + T.border, boxShadow: "0 2px 6px rgba(0,0,0,0.03)" } },
-        React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "🗓️ Tanggal Gajian:"),
+        {
+          style: {
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            background: "#FFFFFF",
+            padding: "8px 16px",
+            borderRadius: 14,
+            border: "1px solid " + T.border,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+          }
+        },
+        React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: T.text } }, "🗓️ Tanggal Gajian:"),
         React.createElement(
           "select",
           {
             value: paydayDate,
             onChange: function (e) { p.onUpdatePayday(parseInt(e.target.value, 10)); },
-            style: { padding: "4px 8px", borderRadius: 8, border: "1px solid " + T.border, fontSize: 13, fontWeight: 800, color: T.teal, background: T.panel, cursor: "pointer" }
+            style: {
+              padding: "4px 10px",
+              borderRadius: 8,
+              border: "1px solid " + T.border,
+              fontSize: 12,
+              fontWeight: 800,
+              color: T.teal,
+              background: "#F8FAFC",
+              cursor: "pointer",
+              outline: "none"
+            }
           },
           Array.from({ length: 31 }, function (_, i) { return i + 1; }).map(function (d) {
             return React.createElement("option", { key: d, value: d }, d === 1 ? "Tgl 1 (Kalender)" : "Tgl " + d);
@@ -2561,9 +3763,110 @@ function AnalisisBulananView(p) {
         )
       )
     ),
+
+    // 2. EXECUTIVE 3-METRIC SUMMARY CARDS
     React.createElement(
       "div",
-      { style: { display: "flex", flexDirection: "column", gap: 16 } },
+      {
+        style: {
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: 16,
+          marginBottom: 24
+        }
+      },
+      // Metric 1: Status Siklus Saat Ini
+      React.createElement(
+        "div",
+        {
+          style: {
+            background: "#FFFFFF",
+            borderRadius: 20,
+            border: "1px solid " + T.border,
+            padding: "20px 24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }
+        },
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 11, color: curNet >= 0 ? "#059669" : "#E11D48", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "SIKLUS SAAT INI (" + (curNet >= 0 ? "SURPLUS" : "DEFISIT") + ")"),
+          React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: curNet >= 0 ? "#059669" : "#E11D48", marginTop: 4 } }, (curNet >= 0 ? "+" : "") + fmt(curNet)),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, "Siklus " + curP.monthName + " (Gajian Tgl " + paydayDate + ")")
+        ),
+        React.createElement(
+          "div",
+          { style: { width: 44, height: 44, borderRadius: 14, background: curNet >= 0 ? "rgba(5, 150, 105, 0.1)" : "rgba(225, 29, 72, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          curNet >= 0 ? "⚡" : "⚠️"
+        )
+      ),
+
+      // Metric 2: Rata-rata Tingkat Tabungan
+      React.createElement(
+        "div",
+        {
+          style: {
+            background: "#FFFFFF",
+            borderRadius: 20,
+            border: "1px solid " + T.border,
+            padding: "20px 24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }
+        },
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "RATA-RATA TINGKAT TABUNGAN"),
+          React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: T.text, marginTop: 4 } }, avgSavingsRate + "%"),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, "Rasio surplus kas terhadap pemasukan")
+        ),
+        React.createElement(
+          "div",
+          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(2, 132, 199, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          "🌱"
+        )
+      ),
+
+      // Metric 3: Total Akumulasi Surplus
+      React.createElement(
+        "div",
+        {
+          style: {
+            background: "#FFFFFF",
+            borderRadius: 20,
+            border: "1px solid " + T.border,
+            padding: "20px 24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }
+        },
+        React.createElement(
+          "div",
+          null,
+          React.createElement("div", { style: { fontSize: 11, color: T.violet, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "TOTAL AKUMULASI CASHFLOW"),
+          React.createElement("div", { style: { fontSize: 26, fontWeight: 900, color: overallSurplus >= 0 ? T.text : "#E11D48", marginTop: 4 } }, (overallSurplus >= 0 ? "+" : "") + fmt(overallSurplus)),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, sortedKeys.length + " siklus keuangan terdata")
+        ),
+        React.createElement(
+          "div",
+          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(139, 92, 246, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          "📊"
+        )
+      )
+    ),
+
+    // 3. CYCLE INTELLIGENCE CARDS
+    React.createElement(
+      "div",
+      { style: { display: "flex", flexDirection: "column", gap: 18 } },
       sortedKeys.map(function (mKey) {
         var periodInfo = cycleMap[mKey];
         var isCurrent = mKey === curP.cycleKey;
@@ -2575,70 +3878,154 @@ function AnalisisBulananView(p) {
           return getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey === mKey;
         });
 
-        var tInc = mInc.reduce(function (s, i) { return s + i.nominal; }, 0);
-        var tExp = mExp.reduce(function (s, e) { return s + e.nominal; }, 0);
+        var tInc = mInc.reduce(function (s, i) { return s + (i.nominal || 0); }, 0);
+        var tExp = mExp.reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
         var net = tInc - tExp;
         var pctSpent = tInc > 0 ? Math.min(100, Math.round((tExp / tInc) * 100)) : tExp > 0 ? 100 : 0;
+        var sRate = tInc > 0 ? Math.max(0, Math.round((net / tInc) * 100)) : 0;
+
+        // Top categories calculation
+        var catTotals = {};
+        mExp.forEach(function (e) {
+          var c = e.kategori || "Lainnya";
+          catTotals[c] = (catTotals[c] || 0) + (e.nominal || 0);
+        });
+        var topCats = Object.keys(catTotals).map(function (c) {
+          return { name: c, total: catTotals[c], pct: tExp > 0 ? Math.round((catTotals[c] / tExp) * 100) : 0 };
+        }).sort(function (a, b) { return b.total - a.total; }).slice(0, 4);
 
         return React.createElement(
           "div",
           {
             key: mKey,
             style: {
-              background: T.card,
-              borderRadius: 16,
+              background: "#FFFFFF",
+              borderRadius: 22,
               border: isCurrent ? "2px solid " + T.teal : "1px solid " + T.border,
-              padding: 22,
-              position: "relative",
-              boxShadow: isCurrent ? "0 4px 16px " + T.tealDim : "none"
+              padding: "24px 28px",
+              boxShadow: isCurrent ? "0 8px 24px -4px rgba(2, 132, 199, 0.12)" : "0 1px 3px rgba(0,0,0,0.02)",
+              transition: "all 0.2s ease"
             }
           },
+          // Card Header: Period & Cashflow Status
           React.createElement(
             "div",
-            { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 } },
+            { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 12 } },
             React.createElement(
               "div",
-              { style: { display: "flex", alignItems: "center", gap: 10 } },
+              { style: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" } },
               React.createElement("div", { style: { fontSize: 17, fontWeight: 900, color: isCurrent ? T.teal : T.text } }, "📅 " + periodInfo.label),
-              isCurrent && React.createElement("span", { style: { background: T.teal, color: "#FFFFFF", fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 6, textTransform: "uppercase" }, title: "Siklus yang aktif saat ini" }, "⚡ Sedang Berjalan")
+              isCurrent && React.createElement(
+                "span",
+                { style: { background: "rgba(2, 132, 199, 0.1)", color: T.teal, border: "1px solid rgba(2, 132, 199, 0.25)", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 20 } },
+                "⚡ Siklus Sedang Berjalan"
+              )
             ),
             React.createElement(
               "div",
-              { style: { textAlign: "right" } },
-              React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700 } }, "Sisa Cashflow:"),
-              React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: net >= 0 ? T.sage : T.coral } }, fmt(net))
+              {
+                style: {
+                  background: net >= 0 ? "rgba(5, 150, 105, 0.08)" : "rgba(225, 29, 72, 0.08)",
+                  border: "1px solid " + (net >= 0 ? "rgba(5, 150, 105, 0.2)" : "rgba(225, 29, 72, 0.2)"),
+                  borderRadius: 12,
+                  padding: "6px 14px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8
+                }
+              },
+              React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: net >= 0 ? "#059669" : "#E11D48" } }, net >= 0 ? "Surplus Kas:" : "Defisit Kas:"),
+              React.createElement("span", { style: { fontSize: 14, fontWeight: 900, color: net >= 0 ? "#059669" : "#E11D48" } }, (net >= 0 ? "+" : "") + fmt(net)),
+              tInc > 0 && React.createElement("span", { style: { fontSize: 10, fontWeight: 800, color: net >= 0 ? "#059669" : "#E11D48", opacity: 0.8 } }, "(" + sRate + "%)")
             )
           ),
-          // Progress bar
+
+          // Cashflow Bar (Spending vs Income)
           tInc > 0 && React.createElement(
             "div",
-            { style: { marginBottom: 14 } },
+            { style: { marginBottom: 18 } },
             React.createElement(
               "div",
-              { style: { display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700, color: T.textSub, marginBottom: 4 } },
-              React.createElement("span", null, "Persentase Terpakai"),
-              React.createElement("span", { style: { color: pctSpent > 90 ? T.coral : pctSpent > 70 ? T.amber : T.sage } }, pctSpent + "%")
+              { style: { display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700, color: T.textSub, marginBottom: 6 } },
+              React.createElement("span", null, "Persentase Pengeluaran terhadap Pemasukan"),
+              React.createElement("span", { style: { color: pctSpent > 90 ? "#E11D48" : pctSpent > 70 ? "#D97706" : "#059669" } }, pctSpent + "%")
             ),
             React.createElement(
               "div",
-              { style: { height: 6, background: T.panel, borderRadius: 3, overflow: "hidden" } },
-              React.createElement("div", { style: { height: "100%", width: pctSpent + "%", background: pctSpent > 90 ? T.coral : pctSpent > 70 ? T.amber : T.teal, borderRadius: 3 } })
+              { style: { height: 8, background: "#F1F5F9", borderRadius: 4, overflow: "hidden" } },
+              React.createElement("div", {
+                style: {
+                  height: "100%",
+                  width: pctSpent + "%",
+                  background: pctSpent > 90 ? "#E11D48" : pctSpent > 70 ? "#D97706" : "#059669",
+                  borderRadius: 4,
+                  transition: "width .4s ease"
+                }
+              })
             )
           ),
+
+          // 3-Column Metrics Strip
           React.createElement(
             "div",
-            { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } },
+            { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: topCats.length > 0 ? 18 : 0 } },
             React.createElement(
               "div",
-              { style: { background: T.sageDim, padding: 14, borderRadius: 12, border: "1px solid " + T.sage + "30" } },
-              React.createElement("div", { style: { fontSize: 11, color: T.sage, fontWeight: 800, textTransform: "uppercase" } }, "Pemasukan (" + mInc.length + " transaksi)"),
-              React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: T.text, marginTop: 4 } }, fmt(tInc))
+              { style: { background: "#F8FAFC", padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
+              React.createElement("div", { style: { fontSize: 11, color: "#059669", fontWeight: 800, textTransform: "uppercase" } }, "Pemasukan (" + mInc.length + " tx)"),
+              React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.text, marginTop: 4 } }, "+" + fmt(tInc))
             ),
             React.createElement(
               "div",
-              { style: { background: T.coralDim, padding: 14, borderRadius: 12, border: "1px solid " + T.coral + "30" } },
-              React.createElement("div", { style: { fontSize: 11, color: T.coral, fontWeight: 800, textTransform: "uppercase" } }, "Pengeluaran (" + mExp.length + " transaksi)"),
-              React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: T.text, marginTop: 4 } }, fmt(tExp))
+              { style: { background: "#F8FAFC", padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
+              React.createElement("div", { style: { fontSize: 11, color: "#E11D48", fontWeight: 800, textTransform: "uppercase" } }, "Pengeluaran (" + mExp.length + " tx)"),
+              React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.text, marginTop: 4 } }, "-" + fmt(tExp))
+            ),
+            React.createElement(
+              "div",
+              { style: { background: "#F8FAFC", padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
+              React.createElement("div", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase" } }, "Sisa Saldo Kas"),
+              React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: net >= 0 ? "#059669" : "#E11D48", marginTop: 4 } }, (net >= 0 ? "+" : "") + fmt(net))
+            )
+          ),
+
+          // Top Spending Categories Breakdown for this cycle
+          topCats.length > 0 && React.createElement(
+            "div",
+            { style: { paddingTop: 14, borderTop: "1px solid " + T.border } },
+            React.createElement(
+              "div",
+              { style: { fontSize: 11, fontWeight: 800, color: T.textSub, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 } },
+              "POS PENGELUARAN TERBESAR PADA SIKLUS INI"
+            ),
+            React.createElement(
+              "div",
+              { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 } },
+              topCats.map(function (c) {
+                var cfg = getCat(c.name);
+                return React.createElement(
+                  "div",
+                  {
+                    key: c.name,
+                    style: {
+                      background: "#F8FAFC",
+                      borderRadius: 12,
+                      padding: "10px 14px",
+                      border: "1px solid " + T.border,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 4
+                    }
+                  },
+                  React.createElement(
+                    "div",
+                    { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                    React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: T.text, display: "flex", alignItems: "center", gap: 5 } }, cfg.emoji, " ", c.name === "Fashion" ? "Pakaian" : c.name),
+                    React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: T.teal } }, c.pct + "%")
+                  ),
+                  React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: "#E11D48" } }, "-" + fmt(c.total))
+                );
+              })
             )
           )
         );
