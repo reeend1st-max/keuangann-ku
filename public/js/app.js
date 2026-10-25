@@ -5682,12 +5682,6 @@ function ZakatView(p) {
   var _profesiPct = useState(2.5), profesiPct = _profesiPct[0], setProfesiPct = _profesiPct[1];
   var _payMethod = useState("Transfer"), payMethod = _payMethod[0], setPayMethod = _payMethod[1];
 
-  // Maal (Harta/Tabungan) State
-  var _useAutoMaal = useState(true), useAutoMaal = _useAutoMaal[0], setUseAutoMaal = _useAutoMaal[1];
-  var _manualMaal = useState(formatRupiahInput(totalWealth || 25000000)), manualMaal = _manualMaal[0], setManualMaal = _manualMaal[1];
-  var _maalPct = useState(2.5), maalPct = _maalPct[0], setMaalPct = _maalPct[1];
-  var _goldPrice = useState("1400000"), goldPrice = _goldPrice[0], setGoldPrice = _goldPrice[1];
-
   // Sedekah / Donasi Bebas State
   var _donasiPct = useState(2.5), donasiPct = _donasiPct[0], setDonasiPct = _donasiPct[1];
   var _isCustomNom = useState(false), isCustomNom = _isCustomNom[0], setIsCustomNom = _isCustomNom[1];
@@ -5697,13 +5691,6 @@ function ZakatView(p) {
   var nisabProfesiMonthly = 6859394;
   var meetsNisabProfesi = effectiveIncome >= nisabProfesiMonthly;
   var zakatProfesiNominal = Math.round(effectiveIncome * (profesiPct / 100));
-
-  var effectiveMaal = useAutoMaal ? totalWealth : parseRupiahInput(manualMaal);
-  var parsedGold = parseRupiahInput(goldPrice) || 1400000;
-  var nisabMaalAnnual = 85 * parsedGold;
-  var meetsNisabMaal = effectiveMaal >= nisabMaalAnnual;
-  var zakatMaalAnnualNominal = Math.round(effectiveMaal * (maalPct / 100));
-  var zakatMaalMonthlyNominal = Math.round(zakatMaalAnnualNominal / 12);
 
   var baseDonasi = effectiveIncome > 0 ? effectiveIncome : totalWealth;
   var donasiNominal = isCustomNom ? parseRupiahInput(customNominal) : Math.round(baseDonasi * (donasiPct / 100));
@@ -5807,72 +5794,6 @@ function ZakatView(p) {
     );
   }
 
-  // --- Tab: Maal ---
-  function maalContent() {
-    return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 16 } },
-      React.createElement("div", { style: { display: "flex", gap: 10 } },
-        mkZToggle(useAutoMaal, "⚡ Saldo & Tabungan (" + fmt(totalWealth) + ")", function () { setUseAutoMaal(true); }),
-        mkZToggle(!useAutoMaal, "✏️ Masukkan Total Harta", function () { setUseAutoMaal(false); })
-      ),
-      !useAutoMaal && React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6 } },
-        React.createElement("label", { style: { fontSize: 12, color: T.textSub, fontWeight: 700, textTransform: "uppercase" } }, "Total Harta Simpanan / Tabungan 1 Tahun:"),
-        mkZInput(manualMaal, function (e) { setManualMaal(formatRupiahInput(e.target.value)); }, "Contoh: 120.000.000")
-      ),
-      React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", background: T.panel, padding: "10px 14px", borderRadius: 10, border: "1px solid " + T.border } },
-        React.createElement("span", { style: { fontSize: 12, color: T.textSub, fontWeight: 600 } }, "Harga Emas per Gram:"),
-        React.createElement("input", { value: goldPrice, onChange: function (e) { setGoldPrice(e.target.value.replace(/[^0-9]/g, "")); }, style: { width: 130, background: T.card, border: "1px solid " + T.border, borderRadius: 8, padding: "6px 10px", color: T.text, fontSize: 13, fontWeight: 800, textAlign: "right" } })
-      ),
-      React.createElement("div", { style: {
-        padding: "14px 16px", borderRadius: 12,
-        background: meetsNisabMaal ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)",
-        border: "1.5px solid " + (meetsNisabMaal ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)")
-      } },
-        React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: meetsNisabMaal ? "#10B981" : "#D97706" } },
-          meetsNisabMaal ? "🟢 Mencapai Nisab Maal (Wajib Zakat)" : "🟡 Belum Mencapai Nisab Maal"),
-        React.createElement("div", { style: { fontSize: 11.5, color: T.textSub, marginTop: 4 } },
-          "Nisab 85 gr Emas: " + fmt(nisabMaalAnnual) + " (wajib jika mengendap 1 tahun / haul).")
-      ),
-      // Input Persen Zakat Maal
-      React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", background: T.panel, padding: "10px 14px", borderRadius: 10, border: "1px solid " + T.border } },
-        React.createElement("div", null,
-          React.createElement("div", { style: { fontSize: 12, color: T.text, fontWeight: 700 } }, "Persentase Zakat Maal:"),
-          React.createElement("div", { style: { fontSize: 10.5, color: T.textSub, marginTop: 1 } }, "Bisa diedit bebas (standar syariat: 2.5%)")
-        ),
-        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
-          React.createElement("input", {
-            type: "number",
-            step: "0.1",
-            min: "0.1",
-            max: "100",
-            value: maalPct,
-            onChange: function (e) {
-              var val = parseFloat(e.target.value);
-              setMaalPct(isNaN(val) ? 0 : val);
-            },
-            style: { width: 65, background: T.card, border: "1.5px solid " + T.border, borderRadius: 8, padding: "6px 8px", color: T.text, fontSize: 14, fontWeight: 800, textAlign: "center", outline: "none" }
-          }),
-          React.createElement("span", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "%")
-        )
-      ),
-
-      React.createElement("div", { style: {
-        background: "linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.05))",
-        border: "2px solid rgba(16,185,129,0.35)", borderRadius: 16, padding: "24px",
-        display: "flex", justifyContent: "space-between", alignItems: "center"
-      } },
-        React.createElement("div", null,
-          React.createElement("div", { style: { fontSize: 12, color: "#10B981", fontWeight: 800, textTransform: "uppercase" } }, "Zakat Maal Tahunan (" + maalPct + "%)"),
-          React.createElement("div", { style: { fontSize: 32, fontWeight: 900, color: "#10B981", marginTop: 4 } }, fmt(zakatMaalAnnualNominal)),
-          React.createElement("div", { style: { fontSize: 12, color: T.textSub, marginTop: 4 } }, "Atau dicicil: " + fmt(zakatMaalMonthlyNominal) + " / bulan")
-        ),
-        React.createElement("div", { style: { fontSize: 40 } }, "💎")
-      ),
-      React.createElement(Btn, { color: "#10B981", disabled: zakatMaalAnnualNominal <= 0, onClick: function () {
-        recordExpense("Zakat Maal Tabungan", zakatMaalAnnualNominal, "Perhitungan zakat maal " + maalPct + "% dari harta simpanan " + fmt(effectiveMaal));
-      } }, "➕ Catat Pengeluaran Zakat Maal (" + fmt(zakatMaalAnnualNominal) + ")")
-    );
-  }
-
   // --- Tab: Donasi ---
   function donasiContent() {
     return React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 16 } },
@@ -5953,7 +5874,7 @@ function ZakatView(p) {
       React.createElement("div", { style: { background: T.card, borderRadius: 20, border: "1px solid " + T.border, padding: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" } },
         React.createElement("h2", { style: { fontSize: 16, fontWeight: 900, color: T.text, margin: "0 0 16px" } }, "🧮 Kalkulator"),
         React.createElement("div", { style: { display: "flex", background: T.panel, borderRadius: 12, padding: 4, border: "1px solid " + T.border, marginBottom: 20 } },
-          [{ id: "profesi", label: "💼 Zakat Profesi" }, { id: "maal", label: "💎 Zakat Maal" }, { id: "donasi", label: "🤲 Sedekah Bebas" }].map(function (t) {
+          [{ id: "profesi", label: "💼 Zakat Profesi" }, { id: "donasi", label: "🤲 Sedekah Bebas" }].map(function (t) {
             var active = tab === t.id;
             return React.createElement("button", { key: t.id, type: "button", onClick: function () { setTab(t.id); }, style: {
               flex: 1, padding: "10px 8px", borderRadius: 9, border: "none",
@@ -5963,7 +5884,6 @@ function ZakatView(p) {
           })
         ),
         tab === "profesi" && profesiContent(),
-        tab === "maal" && maalContent(),
         tab === "donasi" && donasiContent()
       ),
       // Right: History
