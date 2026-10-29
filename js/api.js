@@ -455,6 +455,51 @@
       var list = this.getRepeatTemplates().filter(function (x) { return x.id !== id; });
       this._setLocal("repeat_templates", list);
     },
+
+    // ── Tagihan Mendatang Cloud Sync ──────────────────────────────────────────
+    getBills: async function () {
+      var localBills = [];
+      try {
+        var raw = localStorage.getItem("keuangan_upcoming_bills");
+        if (raw) localBills = JSON.parse(raw);
+      } catch(e) {}
+
+      try {
+        var sess = await this.getSession();
+        if (sess && sess.id) {
+          var res = await sb.auth.getUser();
+          var user = res.data && res.data.user;
+          var metaBills = user && user.user_metadata && user.user_metadata.upcoming_bills;
+          if (Array.isArray(metaBills)) {
+            // Jika ada data di cloud, update local cache
+            localStorage.setItem("keuangan_upcoming_bills", JSON.stringify(metaBills));
+            return metaBills;
+          } else if (localBills.length > 0) {
+            // Jika di cloud belum ada tapi di local ada (migrasi pertama dari laptop)
+            await sb.auth.updateUser({ data: { upcoming_bills: localBills } });
+          }
+        }
+      } catch(e) {
+        console.warn("Sync getBills cloud:", e);
+      }
+      return localBills;
+    },
+
+    saveBills: async function (bills) {
+      try {
+        localStorage.setItem("keuangan_upcoming_bills", JSON.stringify(bills));
+      } catch(e) {}
+
+      try {
+        var sess = await this.getSession();
+        if (sess && sess.id) {
+          await sb.auth.updateUser({ data: { upcoming_bills: bills } });
+        }
+      } catch(e) {
+        console.warn("Sync saveBills cloud:", e);
+      }
+      return bills;
+    },
   };
 
   window.Api = Api;

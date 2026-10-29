@@ -209,6 +209,9 @@ function getBills() {
 }
 function saveBills(bills) {
   try { localStorage.setItem("keuangan_upcoming_bills", JSON.stringify(bills)); } catch(e) {}
+  if (window.Api && window.Api.saveBills) {
+    window.Api.saveBills(bills);
+  }
 }
 
 var MONTH_NAMES = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
@@ -2235,6 +2238,16 @@ function TagihanMendatangWidget(p) {
   var _editBill = useState(null), editBill = _editBill[0], setEditBill = _editBill[1];
   var _bayarBill = useState(null), bayarBill = _bayarBill[0], setBayarBill = _bayarBill[1];
   var _delBill = useState(null), delBill = _delBill[0], setDelBill = _delBill[1];
+
+  useEffect(function () {
+    if (window.Api && window.Api.getBills) {
+      window.Api.getBills().then(function (cloudBills) {
+        if (Array.isArray(cloudBills)) {
+          setBills(cloudBills);
+        }
+      }).catch(function () {});
+    }
+  }, []);
 
   function reload() {
     setBills(getBills());
@@ -5857,10 +5870,6 @@ function ZakatView(p) {
         React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 } }, "💵 Pemasukan Siklus"),
         React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: T.teal } }, fmt(cycleIncomeTotal)),
         React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 4 } }, curPeriod.monthName)
-      ),
-      React.createElement("div", { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, padding: "18px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" } },
-        React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 } }, "💎 Total Harta & Tabungan"),
-        React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: "#8B5CF6" } }, fmt(totalWealth))
       ),
       React.createElement("div", { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, padding: "18px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" } },
         React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 } }, "✅ Sudah Disalurkan"),
