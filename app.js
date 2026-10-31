@@ -98,6 +98,8 @@ var CATS = {
   "Darurat": { emoji: "🚨", color: "#EF4444" },
   "Tabungan": { emoji: "🏦", color: T.teal },
   "Donasi & Zakat": { emoji: "🤲", color: "#10B981" },
+  "Kouta Internet": { emoji: "📶", color: "#0284C7" },
+  "Tarik Tunai": { emoji: "💵", color: "#10B981" },
   "Lain-lain": { emoji: "📦", color: T.textSub },
 };
 
@@ -985,6 +987,9 @@ function AddCategoryModal(p) {
     try {
       localStorage.setItem("keuangan_custom_categories", JSON.stringify(custom));
     } catch (e) {}
+    if (window.Api && window.Api.saveCustomCategories) {
+      window.Api.saveCustomCategories(custom);
+    }
     p.onSave(cleanName);
     setName(""); setEmoji("🐾"); setCustomEm(""); setColor("#0284C7"); setErr("");
     p.onClose();
@@ -6014,6 +6019,14 @@ function App() {
       tk.show(e.message || "Gagal memuat data.", "error");
       setLoading(false);
     });
+
+    if (window.Api && window.Api.getCustomCategories) {
+      window.Api.getCustomCategories().then(function (cats) {
+        if (cats && typeof cats === "object") {
+          window.customCats = Object.assign({}, window.customCats || {}, cats);
+        }
+      }).catch(function () {});
+    }
   }, [user]);
 
   var handleAuth = useCallback(function (u) { setUser(u); }, []);

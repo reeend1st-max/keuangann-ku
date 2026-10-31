@@ -500,6 +500,51 @@
       }
       return bills;
     },
+
+    // ── Custom Categories Cloud Sync ──────────────────────────────────────────
+    getCustomCategories: async function () {
+      var localCats = {};
+      try {
+        var raw = localStorage.getItem("keuangan_custom_categories");
+        if (raw) localCats = JSON.parse(raw);
+      } catch(e) {}
+
+      try {
+        var sess = await this.getSession();
+        if (sess && sess.id) {
+          var res = await sb.auth.getUser();
+          var user = res.data && res.data.user;
+          var metaCats = user && user.user_metadata && user.user_metadata.custom_categories;
+          if (metaCats && typeof metaCats === "object") {
+            // Gabungkan lokal dan cloud
+            var merged = Object.assign({}, metaCats, localCats);
+            localStorage.setItem("keuangan_custom_categories", JSON.stringify(merged));
+            return merged;
+          } else if (Object.keys(localCats).length > 0) {
+            await sb.auth.updateUser({ data: { custom_categories: localCats } });
+          }
+        }
+      } catch(e) {
+        console.warn("Sync getCustomCategories cloud:", e);
+      }
+      return localCats;
+    },
+
+    saveCustomCategories: async function (cats) {
+      try {
+        localStorage.setItem("keuangan_custom_categories", JSON.stringify(cats));
+      } catch(e) {}
+
+      try {
+        var sess = await this.getSession();
+        if (sess && sess.id) {
+          await sb.auth.updateUser({ data: { custom_categories: cats } });
+        }
+      } catch(e) {
+        console.warn("Sync saveCustomCategories cloud:", e);
+      }
+      return cats;
+    },
   };
 
   window.Api = Api;
