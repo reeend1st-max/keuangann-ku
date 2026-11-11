@@ -1,13 +1,102 @@
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;background:#0A0E17;overflow:hidden;}
+html,body{width:100%;height:100%;background:#F8FAFC;color:#0F172A;overflow:hidden;-webkit-text-size-adjust:100%;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;}
 #root{width:100%;height:100%;}
-::-webkit-scrollbar{width:10px;height:10px;}
-::-webkit-scrollbar-track{background:#0F1420;}
-::-webkit-scrollbar-thumb{background:#253650;border-radius:6px;}
-::-webkit-scrollbar-thumb:hover{background:#00C896;}
-select{color-scheme:dark;}
-input::placeholder{color:#374A65;}
-#boot-error{display:none;position:fixed;inset:0;z-index:99999;background:#0A0E17;color:#E8F0FE;padding:40px;font-family:-apple-system,sans-serif;overflow:auto;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:6px;}
+::-webkit-scrollbar-thumb:hover{background:#94A3B8;}
+select{color-scheme:light;background:#FFFFFF;color:#0F172A;border:1px solid #E2E8F0;font-family:inherit;}
+input,textarea{color:#0F172A;font-family:inherit;}
+input::placeholder,textarea::placeholder{color:#94A3B8;}
+button{font-family:inherit;}
+#boot-error{display:none;position:fixed;inset:0;z-index:99999;background:#F8FAFC;color:#0F172A;padding:24px;font-family:'Plus Jakarta Sans',sans-serif;overflow:auto;}
 #boot-error.show{display:block;}
-#boot-error h2{color:#FF5E5E;margin-bottom:12px;font-size:20px;}
-#boot-error pre{background:#19223A;border:1px solid #1E2D45;border-radius:10px;padding:16px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#7A90B0;margin-top:12px;}
+#boot-error h2{color:#EF4444;margin-bottom:12px;font-size:20px;}
+#boot-error pre{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:16px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#475569;margin-top:12px;}
+
+/* Responsive styles for mobile screens */
+body.dark-mode {
+  background: #0B0F19 !important;
+  color: #F8FAFC !important;
+}
+body.dark-mode select {
+  color-scheme: dark !important;
+  background: #1A2438 !important;
+  color: #F8FAFC !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+body.dark-mode input,
+body.dark-mode textarea {
+  color: #F8FAFC !important;
+  background: #1A2438 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #64748B !important;
+}
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: #334155 !important;
+}
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  background: #475569 !important;
+}
+
+@media (max-width: 768px) {
+  html, body {
+    overflow-y: auto !important;
+  }
+  .app-main-layout {
+    flex-direction: column !important;
+  }
+  .sidebar-root {
+    width: 100% !important;
+    height: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    background: #FFFFFF !important;
+  }
+  .sidebar-menu-list {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding: 8px !important;
+    gap: 6px !important;
+  }
+  .sidebar-menu-list button {
+    width: auto !important;
+    padding: 6px 12px !important;
+    margin-bottom: 0 !important;
+    font-size: 12px !important;
+  }
+  .top-toolbar {
+    padding: 10px 14px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    background: #FFFFFF !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+  }
+  .top-toolbar-actions {
+    gap: 6px !important;
+  }
+  .top-toolbar-actions button {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+  .view-container {
+    padding: 16px 14px !important;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .summary-cards-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .fintech-2col-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
