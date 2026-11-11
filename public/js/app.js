@@ -3025,9 +3025,26 @@ function PemasukanView(p) {
   var _search = useState(""), search = _search[0], setSearch = _search[1];
   var _fMet = useState("Semua"), fMet = _fMet[0], setFMet = _fMet[1];
   var _fCycle = useState("all"), fCycle = _fCycle[0], setFCycle = _fCycle[1];
+  var _fMonth = useState(""), fMonth = _fMonth[0], setFMonth = _fMonth[1];
 
   var allIncome = p.income || [];
   var totalAll = allIncome.reduce(function (s, i) { return s + (i.nominal || 0); }, 0);
+
+  // Ambil daftar unik semua bulan / siklus yang ada di data pemasukan
+  var availableCycles = React.useMemo(function () {
+    var map = {};
+    allIncome.forEach(function (i) {
+      var period = getFinancialPeriod(i.tanggal || i.date, paydayDate);
+      if (!map[period.cycleKey]) {
+        map[period.cycleKey] = {
+          key: period.cycleKey,
+          label: period.cycleName,
+          fullLabel: period.label || period.cycleName
+        };
+      }
+    });
+    return Object.values(map).sort(function (a, b) { return b.key.localeCompare(a.key); });
+  }, [allIncome, paydayDate]);
 
   var cycleIncome = allIncome.filter(function (i) {
     return getFinancialPeriod(i.tanggal || i.date, paydayDate).cycleKey === curPeriod.cycleKey;
@@ -3045,8 +3062,11 @@ function PemasukanView(p) {
   };
 
   var filtered = allIncome.filter(function (item) {
+    var itemPeriod = getFinancialPeriod(item.tanggal || item.date, paydayDate);
     if (fCycle === "cycle") {
-      if (getFinancialPeriod(item.tanggal || item.date, paydayDate).cycleKey !== curPeriod.cycleKey) return false;
+      if (itemPeriod.cycleKey !== curPeriod.cycleKey) return false;
+    } else if (fCycle === "month") {
+      if (fMonth && itemPeriod.cycleKey !== fMonth) return false;
     }
     if (fMet !== "Semua" && item.metode !== fMet) return false;
     if (search) {
@@ -3235,9 +3255,41 @@ function PemasukanView(p) {
         }),
         React.createElement(
           "div",
-          { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
-          pill("Semua Waktu", fCycle === "all", T.teal, function () { setFCycle("all"); }),
-          pill("⚡ Siklus Ini Saja", fCycle === "cycle", "#059669", function () { setFCycle("cycle"); })
+          { style: { display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" } },
+          pill("Semua Waktu", fCycle === "all", T.teal, function () { setFCycle("all"); setFMonth(""); }),
+          pill("⚡ Siklus Ini Saja", fCycle === "cycle", "#059669", function () { setFCycle("cycle"); setFMonth(""); }),
+          React.createElement(
+            "select",
+            {
+              value: fCycle === "month" ? fMonth : "",
+              onChange: function (e) {
+                var val = e.target.value;
+                if (val) {
+                  setFCycle("month");
+                  setFMonth(val);
+                } else {
+                  setFCycle("all");
+                  setFMonth("");
+                }
+              },
+              style: {
+                padding: "6px 12px",
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 700,
+                border: fCycle === "month" ? "1.5px solid " + T.teal : "1px solid " + T.border,
+                background: fCycle === "month" ? "rgba(2, 132, 199, 0.12)" : T.panel,
+                color: fCycle === "month" ? T.teal : T.textSub,
+                cursor: "pointer",
+                outline: "none",
+                transition: "all 0.15s ease"
+              }
+            },
+            React.createElement("option", { value: "" }, "📅 Pilih Bulan..."),
+            availableCycles.map(function (c) {
+              return React.createElement("option", { key: c.key, value: c.key }, c.label);
+            })
+          )
         )
       ),
       React.createElement(
@@ -3467,10 +3519,27 @@ function PengeluaranView(p) {
   var _fn = useState("Semua"), fNW = _fn[0], sFNW = _fn[1];
   var _fs = useState(""), search = _fs[0], sSearch = _fs[1];
   var _fCycle = useState("all"), fCycle = _fCycle[0], setFCycle = _fCycle[1];
+  var _fMonth = useState(""), fMonth = _fMonth[0], setFMonth = _fMonth[1];
   var _mmi = useState(null), memoModalItem = _mmi[0], setMemoModalItem = _mmi[1];
 
   var all = p.expenses || [];
   var total = all.reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
+
+  // Ambil daftar unik semua bulan / siklus yang ada di data pengeluaran
+  var availableCycles = React.useMemo(function () {
+    var map = {};
+    all.forEach(function (e) {
+      var period = getFinancialPeriod(e.tanggal || e.date, paydayDate);
+      if (!map[period.cycleKey]) {
+        map[period.cycleKey] = {
+          key: period.cycleKey,
+          label: period.cycleName,
+          fullLabel: period.label || period.cycleName
+        };
+      }
+    });
+    return Object.values(map).sort(function (a, b) { return b.key.localeCompare(a.key); });
+  }, [all, paydayDate]);
 
   var thisCycleExpList = all.filter(function (e) {
     return getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey === curPeriod.cycleKey;
@@ -3480,8 +3549,11 @@ function PengeluaranView(p) {
   var usedCats = [].concat([], all.map(function (e) { return e.kategori; })).filter(function (v, i, a) { return a.indexOf(v) === i; });
 
   var filtered = [].concat(all).filter(function (e) {
+    var itemPeriod = getFinancialPeriod(e.tanggal || e.date, paydayDate);
     if (fCycle === "cycle") {
-      if (getFinancialPeriod(e.tanggal || e.date, paydayDate).cycleKey !== curPeriod.cycleKey) return false;
+      if (itemPeriod.cycleKey !== curPeriod.cycleKey) return false;
+    } else if (fCycle === "month") {
+      if (fMonth && itemPeriod.cycleKey !== fMonth) return false;
     }
     if (fCat !== "Semua" && e.kategori !== fCat) return false;
     if (fNW !== "Semua" && e.nw !== fNW) return false;
@@ -3672,9 +3744,41 @@ function PengeluaranView(p) {
         }),
         React.createElement(
           "div",
-          { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
-          pill("Semua Waktu", fCycle === "all", T.teal, function () { setFCycle("all"); }),
-          pill("⚡ Siklus Ini Saja", fCycle === "cycle", "#0284C7", function () { setFCycle("cycle"); })
+          { style: { display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" } },
+          pill("Semua Waktu", fCycle === "all", T.teal, function () { setFCycle("all"); setFMonth(""); }),
+          pill("⚡ Siklus Ini Saja", fCycle === "cycle", "#0284C7", function () { setFCycle("cycle"); setFMonth(""); }),
+          React.createElement(
+            "select",
+            {
+              value: fCycle === "month" ? fMonth : "",
+              onChange: function (e) {
+                var val = e.target.value;
+                if (val) {
+                  setFCycle("month");
+                  setFMonth(val);
+                } else {
+                  setFCycle("all");
+                  setFMonth("");
+                }
+              },
+              style: {
+                padding: "6px 12px",
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 700,
+                border: fCycle === "month" ? "1.5px solid " + T.teal : "1px solid " + T.border,
+                background: fCycle === "month" ? "rgba(2, 132, 199, 0.12)" : T.panel,
+                color: fCycle === "month" ? T.teal : T.textSub,
+                cursor: "pointer",
+                outline: "none",
+                transition: "all 0.15s ease"
+              }
+            },
+            React.createElement("option", { value: "" }, "📅 Pilih Bulan..."),
+            availableCycles.map(function (c) {
+              return React.createElement("option", { key: c.key, value: c.key }, c.label);
+            })
+          )
         )
       ),
       React.createElement(
