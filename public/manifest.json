@@ -1,11 +1,11 @@
 {
-  "name": "Keuangan Ku",
-  "short_name": "Keuangan Ku",
-  "description": "Personal Finance Tracker — Catat pemasukan, pengeluaran, dan tabungan",
+  "name": "KeuanganKu",
+  "short_name": "KeuanganKu",
+  "description": "KeuanganKu — Notion-Style Personal Finance Tracker",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0A0E17",
-  "theme_color": "#00C896",
+  "background_color": "#191919",
+  "theme_color": "#202020",
   "orientation": "portrait-primary",
   "icons": [
     {

@@ -1,45 +1,45 @@
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:100%;height:100%;background:#F8FAFC;color:#0F172A;overflow:hidden;-webkit-text-size-adjust:100%;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;}
+html,body{width:100%;height:100%;background:#FBFBFA;color:#37352F;overflow:hidden;-webkit-text-size-adjust:100%;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;}
 #root{width:100%;height:100%;}
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:6px;}
-::-webkit-scrollbar-thumb:hover{background:#94A3B8;}
-select{color-scheme:light;background:#FFFFFF;color:#0F172A;border:1px solid #E2E8F0;font-family:inherit;}
-input,textarea{color:#0F172A;font-family:inherit;}
-input::placeholder,textarea::placeholder{color:#94A3B8;}
+::-webkit-scrollbar-thumb{background:#D6D6D3;border-radius:6px;}
+::-webkit-scrollbar-thumb:hover{background:#A0A09C;}
+select{color-scheme:light;background:#FFFFFF;color:#37352F;border:1px solid #E9E9E8;font-family:inherit;}
+input,textarea{color:#37352F;font-family:inherit;}
+input::placeholder,textarea::placeholder{color:#9B9B9B;}
 button{font-family:inherit;}
-#boot-error{display:none;position:fixed;inset:0;z-index:99999;background:#F8FAFC;color:#0F172A;padding:24px;font-family:'Plus Jakarta Sans',sans-serif;overflow:auto;}
+#boot-error{display:none;position:fixed;inset:0;z-index:99999;background:#FBFBFA;color:#37352F;padding:24px;font-family:'Plus Jakarta Sans',sans-serif;overflow:auto;}
 #boot-error.show{display:block;}
-#boot-error h2{color:#EF4444;margin-bottom:12px;font-size:20px;}
-#boot-error pre{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:10px;padding:16px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#475569;margin-top:12px;}
+#boot-error h2{color:#D44040;margin-bottom:12px;font-size:20px;}
+#boot-error pre{background:#FFFFFF;border:1px solid #E9E9E8;border-radius:10px;padding:16px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#787774;margin-top:12px;}
 
 /* Responsive styles for mobile screens */
 body.dark-mode {
-  background: #0B0F19 !important;
-  color: #F8FAFC !important;
+  background: #191919 !important;
+  color: #EDEDED !important;
 }
 body.dark-mode select {
   color-scheme: dark !important;
-  background: #1A2438 !important;
-  color: #F8FAFC !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  background: #222222 !important;
+  color: #EDEDED !important;
+  border-color: #2E2E2E !important;
 }
 body.dark-mode input,
 body.dark-mode textarea {
-  color: #F8FAFC !important;
-  background: #1A2438 !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #EDEDED !important;
+  background: #222222 !important;
+  border-color: #2E2E2E !important;
 }
 body.dark-mode input::placeholder,
 body.dark-mode textarea::placeholder {
-  color: #64748B !important;
+  color: #787774 !important;
 }
 body.dark-mode ::-webkit-scrollbar-thumb {
-  background: #334155 !important;
+  background: #333333 !important;
 }
 body.dark-mode ::-webkit-scrollbar-thumb:hover {
-  background: #475569 !important;
+  background: #444444 !important;
 }
 
 @media (max-width: 768px) {
