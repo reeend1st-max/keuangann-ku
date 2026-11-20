@@ -100,7 +100,6 @@ function SmartWalletLogo(props) {
       style: Object.assign({
         borderRadius: Math.round(sz * 0.26),
         flexShrink: 0,
-        boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
         display: "block"
       }, props.style || {})
     },
@@ -633,7 +632,7 @@ function DDatePicker(p) {
             zIndex: 9999,
             background: T.card,
             border: "1.5px solid " + T.border,
-            borderRadius: 16,
+            borderRadius: 8,
             padding: "14px 16px",
             boxShadow: "0 12px 36px rgba(0,0,0,0.25)",
             width: 310,
@@ -834,7 +833,7 @@ function Modal(p) {
     { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9000, padding: 16 } },
     React.createElement(
       "div",
-      { style: { background: T.card, border: "1px solid " + T.border, borderRadius: 16, width: p.width || 440, maxWidth: "100%", padding: 24, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)" } },
+      { style: { background: T.card, border: "1px solid " + T.border, borderRadius: 8, width: p.width || 440, maxWidth: "100%", padding: 24, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)" } },
       React.createElement(
         "div",
         { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid " + T.border } },
@@ -911,7 +910,7 @@ function AuthScreen(p) {
     { style: { background: T.bg, width: "100vw", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" } },
     React.createElement(
       "div",
-      { style: { width: 400, maxWidth: "90vw", background: T.card, borderRadius: 20, padding: "36px 32px", border: "1px solid " + T.border, boxShadow: "0 24px 80px rgba(0,0,0,0.5)" } },
+      { style: { width: 400, maxWidth: "90vw", background: T.card, borderRadius: 8, padding: "36px 32px", border: "1px solid " + T.border, boxShadow: "0 24px 80px rgba(0,0,0,0.5)" } },
       React.createElement(
         "div",
         { style: { textAlign: "center", marginBottom: 24 } },
@@ -1153,7 +1152,7 @@ function MemoDetailModal(p) {
       { style: { display: "flex", flexDirection: "column", gap: 14 } },
       React.createElement(
         "div",
-        { style: { background: T.tealDim, border: "1.5px solid " + T.teal + "40", padding: "14px 16px", borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center" } },
+        { style: { background: T.tealDim, border: "1.5px solid " + T.teal + "40", padding: "14px 16px", borderRadius: 6, display: "flex", justifyContent: "space-between", alignItems: "center" } },
         React.createElement(
           "div",
           null,
@@ -1194,7 +1193,7 @@ function MemoDetailModal(p) {
         ),
         lines.length > 0 ? React.createElement(
           "div",
-          { style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 12, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" } },
+          { style: { background: T.panel, border: "1.5px solid " + T.border, borderRadius: 6, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" } },
           lines.map(function (line, idx) {
             return React.createElement(
               "div",
@@ -1205,7 +1204,7 @@ function MemoDetailModal(p) {
           })
         ) : React.createElement(
           "div",
-          { style: { background: T.panel, border: "1.5px dashed " + T.border, borderRadius: 12, padding: 24, textAlign: "center", color: T.textSub, fontSize: 13 } },
+          { style: { background: T.panel, border: "1.5px dashed " + T.border, borderRadius: 6, padding: 24, textAlign: "center", color: T.textSub, fontSize: 13 } },
           "Belum ada rincian barang spesifik.",
           React.createElement("div", { style: { marginTop: 8 } }, React.createElement(Btn, { color: T.teal, onClick: function () { setIsEditing(true); } }, "+ Tambah Rincian Barang"))
         )
@@ -1622,7 +1621,7 @@ function TabunganView(p) {
         onClick: fn,
         style: {
           padding: "6px 14px",
-          borderRadius: 20,
+          borderRadius: 8,
           fontSize: 12,
           fontWeight: 700,
           border: active ? "1.5px solid " + col : "1px solid " + T.border,
@@ -1631,7 +1630,7 @@ function TabunganView(p) {
           cursor: "pointer",
           whiteSpace: "nowrap",
           transition: "all 0.15s ease",
-          boxShadow: active ? "0 2px 6px " + col + "40" : "none"
+          boxShadow: "none"
         }
       },
       label
@@ -1642,18 +1641,17 @@ function TabunganView(p) {
     "div",
     { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
 
-    // 1. HERO VAULT CARD (Wise / Revolut Dark Theme)
+    // 1. HERO VAULT CARD (Notion Flat Card)
     React.createElement(
       "div",
       {
         style: {
-          background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
-          borderRadius: 24,
+          background: T.card,
+          borderRadius: 8,
           padding: "26px 30px",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          border: "1px solid " + T.border,
           marginBottom: 24,
-          boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1)",
-          color: "#FFFFFF"
+          color: T.text
         }
       },
       // Header Label & Status Tag
@@ -1662,12 +1660,12 @@ function TabunganView(p) {
         { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 } },
         React.createElement(
           "span",
-          { style: { fontSize: 11, color: "rgba(255, 255, 255, 0.7)", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2 } },
+          { style: { fontSize: 11, color: T.textSub, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.2 } },
           "PORTOFOLIO TABUNGAN & SIMPANAN"
         ),
         React.createElement(
           "span",
-          { style: { background: "rgba(16, 185, 129, 0.15)", color: "#34D399", border: "1px solid rgba(16, 185, 129, 0.3)", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20 } },
+          { style: { background: "rgba(16, 185, 129, 0.15)", color: "#059669", border: "1px solid rgba(16, 185, 129, 0.3)", fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 4 } },
           "💎 Dana Cadangan Aktif"
         )
       ),
@@ -1679,10 +1677,10 @@ function TabunganView(p) {
         React.createElement(
           "div",
           null,
-          React.createElement("div", { style: { fontSize: 34, fontWeight: 900, letterSpacing: -0.5, color: "#FFFFFF" } }, fmt(saldo)),
+          React.createElement("div", { style: { fontSize: 34, fontWeight: 900, letterSpacing: -0.5, color: T.text } }, fmt(saldo)),
           React.createElement(
             "div",
-            { style: { fontSize: 12, color: "rgba(255, 255, 255, 0.7)", marginTop: 4 } },
+            { style: { fontSize: 12, color: T.textSub, marginTop: 4 } },
             "Total saldo bersih yang disimpan di " + activeAlloc.length + " platform perbankan / investasi"
           )
         ),
@@ -1697,7 +1695,7 @@ function TabunganView(p) {
                 background: "#059669",
                 color: "#FFFFFF",
                 border: "none",
-                borderRadius: 12,
+                borderRadius: 6,
                 padding: "10px 18px",
                 fontSize: 13,
                 fontWeight: 800,
@@ -1705,7 +1703,6 @@ function TabunganView(p) {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
-                boxShadow: "0 4px 12px rgba(5, 150, 105, 0.3)",
                 transition: "all 0.15s ease"
               }
             },
@@ -1719,7 +1716,7 @@ function TabunganView(p) {
                 background: "rgba(255, 255, 255, 0.12)",
                 color: "#FFFFFF",
                 border: "1px solid rgba(255, 255, 255, 0.2)",
-                borderRadius: 12,
+                borderRadius: 6,
                 padding: "10px 18px",
                 fontSize: 13,
                 fontWeight: 800,
@@ -1791,10 +1788,9 @@ function TabunganView(p) {
         style: {
           background: T.card,
           border: "1px solid " + T.border,
-          borderRadius: 20,
+          borderRadius: 8,
           padding: "20px 24px",
-          marginBottom: 24,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+          marginBottom: 24
         }
       },
       React.createElement(
@@ -1831,7 +1827,7 @@ function TabunganView(p) {
               style: {
                 background: T.panel,
                 border: "1px solid " + T.border,
-                borderRadius: 14,
+                borderRadius: 8,
                 padding: "12px 14px",
                 display: "flex",
                 flexDirection: "column",
@@ -1873,13 +1869,12 @@ function TabunganView(p) {
           style: {
             background: T.panel,
             border: "1px solid " + T.border,
-            borderRadius: 10,
+            borderRadius: 6,
             padding: "8px 14px",
             color: T.text,
             fontSize: 12,
             outline: "none",
-            width: 220,
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+            width: 220
           }
         }),
         React.createElement(
@@ -1924,10 +1919,9 @@ function TabunganView(p) {
       {
         style: {
           background: T.card,
-          borderRadius: 20,
+          borderRadius: 8,
           border: "1px solid " + T.border,
-          overflow: "hidden",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+          overflow: "hidden"
         }
       },
       React.createElement(
@@ -1981,7 +1975,7 @@ function TabunganView(p) {
                     style: {
                       width: 42,
                       height: 42,
-                      borderRadius: 12,
+                      borderRadius: 6,
                       background: isStor ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)",
                       border: "1px solid " + (isStor ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)"),
                       display: "flex",
@@ -2230,7 +2224,7 @@ function BayarTagihanModal(p) {
       { style: { display: "flex", flexDirection: "column", gap: 14 } },
       React.createElement(
         "div",
-        { style: { background: T.amberDim, border: "1.5px solid " + T.amber + "60", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 } },
+        { style: { background: T.amberDim, border: "1.5px solid " + T.amber + "60", borderRadius: 6, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 } },
         React.createElement("span", { style: { fontSize: 28 } }, catInfo.emoji),
         React.createElement(
           "div",
@@ -2241,7 +2235,7 @@ function BayarTagihanModal(p) {
       ),
       React.createElement(
         "div",
-        { style: { background: T.surface, border: "1.5px solid " + T.border, padding: 14, borderRadius: 12, display: "flex", flexDirection: "column", gap: 6 } },
+        { style: { background: T.surface, border: "1.5px solid " + T.border, padding: 14, borderRadius: 6, display: "flex", flexDirection: "column", gap: 6 } },
         React.createElement("label", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase" } }, "💰 Nominal Pembayaran (Bisa Diubah):"),
         React.createElement("input", {
           value: nominal,
@@ -2405,12 +2399,11 @@ function TagihanMendatangWidget(p) {
         style: {
           background: T.card,
           border: "1px solid " + (isOverdue ? "rgba(239, 68, 68, 0.4)" : isToday || isSoon ? "rgba(245, 158, 11, 0.4)" : T.border),
-          borderRadius: 12,
+          borderRadius: 6,
           padding: "12px 14px",
           display: "flex",
           alignItems: "center",
-          gap: 12,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.03)"
+          gap: 12
         }
       },
       React.createElement(
@@ -2419,7 +2412,7 @@ function TagihanMendatangWidget(p) {
           style: {
             width: 40,
             height: 40,
-            borderRadius: 10,
+            borderRadius: 6,
             background: tileBg,
             border: tileBorder,
             display: "flex",
@@ -2457,7 +2450,7 @@ function TagihanMendatangWidget(p) {
           {
             onClick: function () { setBayarBill(b); },
             title: "Bayar tagihan ini",
-            style: { background: "#10B981", border: "none", color: "#FFFFFF", padding: "6px 12px", borderRadius: 7, fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 4px rgba(16, 185, 129, 0.25)" }
+            style: { background: "#10B981", border: "none", color: "#FFFFFF", padding: "6px 12px", borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }
           },
           "💳 Bayar"
         ),
@@ -2503,7 +2496,7 @@ function TagihanMendatangWidget(p) {
 
   return React.createElement(
     "div",
-    { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, overflow: "hidden", marginTop: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" } },
+    { style: { background: T.card, borderRadius: 8, border: "1px solid " + T.border, overflow: "hidden", marginTop: 20 } },
     // Header
     React.createElement(
       "div",
@@ -2515,7 +2508,7 @@ function TagihanMendatangWidget(p) {
         React.createElement("span", { style: { fontSize: 14, fontWeight: 800, color: T.text } }, "Tagihan Mendatang"),
         overdueCount > 0 && React.createElement(
           "span",
-          { style: { background: "#EF4444", color: "#fff", fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 10, marginLeft: 4 } },
+          { style: { background: "#EF4444", color: "#fff", fontSize: 10, fontWeight: 800, padding: "2px 7px", borderRadius: 4, marginLeft: 4 } },
           overdueCount + " harus bayar!"
         ),
         pendingBills.length > 0 && React.createElement(
@@ -2633,10 +2626,9 @@ function DashboardView(p) {
         style: {
           background: T.card,
           border: "1px solid " + T.border,
-          borderRadius: 24,
+          borderRadius: 8,
           padding: "26px 30px",
-          marginBottom: 24,
-          boxShadow: "0 2px 10px rgba(0,0,0,0.03)"
+          marginBottom: 24
         }
       },
       // Top Row: Cycle Status Pill & Cycle Switcher
@@ -2648,20 +2640,20 @@ function DashboardView(p) {
           { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
           React.createElement(
             "span",
-            { style: { background: "rgba(2, 132, 199, 0.08)", color: T.teal, border: "1px solid rgba(2, 132, 199, 0.2)", fontSize: 12, fontWeight: 800, padding: "4px 12px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 6 } },
+            { style: { background: "rgba(2, 132, 199, 0.08)", color: T.teal, border: "1px solid rgba(2, 132, 199, 0.2)", fontSize: 12, fontWeight: 800, padding: "4px 12px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 6 } },
             React.createElement("span", { style: { width: 7, height: 7, borderRadius: "50%", background: T.teal } }),
             isCycle ? ("Siklus " + curPeriod.monthName + " (Gajian Tgl " + paydayDate + ")") : "Seluruh Waktu"
           ),
           isCycle && React.createElement(
             "span",
-            { style: { background: "rgba(16, 185, 129, 0.08)", color: "#059669", border: "1px solid rgba(16, 185, 129, 0.2)", fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 20 } },
+            { style: { background: "rgba(16, 185, 129, 0.08)", color: "#059669", border: "1px solid rgba(16, 185, 129, 0.2)", fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 4 } },
             "⏳ " + (diffDays !== null ? (diffDays + " Hari Tersisa") : "Aktif")
           )
         ),
         // Switcher button
         React.createElement(
           "div",
-          { style: { display: "inline-flex", background: T.panel, padding: 3, borderRadius: 10, border: "1px solid " + T.border } },
+          { style: { display: "inline-flex", background: T.panel, padding: 3, borderRadius: 6, border: "1px solid " + T.border } },
           React.createElement(
             "button",
             {
@@ -2680,7 +2672,7 @@ function DashboardView(p) {
             {
               onClick: function () { setFilterMode("all"); },
               style: {
-                padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 800, border: "none", cursor: "pointer",
+                padding: "6px 14px", borderRadius: 4, fontSize: 11, fontWeight: 800, border: "none", cursor: "pointer",
                 background: !isCycle ? T.text : "transparent",
                 color: !isCycle ? (window.darkMode ? "#191919" : "#FFFFFF") : T.textSub,
                 transition: "all .15s ease"
@@ -2722,14 +2714,13 @@ function DashboardView(p) {
                 alignItems: "center",
                 gap: 6,
                 padding: "10px 18px",
-                borderRadius: 10,
+                borderRadius: 6,
                 background: T.text,
                 color: window.darkMode ? "#191919" : "#FFFFFF",
                 border: "none",
                 fontSize: 12,
                 fontWeight: 800,
                 cursor: "pointer",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
                 transition: "all .15s ease"
               }
             },
@@ -2746,7 +2737,7 @@ function DashboardView(p) {
                 alignItems: "center",
                 gap: 6,
                 padding: "10px 16px",
-                borderRadius: 10,
+                borderRadius: 6,
                 background: T.panel,
                 color: T.text,
                 border: "1px solid " + T.border,
@@ -2769,7 +2760,7 @@ function DashboardView(p) {
                 alignItems: "center",
                 gap: 5,
                 padding: "10px 14px",
-                borderRadius: 10,
+                borderRadius: 6,
                 background: T.panel,
                 color: T.text,
                 border: "1px solid " + T.border,
@@ -2798,19 +2789,19 @@ function DashboardView(p) {
         },
         React.createElement(
           "div",
-          { style: { padding: "10px 14px", background: T.panel, border: "1px solid " + T.border, borderRadius: 12 } },
+          { style: { padding: "10px 14px", background: T.panel, border: "1px solid " + T.border, borderRadius: 6 } },
           React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontWeight: 800, textTransform: "uppercase" } }, "Pemasukan Siklus"),
           React.createElement("div", { style: { fontSize: 17, fontWeight: 900, color: "#059669", marginTop: 2 } }, "+ " + fmt(tInc))
         ),
         React.createElement(
           "div",
-          { style: { padding: "10px 14px", background: T.panel, border: "1px solid " + T.border, borderRadius: 12 } },
+          { style: { padding: "10px 14px", background: T.panel, border: "1px solid " + T.border, borderRadius: 6 } },
           React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontWeight: 800, textTransform: "uppercase" } }, "Pengeluaran Siklus (" + pct + "%)"),
           React.createElement("div", { style: { fontSize: 17, fontWeight: 900, color: "#DC2626", marginTop: 2 } }, "- " + fmt(tExp))
         ),
         React.createElement(
           "div",
-          { style: { padding: "10px 14px", background: T.panel, border: "1px solid " + T.border, borderRadius: 12 } },
+          { style: { padding: "10px 14px", background: T.panel, border: "1px solid " + T.border, borderRadius: 6 } },
           React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontWeight: 800, textTransform: "uppercase" } }, "Total Tabungan (KROM)"),
           React.createElement("div", { style: { fontSize: 17, fontWeight: 900, color: T.teal, marginTop: 2 } }, fmt(saldoTab))
         )
@@ -2828,12 +2819,12 @@ function DashboardView(p) {
         ),
         React.createElement(
           "div",
-          { style: { height: 6, background: T.panel, borderRadius: 3, overflow: "hidden" } },
+          { style: { height: 6, background: T.panel, borderRadius: 2, overflow: "hidden" } },
           React.createElement("div", {
             style: {
               height: "100%",
               width: pct + "%",
-              borderRadius: 3,
+              borderRadius: 2,
               background: pct > 85 ? "#EF4444" : pct > 60 ? "#F59E0B" : "linear-gradient(90deg, #10B981, #0284C7)",
               transition: "width .4s ease"
             }
@@ -2842,10 +2833,10 @@ function DashboardView(p) {
       )
     ),
 
-    // 2. MAIN 2-COLUMN GRID (STRIPE STYLE)
+    // 2. MAIN DOCUMENT FLOW (Notion Single Column)
     React.createElement(
       "div",
-      { className: "fintech-2col-grid", style: { display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 24, alignItems: "start" } },
+      { style: { display: "flex", flexDirection: "column", gap: 20 } },
 
       // LEFT COLUMN: TAGIHAN MENDATANG & TRANSAKSI TERKINI
       React.createElement(
@@ -2865,10 +2856,9 @@ function DashboardView(p) {
           {
             style: {
               background: T.card,
-              borderRadius: 20,
+              borderRadius: 8,
               border: "1px solid " + T.border,
-              padding: "20px 22px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
+              padding: "20px 22px"
             }
           },
           React.createElement(
@@ -2903,7 +2893,7 @@ function DashboardView(p) {
                         alignItems: "center",
                         justifyContent: "space-between",
                         padding: "10px 12px",
-                        borderRadius: 12,
+                        borderRadius: 6,
                         background: T.panel,
                         border: "1px solid " + T.border
                       }
@@ -2917,7 +2907,7 @@ function DashboardView(p) {
                           style: {
                             width: 34,
                             height: 34,
-                            borderRadius: 10,
+                            borderRadius: 6,
                             background: isInc ? "rgba(16, 185, 129, 0.12)" : "rgba(2, 132, 199, 0.1)",
                             display: "flex",
                             alignItems: "center",
@@ -2953,10 +2943,10 @@ function DashboardView(p) {
         )
       ),
 
-      // RIGHT COLUMN: SMART INSIGHTS & SAVINGS BREAKDOWN
+      // BOTTOM ROW: SMART INSIGHTS & SAVINGS BREAKDOWN (Notion 2-Column Property Row)
       React.createElement(
         "div",
-        { style: { display: "flex", flexDirection: "column", gap: 24 } },
+        { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20 } },
 
         // 1. SMART FINANCIAL RATIO (NEED VS WANT)
         React.createElement(
@@ -2964,10 +2954,9 @@ function DashboardView(p) {
           {
             style: {
               background: T.card,
-              borderRadius: 20,
+              borderRadius: 8,
               border: "1px solid " + T.border,
-              padding: "20px 22px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
+              padding: "20px 22px"
             }
           },
           React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "Smart Insight"),
@@ -2988,7 +2977,7 @@ function DashboardView(p) {
               ),
               React.createElement(
                 "div",
-                { style: { height: 6, background: T.panel, borderRadius: 3, overflow: "hidden" } },
+                { style: { height: 6, background: T.panel, borderRadius: 2, overflow: "hidden" } },
                 React.createElement("div", { style: { height: "100%", width: needPct + "%", background: T.teal, borderRadius: 3 } })
               )
             ),
@@ -3004,7 +2993,7 @@ function DashboardView(p) {
               ),
               React.createElement(
                 "div",
-                { style: { height: 6, background: T.panel, borderRadius: 3, overflow: "hidden" } },
+                { style: { height: 6, background: T.panel, borderRadius: 2, overflow: "hidden" } },
                 React.createElement("div", { style: { height: "100%", width: wantPct + "%", background: "#8B5CF6", borderRadius: 3 } })
               )
             )
@@ -3022,10 +3011,9 @@ function DashboardView(p) {
           {
             style: {
               background: T.card,
-              borderRadius: 20,
+              borderRadius: 8,
               border: "1px solid " + T.border,
-              padding: "20px 22px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
+              padding: "20px 22px"
             }
           },
           React.createElement(
@@ -3132,16 +3120,16 @@ function PemasukanView(p) {
         onClick: fn,
         style: {
           padding: "6px 14px",
-          borderRadius: 20,
+          borderRadius: 4,
           fontSize: 12,
           fontWeight: 700,
           border: active ? "1.5px solid " + col : "1px solid " + T.border,
-          background: active ? col : "#FFFFFF",
+          background: active ? col : T.surface,
           color: active ? "#FFFFFF" : T.textSub,
           cursor: "pointer",
           whiteSpace: "nowrap",
           transition: "all 0.15s ease",
-          boxShadow: active ? "0 2px 6px " + col + "40" : "none"
+          boxShadow: "none"
         }
       },
       label
@@ -3169,10 +3157,9 @@ function PemasukanView(p) {
         {
           style: {
             background: T.card,
-            borderRadius: 20,
+            borderRadius: 8,
             border: "1px solid " + T.border,
             padding: "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between"
@@ -3187,7 +3174,7 @@ function PemasukanView(p) {
         ),
         React.createElement(
           "div",
-          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(5, 150, 105, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          { style: { width: 44, height: 44, borderRadius: 6, background: "rgba(5, 150, 105, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
           "⚡"
         )
       ),
@@ -3198,10 +3185,9 @@ function PemasukanView(p) {
         {
           style: {
             background: T.card,
-            borderRadius: 20,
+            borderRadius: 8,
             border: "1px solid " + T.border,
             padding: "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between"
@@ -3216,7 +3202,7 @@ function PemasukanView(p) {
         ),
         React.createElement(
           "div",
-          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(2, 132, 199, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          { style: { width: 44, height: 44, borderRadius: 6, background: "rgba(2, 132, 199, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
           "💰"
         )
       ),
@@ -3226,35 +3212,35 @@ function PemasukanView(p) {
         "div",
         {
           style: {
-            background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
-            borderRadius: 20,
+            background: T.card,
+            borderRadius: 8,
+            border: "1px solid " + T.border,
             padding: "20px 24px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            color: "#FFFFFF"
+            color: T.text
           }
         },
         React.createElement(
           "div",
           null,
-          React.createElement("div", { style: { fontSize: 13, fontWeight: 800 } }, "Catat Arus Kas"),
-          React.createElement("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 2 } }, "Gaji, bonus, profit usaha & lainnya")
+          React.createElement("div", { style: { fontSize: 13, fontWeight: 800, color: T.text } }, "Catat Arus Kas"),
+          React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 2 } }, "Gaji, bonus, profit usaha & lainnya")
         ),
         React.createElement(
           "button",
           {
             onClick: p.onAdd,
             style: {
-              background: "#059669",
-              color: "#FFFFFF",
+              background: T.text,
+              color: window.darkMode ? "#191919" : "#FFFFFF",
               border: "none",
-              borderRadius: 12,
+              borderRadius: 6,
               padding: "10px 18px",
               fontSize: 13,
               fontWeight: 800,
               cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(5, 150, 105, 0.4)",
               whiteSpace: "nowrap"
             }
           },
@@ -3286,13 +3272,12 @@ function PemasukanView(p) {
           style: {
             background: T.panel,
             border: "1px solid " + T.border,
-            borderRadius: 10,
+            borderRadius: 6,
             padding: "8px 14px",
             color: T.text,
             fontSize: 12,
             outline: "none",
-            width: 240,
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+            width: 240
           }
         }),
         React.createElement(
@@ -3316,7 +3301,7 @@ function PemasukanView(p) {
               },
               style: {
                 padding: "6px 12px",
-                borderRadius: 20,
+                borderRadius: 8,
                 fontSize: 12,
                 fontWeight: 700,
                 border: fCycle === "month" ? "1.5px solid " + T.teal : "1px solid " + T.border,
@@ -3350,10 +3335,9 @@ function PemasukanView(p) {
       {
         style: {
           background: T.card,
-          borderRadius: 20,
+          borderRadius: 8,
           border: "1px solid " + T.border,
-          overflow: "hidden",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+          overflow: "hidden"
         }
       },
       React.createElement(
@@ -3446,7 +3430,7 @@ function PemasukanView(p) {
                         style: {
                           width: 42,
                           height: 42,
-                          borderRadius: 12,
+                          borderRadius: 6,
                           background: "rgba(5, 150, 105, 0.1)",
                           border: "1px solid rgba(5, 150, 105, 0.2)",
                           display: "flex",
@@ -3626,7 +3610,7 @@ function PengeluaranView(p) {
         onClick: fn,
         style: {
           padding: "6px 14px",
-          borderRadius: 20,
+          borderRadius: 8,
           fontSize: 12,
           fontWeight: 700,
           border: active ? "1.5px solid " + col : "1px solid " + T.border,
@@ -3635,7 +3619,7 @@ function PengeluaranView(p) {
           cursor: "pointer",
           whiteSpace: "nowrap",
           transition: "all 0.15s ease",
-          boxShadow: active ? "0 2px 6px " + col + "40" : "none"
+          boxShadow: "none"
         }
       },
       label
@@ -3663,10 +3647,9 @@ function PengeluaranView(p) {
         {
           style: {
             background: T.card,
-            borderRadius: 20,
+            borderRadius: 8,
             border: "1px solid " + T.border,
             padding: "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between"
@@ -3681,7 +3664,7 @@ function PengeluaranView(p) {
         ),
         React.createElement(
           "div",
-          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(225, 29, 72, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          { style: { width: 44, height: 44, borderRadius: 8, background: "rgba(225, 29, 72, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
           "⚡"
         )
       ),
@@ -3692,10 +3675,9 @@ function PengeluaranView(p) {
         {
           style: {
             background: T.card,
-            borderRadius: 20,
+            borderRadius: 8,
             border: "1px solid " + T.border,
             padding: "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between"
@@ -3710,7 +3692,7 @@ function PengeluaranView(p) {
         ),
         React.createElement(
           "div",
-          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(2, 132, 199, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          { style: { width: 44, height: 44, borderRadius: 8, background: "rgba(2, 132, 199, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
           "💸"
         )
       ),
@@ -3721,10 +3703,9 @@ function PengeluaranView(p) {
         {
           style: {
             background: T.card,
-            borderRadius: 20,
+            borderRadius: 8,
             border: "1px solid " + T.border,
             padding: "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between"
@@ -3775,13 +3756,12 @@ function PengeluaranView(p) {
           style: {
             background: T.panel,
             border: "1px solid " + T.border,
-            borderRadius: 10,
+            borderRadius: 6,
             padding: "8px 14px",
             color: T.text,
             fontSize: 12,
             outline: "none",
-            width: 240,
-            boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+            width: 240
           }
         }),
         React.createElement(
@@ -3805,7 +3785,7 @@ function PengeluaranView(p) {
               },
               style: {
                 padding: "6px 12px",
-                borderRadius: 20,
+                borderRadius: 8,
                 fontSize: 12,
                 fontWeight: 700,
                 border: fCycle === "month" ? "1.5px solid " + T.teal : "1px solid " + T.border,
@@ -3834,7 +3814,7 @@ function PengeluaranView(p) {
               background: T.panel,
               border: "1px solid " + T.border,
               color: T.text,
-              borderRadius: 12,
+              borderRadius: 6,
               padding: "10px 14px",
               fontSize: 13,
               fontWeight: 800,
@@ -3851,10 +3831,10 @@ function PengeluaranView(p) {
           {
             onClick: p.onAdd,
             style: {
-              background: "#E11D48",
-              color: "#FFFFFF",
+              background: T.text,
+              color: window.darkMode ? "#191919" : "#FFFFFF",
               border: "none",
-              borderRadius: 12,
+              borderRadius: 6,
               padding: "10px 18px",
               fontSize: 13,
               fontWeight: 800,
@@ -3862,7 +3842,6 @@ function PengeluaranView(p) {
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              boxShadow: "0 4px 12px rgba(225, 29, 72, 0.35)",
               whiteSpace: "nowrap"
             }
           },
@@ -3907,10 +3886,9 @@ function PengeluaranView(p) {
       {
         style: {
           background: T.card,
-          borderRadius: 20,
+          borderRadius: 8,
           border: "1px solid " + T.border,
-          overflow: "hidden",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+          overflow: "hidden"
         }
       },
       React.createElement(
@@ -4004,7 +3982,7 @@ function PengeluaranView(p) {
                         style: {
                           width: 42,
                           height: 42,
-                          borderRadius: 12,
+                          borderRadius: 6,
                           background: "#F1F5F9",
                           border: "1px solid " + T.border,
                           display: "flex",
@@ -4237,9 +4215,8 @@ function AnalisisBulananView(p) {
             gap: 10,
             background: T.card,
             padding: "8px 16px",
-            borderRadius: 14,
-            border: "1px solid " + T.border,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+            borderRadius: 8,
+            border: "1px solid " + T.border
           }
         },
         React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: T.text } }, "🗓️ Tanggal Gajian:"),
@@ -4284,10 +4261,9 @@ function AnalisisBulananView(p) {
         {
           style: {
             background: T.card,
-            borderRadius: 20,
+            borderRadius: 8,
             border: "1px solid " + T.border,
             padding: "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between"
@@ -4302,7 +4278,7 @@ function AnalisisBulananView(p) {
         ),
         React.createElement(
           "div",
-          { style: { width: 44, height: 44, borderRadius: 14, background: curNet >= 0 ? "rgba(5, 150, 105, 0.1)" : "rgba(225, 29, 72, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          { style: { width: 44, height: 44, borderRadius: 8, background: curNet >= 0 ? "rgba(5, 150, 105, 0.1)" : "rgba(225, 29, 72, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
           curNet >= 0 ? "⚡" : "⚠️"
         )
       ),
@@ -4313,10 +4289,9 @@ function AnalisisBulananView(p) {
         {
           style: {
             background: T.card,
-            borderRadius: 20,
+            borderRadius: 8,
             border: "1px solid " + T.border,
             padding: "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between"
@@ -4331,7 +4306,7 @@ function AnalisisBulananView(p) {
         ),
         React.createElement(
           "div",
-          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(2, 132, 199, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          { style: { width: 44, height: 44, borderRadius: 8, background: "rgba(2, 132, 199, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
           "🌱"
         )
       ),
@@ -4342,10 +4317,9 @@ function AnalisisBulananView(p) {
         {
           style: {
             background: T.card,
-            borderRadius: 20,
+            borderRadius: 8,
             border: "1px solid " + T.border,
             padding: "20px 24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between"
@@ -4360,7 +4334,7 @@ function AnalisisBulananView(p) {
         ),
         React.createElement(
           "div",
-          { style: { width: 44, height: 44, borderRadius: 14, background: "rgba(139, 92, 246, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
+          { style: { width: 44, height: 44, borderRadius: 8, background: "rgba(139, 92, 246, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 } },
           "📊"
         )
       )
@@ -4406,7 +4380,7 @@ function AnalisisBulananView(p) {
               borderRadius: 22,
               border: isCurrent ? "2px solid " + T.teal : "1px solid " + T.border,
               padding: "24px 28px",
-              boxShadow: isCurrent ? "0 8px 24px -4px rgba(2, 132, 199, 0.12)" : "0 1px 3px rgba(0,0,0,0.02)",
+              boxShadow: "none",
               transition: "all 0.2s ease"
             }
           },
@@ -4430,7 +4404,7 @@ function AnalisisBulananView(p) {
                 style: {
                   background: net >= 0 ? "rgba(5, 150, 105, 0.08)" : "rgba(225, 29, 72, 0.08)",
                   border: "1px solid " + (net >= 0 ? "rgba(5, 150, 105, 0.2)" : "rgba(225, 29, 72, 0.2)"),
-                  borderRadius: 12,
+                  borderRadius: 6,
                   padding: "6px 14px",
                   display: "flex",
                   alignItems: "center",
@@ -4474,19 +4448,19 @@ function AnalisisBulananView(p) {
             { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: topCats.length > 0 ? 18 : 0 } },
             React.createElement(
               "div",
-              { style: { background: T.panel, padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
+              { style: { background: T.panel, padding: "14px 18px", borderRadius: 8, border: "1px solid " + T.border } },
               React.createElement("div", { style: { fontSize: 11, color: "#059669", fontWeight: 800, textTransform: "uppercase" } }, "Pemasukan (" + mInc.length + " tx)"),
               React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.text, marginTop: 4 } }, "+" + fmt(tInc))
             ),
             React.createElement(
               "div",
-              { style: { background: T.panel, padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
+              { style: { background: T.panel, padding: "14px 18px", borderRadius: 8, border: "1px solid " + T.border } },
               React.createElement("div", { style: { fontSize: 11, color: "#E11D48", fontWeight: 800, textTransform: "uppercase" } }, "Pengeluaran (" + mExp.length + " tx)"),
               React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: T.text, marginTop: 4 } }, "-" + fmt(tExp))
             ),
             React.createElement(
               "div",
-              { style: { background: T.panel, padding: "14px 18px", borderRadius: 14, border: "1px solid " + T.border } },
+              { style: { background: T.panel, padding: "14px 18px", borderRadius: 8, border: "1px solid " + T.border } },
               React.createElement("div", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase" } }, "Sisa Saldo Kas"),
               React.createElement("div", { style: { fontSize: 18, fontWeight: 900, color: net >= 0 ? "#059669" : "#E11D48", marginTop: 4 } }, (net >= 0 ? "+" : "") + fmt(net))
             )
@@ -4512,7 +4486,7 @@ function AnalisisBulananView(p) {
                     key: c.name,
                     style: {
                       background: T.panel,
-                      borderRadius: 12,
+                      borderRadius: 6,
                       padding: "10px 14px",
                       border: "1px solid " + T.border,
                       display: "flex",
@@ -4613,7 +4587,7 @@ function AnalisisTahunanView(p) {
     // Ringkasan Banner
     React.createElement(
       "div",
-      { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, padding: 24, marginBottom: 20 } },
+      { style: { background: T.card, borderRadius: 8, border: "1px solid " + T.border, padding: 24, marginBottom: 20 } },
       React.createElement("div", { style: { fontSize: 12, color: T.textSub, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 } }, "Sisa Cashflow Siklus Tahun " + selYear + (paydayDate > 1 ? " (Gajian tgl " + paydayDate + ")" : "")),
       React.createElement("div", { style: { fontSize: 32, fontWeight: 900, color: net >= 0 ? T.teal : T.coral, marginTop: 6 } }, fmt(net)),
       React.createElement(
@@ -4636,7 +4610,7 @@ function AnalisisTahunanView(p) {
             key: c.month,
             style: {
               background: T.card,
-              borderRadius: 14,
+              borderRadius: 8,
               border: isCurrent ? "2px solid " + T.teal : "1px solid " + T.border,
               padding: 16,
               display: "flex",
@@ -4790,12 +4764,11 @@ function KalenderPengeluaranView(p) {
           style: {
             background: T.card,
             border: "1px solid " + T.border,
-            borderRadius: 14,
+            borderRadius: 8,
             padding: "8px 16px",
             display: "flex",
             alignItems: "center",
-            gap: 12,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+            gap: 12
           }
         },
         React.createElement(
@@ -4821,7 +4794,6 @@ function KalenderPengeluaranView(p) {
           alignItems: "center",
           justifyContent: "space-between",
           marginBottom: 20,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
           flexWrap: "wrap",
           gap: 10
         }
@@ -4836,7 +4808,7 @@ function KalenderPengeluaranView(p) {
             style: {
               background: T.panel,
               border: "1px solid " + T.border,
-              borderRadius: 10,
+              borderRadius: 6,
               padding: "6px 14px",
               fontSize: 12,
               fontWeight: 800,
@@ -4856,7 +4828,7 @@ function KalenderPengeluaranView(p) {
             style: {
               background: "rgba(2, 132, 199, 0.08)",
               border: "1px solid rgba(2, 132, 199, 0.25)",
-              borderRadius: 10,
+              borderRadius: 6,
               padding: "6px 12px",
               fontSize: 12,
               fontWeight: 800,
@@ -4880,7 +4852,7 @@ function KalenderPengeluaranView(p) {
           style: {
             background: T.panel,
             border: "1px solid " + T.border,
-            borderRadius: 10,
+            borderRadius: 6,
             padding: "6px 14px",
             fontSize: 12,
             fontWeight: 800,
@@ -4909,8 +4881,7 @@ function KalenderPengeluaranView(p) {
             background: T.card,
             borderRadius: 22,
             border: "1px solid " + T.border,
-            padding: "20px 22px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+            padding: "20px 22px"
           }
         },
         // Days of week header
@@ -4991,7 +4962,7 @@ function KalenderPengeluaranView(p) {
                 style: {
                   background: isSelected ? "rgba(2, 132, 199, 0.08)" : isToday ? "#F8FAFC" : "#FFFFFF",
                   border: isSelected ? "2px solid #0284C7" : isToday ? "1.5px solid #0284C7" : "1px solid " + T.border,
-                  borderRadius: 14,
+                  borderRadius: 8,
                   padding: "8px 6px",
                   display: "flex",
                   flexDirection: "column",
@@ -4999,7 +4970,7 @@ function KalenderPengeluaranView(p) {
                   minHeight: 74,
                   cursor: "pointer",
                   transition: "all 0.15s ease",
-                  boxShadow: isSelected ? "0 4px 12px rgba(2, 132, 199, 0.15)" : "none"
+                  boxShadow: "none"
                 }
               },
               React.createElement(
@@ -5076,8 +5047,7 @@ function KalenderPengeluaranView(p) {
             border: "1px solid " + T.border,
             padding: "22px 24px",
             display: "flex",
-            flexDirection: "column",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+            flexDirection: "column"
           }
         },
         React.createElement(
@@ -5120,7 +5090,7 @@ function KalenderPengeluaranView(p) {
                 style: {
                   background: T.panel,
                   padding: "14px 18px",
-                  borderRadius: 16,
+                  borderRadius: 8,
                   border: "1px solid " + T.border
                 }
               },
@@ -5158,11 +5128,10 @@ function KalenderPengeluaranView(p) {
                       gap: 8,
                       padding: "12px 14px",
                       background: T.surface,
-                      borderRadius: 14,
+                      borderRadius: 8,
                       border: "1px solid " + T.border,
                       cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                      transition: "all 0.15s ease"
                     }
                   },
                   // Item Title, Category & Nominal
@@ -5178,7 +5147,7 @@ function KalenderPengeluaranView(p) {
                           style: {
                             width: 36,
                             height: 36,
-                            borderRadius: 10,
+                            borderRadius: 6,
                             background: "#F1F5F9",
                             display: "flex",
                             alignItems: "center",
@@ -5268,7 +5237,7 @@ function TopNavbar(p) {
         position: "sticky",
         top: 0,
         zIndex: 100,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+        boxShadow: "none",
         userSelect: "none"
       }
     },
@@ -5412,7 +5381,7 @@ function TopNavbar(p) {
                   width: 28,
                   height: 28,
                   borderRadius: "50%",
-                  background: "linear-gradient(135deg, #0F172A, #334155)",
+                  background: T.text,
                   color: "#FFFFFF",
                   fontWeight: 800,
                   fontSize: 12,
@@ -5546,7 +5515,7 @@ function QuickExecuteRepeatModal(p) {
 
       React.createElement(
         "div",
-        { style: { background: T.tealDim, border: "1.5px solid " + T.teal + "40", padding: "14px 16px", borderRadius: 12, display: "flex", alignItems: "center", gap: 12 } },
+        { style: { background: T.tealDim, border: "1.5px solid " + T.teal + "40", padding: "14px 16px", borderRadius: 6, display: "flex", alignItems: "center", gap: 12 } },
         React.createElement("span", { style: { fontSize: 26 } }, catInfo.emoji),
         React.createElement(
           "div",
@@ -5558,7 +5527,7 @@ function QuickExecuteRepeatModal(p) {
 
       React.createElement(
         "div",
-        { style: { background: T.surface, border: "1.5px solid " + T.border, padding: 14, borderRadius: 12, display: "flex", flexDirection: "column", gap: 6 } },
+        { style: { background: T.surface, border: "1.5px solid " + T.border, padding: 14, borderRadius: 6, display: "flex", flexDirection: "column", gap: 6 } },
         React.createElement("label", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase" } }, "💰 Nominal Harga (Dapat Diubah Jika Ada Perubahan Harga):"),
         React.createElement("input", {
           value: nominal,
@@ -5643,7 +5612,7 @@ function EditRepeatTemplateModal(p) {
       React.createElement(DInput, { label: "Nama Templat / Keperluan", value: keperluan, onChange: setKeperluan }),
       React.createElement(
         "div",
-        { style: { background: T.surface, border: "1.5px solid " + T.teal + "50", padding: 14, borderRadius: 12, display: "flex", flexDirection: "column", gap: 6 } },
+        { style: { background: T.surface, border: "1.5px solid " + T.teal + "50", padding: 14, borderRadius: 6, display: "flex", flexDirection: "column", gap: 6 } },
         React.createElement("label", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase" } }, "✏️ Default Nominal Harga (Dapat Diubah Jika Harga Naik/Turun):"),
         React.createElement("input", {
           value: nominal,
@@ -5722,7 +5691,7 @@ function RepeatOrderModal(p) {
               {
                 key: tmpl.id,
                 style: {
-                  background: T.surface, border: "1.5px solid " + T.border, borderRadius: 12, padding: "12px 16px",
+                  background: T.surface, border: "1.5px solid " + T.border, borderRadius: 6, padding: "12px 16px",
                   display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12
                 }
               },
@@ -5900,7 +5869,7 @@ function ZakatView(p) {
         mkZInput(manualInc, function (e) { setManualInc(formatRupiahInput(e.target.value)); }, "Contoh: 8.000.000")
       ),
       React.createElement("div", { style: {
-        padding: "14px 16px", borderRadius: 12,
+        padding: "14px 16px", borderRadius: 6,
         background: meetsNisabProfesi ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)",
         border: "1.5px solid " + (meetsNisabProfesi ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)")
       } },
@@ -5934,7 +5903,7 @@ function ZakatView(p) {
 
       React.createElement("div", { style: {
         background: "linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.05))",
-        border: "2px solid rgba(16,185,129,0.35)", borderRadius: 16, padding: "24px", textAlign: "center"
+        border: "2px solid rgba(16,185,129,0.35)", borderRadius: 8, padding: "24px", textAlign: "center"
       } },
         React.createElement("div", { style: { fontSize: 12, color: "#10B981", fontWeight: 800, textTransform: "uppercase", letterSpacing: 1 } }, "Porsi Zakat / Sedekah (" + profesiPct + "%)"),
         React.createElement("div", { style: { fontSize: 36, fontWeight: 900, color: "#10B981", margin: "8px 0 4px" } }, fmt(zakatProfesiNominal)),
@@ -5983,7 +5952,7 @@ function ZakatView(p) {
       ),
       React.createElement("div", { style: {
         background: "linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.05))",
-        border: "2px solid rgba(16,185,129,0.35)", borderRadius: 16, padding: "24px",
+        border: "2px solid rgba(16,185,129,0.35)", borderRadius: 8, padding: "24px",
         display: "flex", justifyContent: "space-between", alignItems: "center"
       } },
         React.createElement("div", null,
@@ -6004,7 +5973,7 @@ function ZakatView(p) {
     // Page Header
     React.createElement("div", { style: { marginBottom: 24 } },
       React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12, marginBottom: 8 } },
-        React.createElement("div", { style: { width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #10B981, #059669)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "#fff" } }, "🕌"),
+        React.createElement("div", { style: { width: 48, height: 48, borderRadius: 8, background: "linear-gradient(135deg, #10B981, #059669)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, color: "#fff" } }, "🕌"),
         React.createElement("div", null,
           React.createElement("h1", { style: { fontSize: 22, fontWeight: 900, color: T.text, margin: 0 } }, "Zakat & Donasi"),
           React.createElement("p", { style: { fontSize: 13, color: T.textSub, margin: "2px 0 0" } }, "Hitung kewajiban zakat 2.5% dan porsi sedekah otomatis")
@@ -6013,12 +5982,12 @@ function ZakatView(p) {
     ),
     // Summary Cards
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 24 } },
-      React.createElement("div", { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, padding: "18px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" } },
+      React.createElement("div", { style: { background: T.card, borderRadius: 8, border: "1px solid " + T.border, padding: "18px 20px" } },
         React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 } }, "💵 Pemasukan Siklus"),
         React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: T.teal } }, fmt(cycleIncomeTotal)),
         React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 4 } }, curPeriod.monthName)
       ),
-      React.createElement("div", { style: { background: T.card, borderRadius: 16, border: "1px solid " + T.border, padding: "18px 20px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" } },
+      React.createElement("div", { style: { background: T.card, borderRadius: 8, border: "1px solid " + T.border, padding: "18px 20px" } },
         React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase", marginBottom: 6 } }, "✅ Sudah Disalurkan"),
         React.createElement("div", { style: { fontSize: 20, fontWeight: 900, color: "#10B981" } }, fmt(totalZakatPaid)),
         React.createElement("div", { style: { fontSize: 11, color: T.textSub, marginTop: 4 } }, zakatHistory.length + " transaksi")
@@ -6027,9 +5996,9 @@ function ZakatView(p) {
     // Two Column Layout
     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 } },
       // Left: Calculator
-      React.createElement("div", { style: { background: T.card, borderRadius: 20, border: "1px solid " + T.border, padding: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" } },
+      React.createElement("div", { style: { background: T.card, borderRadius: 8, border: "1px solid " + T.border, padding: "24px" } },
         React.createElement("h2", { style: { fontSize: 16, fontWeight: 900, color: T.text, margin: "0 0 16px" } }, "🧮 Kalkulator"),
-        React.createElement("div", { style: { display: "flex", background: T.panel, borderRadius: 12, padding: 4, border: "1px solid " + T.border, marginBottom: 20 } },
+        React.createElement("div", { style: { display: "flex", background: T.panel, borderRadius: 6, padding: 4, border: "1px solid " + T.border, marginBottom: 20 } },
           [{ id: "profesi", label: "💼 Zakat Profesi" }, { id: "donasi", label: "🤲 Sedekah Bebas" }].map(function (t) {
             var active = tab === t.id;
             return React.createElement("button", { key: t.id, type: "button", onClick: function () { setTab(t.id); }, style: {
@@ -6043,7 +6012,7 @@ function ZakatView(p) {
         tab === "donasi" && donasiContent()
       ),
       // Right: History
-      React.createElement("div", { style: { background: T.card, borderRadius: 20, border: "1px solid " + T.border, padding: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", display: "flex", flexDirection: "column" } },
+      React.createElement("div", { style: { background: T.card, borderRadius: 8, border: "1px solid " + T.border, padding: "24px", display: "flex", flexDirection: "column" } },
         React.createElement("h2", { style: { fontSize: 16, fontWeight: 900, color: T.text, margin: "0 0 16px" } }, "📋 Riwayat Penyaluran"),
         zakatHistory.length === 0
           ? React.createElement("div", { style: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "40px 0", color: T.textSub } },
@@ -6054,7 +6023,7 @@ function ZakatView(p) {
           : React.createElement("div", { style: { flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10, maxHeight: 500 } },
               zakatHistory.slice(0, 20).map(function (item, idx) {
                 return React.createElement("div", { key: item.id || idx, style: {
-                  display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12,
+                  display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 6,
                   background: T.panel, border: "1px solid " + T.border
                 } },
                   React.createElement("div", { style: { width: 38, height: 38, borderRadius: 10, background: "rgba(16,185,129,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 } }, "🤲"),

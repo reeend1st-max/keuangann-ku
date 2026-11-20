@@ -95,8 +95,24 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
   }
 }
 
-@media (max-width: 960px) {
-  .fintech-2col-grid {
-    grid-template-columns: 1fr !important;
-  }
+/* Notion Clean Document Utility Classes */
+.notion-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.notion-row {
+  transition: background-color 0.12s ease;
+}
+.notion-row:hover {
+  background-color: #F7F7F5;
+}
+body.dark-mode .notion-row:hover {
+  background-color: #252525;
 }
