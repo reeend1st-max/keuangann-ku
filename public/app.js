@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    Keuangan Ku — Main React Application (Pure JS / UMD / React 18)
    ========================================================================== */
 
@@ -1581,12 +1581,12 @@ function TabunganView(p) {
 
   var ALL_LOCS = ["KROM", "JAGO", "BIBIT", "BCA", "SEABANK", "Lainnya"];
   var LOC_ICONS = {
-    KROM: "ðŸ›ï¸",
-    JAGO: "ðŸ¦Š",
-    BIBIT: "ðŸŒ±",
-    BCA: "ðŸ¦",
-    SEABANK: "ðŸŒŠ",
-    Lainnya: "ðŸ“"
+    KROM: "\uD83C\uDFDB\uFE0F",
+    JAGO: "\uD83E\uDD8A",
+    BIBIT: "\uD83C\uDF31",
+    BCA: "\uD83C\uDFE6",
+    SEABANK: "\uD83C\uDF0A",
+    Lainnya: "\uD83D\uDD0D"
   };
 
   var locAlloc = ALL_LOCS.map(function (loc) {
@@ -1616,7 +1616,7 @@ function TabunganView(p) {
     "div",
     { className: "notion-page-canvas" },
     // 1. Page Icon & Title
-    React.createElement("div", { className: "notion-page-icon" }, "ðŸ’Ž"),
+    React.createElement("div", { className: "notion-page-icon" }, "\uD83D\uDC8E"),
     React.createElement("h1", { className: "notion-h1" }, "Tabungan"),
 
     // 2. Notion Properties Block
@@ -1668,7 +1668,7 @@ function TabunganView(p) {
               React.createElement(
                 "div",
                 { style: { display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 } },
-                React.createElement("span", null, LOC_ICONS[acc.name] || "ðŸ“"),
+                React.createElement("span", null, LOC_ICONS[acc.name] || "\uD83D\uDD0D"),
                 React.createElement("span", null, acc.name)
               ),
               React.createElement("span", { style: { fontSize: 11, color: "#787774" } }, pct + "%")
@@ -1744,7 +1744,7 @@ function TabunganView(p) {
         React.createElement("input", {
           value: search,
           onChange: function (e) { setSearch(e.target.value); },
-          placeholder: "ðŸ” Cari catatan...",
+          placeholder: "Cari catatan...",
           style: { fontSize: 12, padding: "5px 10px", border: "1px solid #EDECE9", borderRadius: 4, outline: "none", width: 160 }
         })
       ),
@@ -1811,7 +1811,7 @@ function TabunganView(p) {
                           style: { padding: "2px 6px", fontSize: 12 },
                           onClick: function () { p.onEdit(item); }
                         },
-                        "âœ"
+                        "Edit"
                       ),
                       React.createElement(
                         "button",
@@ -1820,7 +1820,7 @@ function TabunganView(p) {
                           style: { padding: "2px 6px", fontSize: 12, color: "#E03E3E" },
                           onClick: function () { p.onDelete(item.id); }
                         },
-                        "âœ•"
+                        "X"
                       )
                     )
                   );
@@ -2695,7 +2695,7 @@ function PengeluaranView(p) {
     "div",
     { className: "notion-page-canvas" },
     // 1. Page Icon & Title
-    React.createElement("div", { className: "notion-page-icon" }, "ðŸ’¸"),
+    React.createElement("div", { className: "notion-page-icon" }, "\uD83D\uDCB8"),
     React.createElement("h1", { className: "notion-h1" }, "Pengeluaran"),
 
     // 2. Notion Properties Block
@@ -2785,7 +2785,7 @@ function PengeluaranView(p) {
         React.createElement("input", {
           value: search,
           onChange: function (e) { sSearch(e.target.value); },
-          placeholder: "ðŸ” Cari keperluan...",
+          placeholder: "Cari keperluan...",
           style: {
             fontSize: 12,
             padding: "5px 10px",
@@ -2849,7 +2849,7 @@ function PengeluaranView(p) {
                         style: { marginLeft: 6, fontSize: 11 },
                         onClick: function () { setMemoModalItem(item); }
                       },
-                      "ðŸ“ Memo"
+                      "\uD83D\uDCDD Memo"
                     )
                   ),
                   React.createElement(
@@ -2882,7 +2882,7 @@ function PengeluaranView(p) {
                         style: { padding: "2px 6px", fontSize: 12 },
                         onClick: function () { p.onEdit(item); }
                       },
-                      "âœ"
+                      "Edit"
                     ),
                     React.createElement(
                       "button",
@@ -2891,7 +2891,7 @@ function PengeluaranView(p) {
                         style: { padding: "2px 6px", fontSize: 12, color: "#E03E3E" },
                         onClick: function () { p.onDelete(item.id, item); }
                       },
-                      "âœ•"
+                      "X"
                     )
                   )
                 );
@@ -3501,7 +3501,7 @@ function KalenderPengeluaranView(p) {
     "div",
     { className: "notion-page-canvas" },
     // 1. Page Icon & Title
-    React.createElement("div", { className: "notion-page-icon" }, "ðŸ“…"),
+    React.createElement("div", { className: "notion-page-icon" }, "\uD83D\uDCC5"),
     React.createElement("h1", { className: "notion-h1" }, "Kalender"),
 
     // 2. Notion Properties Block
@@ -3545,7 +3545,7 @@ function KalenderPengeluaranView(p) {
         React.createElement(
           "button",
           { className: "notion-action-btn", style: { border: "1px solid #EDECE9" }, onClick: prevMonth },
-          "â†"
+          "\u2190"
         ),
         React.createElement(
           "button",
@@ -3555,7 +3555,7 @@ function KalenderPengeluaranView(p) {
         React.createElement(
           "button",
           { className: "notion-action-btn", style: { border: "1px solid #EDECE9" }, onClick: nextMonth },
-          "â†’"
+          "\u2192"
         )
       )
     ),
@@ -3623,7 +3623,7 @@ function KalenderPengeluaranView(p) {
                         className: "notion-tag notion-tag-yellow",
                         style: { fontSize: 10, padding: "1px 5px", marginBottom: 2, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }
                       },
-                      "ðŸ“‹ " + b.nama
+                      "\uD83D\uDCCB " + b.nama
                     );
                   }),
                   // Expense chip (red)
@@ -3669,7 +3669,7 @@ function KalenderPengeluaranView(p) {
         React.createElement(
           "button",
           { className: "notion-action-btn", style: { padding: "2px 6px", fontSize: 11 }, onClick: function () { setSelDateStr(null); } },
-          "Tutup âœ•"
+          "Tutup X"
         )
       ),
       (selectedDateBills.length === 0 && selectedDateExpenses.length === 0 && selectedDateIncomes.length === 0)
@@ -3681,7 +3681,7 @@ function KalenderPengeluaranView(p) {
               return React.createElement(
                 "div",
                 { key: b.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
-                React.createElement("span", null, "ðŸ“‹ Tagihan: ", React.createElement("strong", null, b.nama)),
+                React.createElement("span", null, "\uD83D\uDCCB Tagihan: ", React.createElement("strong", null, b.nama)),
                 React.createElement("span", { className: "notion-tag notion-tag-yellow" }, fmt(b.nominal))
               );
             }),
@@ -3689,7 +3689,7 @@ function KalenderPengeluaranView(p) {
               return React.createElement(
                 "div",
                 { key: e.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
-                React.createElement("span", null, "ðŸ’¸ ", e.keperluan, React.createElement("span", { style: { color: "#787774", marginLeft: 4 } }, "(" + e.kategori + ")")),
+                React.createElement("span", null, "\uD83D\uDCB8 ", e.keperluan, React.createElement("span", { style: { color: "#787774", marginLeft: 4 } }, "(" + e.kategori + ")")),
                 React.createElement("span", { style: { color: "#5D1715", fontWeight: 600 } }, "-" + fmt(e.nominal))
               );
             }),
@@ -3697,7 +3697,7 @@ function KalenderPengeluaranView(p) {
               return React.createElement(
                 "div",
                 { key: i.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
-                React.createElement("span", null, "ðŸ’µ ", i.sumber),
+                React.createElement("span", null, "\uD83D\uDCB5 ", i.sumber),
                 React.createElement("span", { style: { color: "#1C3829", fontWeight: 600 } }, "+" + fmt(i.nominal))
               );
             })
