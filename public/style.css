@@ -101,9 +101,9 @@ button {
 }
 
 .notion-page-icon {
-  font-size: 64px;
+  font-size: 48px;
   line-height: 1;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   user-select: none;
   display: inline-block;
 }
@@ -112,18 +112,18 @@ button {
 .notion-props-grid {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px 0 16px;
-  margin-bottom: 16px;
+  gap: 4px;
+  padding: 6px 0 10px;
+  margin-bottom: 12px;
 }
 .notion-prop-row {
   display: flex;
   align-items: center;
-  min-height: 28px;
+  min-height: 24px;
   font-size: 13px;
 }
 .notion-prop-label {
-  width: 140px;
+  width: 130px;
   flex-shrink: 0;
   color: #787774;
   font-size: 13px;
@@ -177,8 +177,8 @@ button {
   background: #F7F6F3;
   border: 1px solid #EDECE9;
   border-radius: 6px;
-  padding: 16px 20px;
-  margin-bottom: 24px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
 }
 
 /* Notion Action Link & Text Buttons */
@@ -241,8 +241,8 @@ button {
   border-radius: 4px;
   overflow-x: auto;
   background: #FFFFFF;
-  margin-top: 12px;
-  margin-bottom: 28px;
+  margin-top: 8px;
+  margin-bottom: 20px;
 }
 .notion-table {
   width: 100%;
@@ -312,9 +312,10 @@ button {
 }
 
 .notion-page-canvas {
-  max-width: 860px !important;
-  margin: 0 auto !important;
-  padding: 48px 48px 96px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 24px 32px 64px !important;
   box-sizing: border-box !important;
 }
 

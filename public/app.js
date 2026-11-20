@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    Keuangan Ku — Main React Application (Pure JS / UMD / React 18)
    ========================================================================== */
 
@@ -2271,7 +2271,7 @@ function DashboardView(p) {
     "div",
     { className: "notion-page-canvas" },
     // 1. Notion Page Icon & Title
-    React.createElement("div", { className: "notion-page-icon" }, "👛"),
+    React.createElement("div", { className: "notion-page-icon" }, "💳"),
     React.createElement("h1", { className: "notion-h1" }, "Ringkasan " + curPeriod.monthName),
 
     // 2. Notion Properties Block
