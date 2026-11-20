@@ -1639,7 +1639,7 @@ function TabunganView(p) {
 
   return React.createElement(
     "div",
-    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
+    { style: { padding: "24px 28px 40px", maxWidth: 880, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
 
     // 1. HERO VAULT CARD (Notion Flat Card)
     React.createElement(
@@ -2496,7 +2496,7 @@ function TagihanMendatangWidget(p) {
 
   return React.createElement(
     "div",
-    { style: { background: T.card, borderRadius: 8, border: "1px solid " + T.border, overflow: "hidden", marginTop: 20 } },
+    { style: { background: T.card, borderRadius: 8, border: "1px solid " + T.border, overflow: "hidden" } },
     // Header
     React.createElement(
       "div",
@@ -2518,8 +2518,21 @@ function TagihanMendatangWidget(p) {
         )
       ),
       React.createElement(
-        Btn,
-        { color: T.amber, small: true, onClick: function () { setEditBill(null); setShowForm(true); } },
+        "button",
+        {
+          onClick: function () { setEditBill(null); setShowForm(true); },
+          style: {
+            padding: "5px 12px",
+            borderRadius: 6,
+            background: T.panel,
+            border: "1px solid " + T.border,
+            color: T.text,
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: "pointer",
+            transition: "all .15s ease"
+          }
+        },
         "+ Tambah Tagihan"
       )
     ),
@@ -2617,90 +2630,107 @@ function DashboardView(p) {
 
   return React.createElement(
     "div",
-    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%" } },
+    { style: { padding: "28px 20px 48px", maxWidth: 880, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
 
-    // 1. HERO FINANCIAL COMMAND CENTER (Wise / Revolut Hero Card)
+    // 1. NOTION DOCUMENT HEADER & TITLE
     React.createElement(
       "div",
-      {
-        style: {
-          background: T.card,
-          border: "1px solid " + T.border,
-          borderRadius: 8,
-          padding: "26px 30px",
-          marginBottom: 24
-        }
-      },
-      // Top Row: Cycle Status Pill & Cycle Switcher
+      { style: { marginBottom: 22 } },
       React.createElement(
         "div",
-        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 } },
+        { style: { display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 8 } },
+        React.createElement(
+          "div",
+          { style: { display: "flex", alignItems: "center", gap: 12 } },
+          React.createElement(SmartWalletLogo, { size: 38 }),
+          React.createElement(
+            "div",
+            null,
+            React.createElement("h1", { style: { fontSize: 24, fontWeight: 900, color: T.text, margin: 0, letterSpacing: -0.5, lineHeight: 1.2 } }, "KeuanganKu"),
+            React.createElement("p", { style: { fontSize: 12, color: T.textSub, margin: "2px 0 0" } }, "Catatan keuangan pribadi yang simpel & rapi.")
+          )
+        ),
+        // Cycle indicator & Switcher
         React.createElement(
           "div",
           { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
           React.createElement(
             "span",
-            { style: { background: "rgba(2, 132, 199, 0.08)", color: T.teal, border: "1px solid rgba(2, 132, 199, 0.2)", fontSize: 12, fontWeight: 800, padding: "4px 12px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 6 } },
-            React.createElement("span", { style: { width: 7, height: 7, borderRadius: "50%", background: T.teal } }),
+            { style: { background: T.panel, color: T.textSub, border: "1px solid " + T.border, fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 4 } },
             isCycle ? ("Siklus " + curPeriod.monthName + " (Gajian Tgl " + paydayDate + ")") : "Seluruh Waktu"
           ),
-          isCycle && React.createElement(
-            "span",
-            { style: { background: "rgba(16, 185, 129, 0.08)", color: "#059669", border: "1px solid rgba(16, 185, 129, 0.2)", fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 4 } },
-            "⏳ " + (diffDays !== null ? (diffDays + " Hari Tersisa") : "Aktif")
-          )
-        ),
-        // Switcher button
-        React.createElement(
-          "div",
-          { style: { display: "inline-flex", background: T.panel, padding: 3, borderRadius: 6, border: "1px solid " + T.border } },
           React.createElement(
-            "button",
-            {
-              onClick: function () { setFilterMode("cycle"); },
-              style: {
-                padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 800, border: "none", cursor: "pointer",
-                background: isCycle ? T.text : "transparent",
-                color: isCycle ? (window.darkMode ? "#191919" : "#FFFFFF") : T.textSub,
-                transition: "all .15s ease"
-              }
-            },
-            "⚡ Siklus Ini"
-          ),
-          React.createElement(
-            "button",
-            {
-              onClick: function () { setFilterMode("all"); },
-              style: {
-                padding: "6px 14px", borderRadius: 4, fontSize: 11, fontWeight: 800, border: "none", cursor: "pointer",
-                background: !isCycle ? T.text : "transparent",
-                color: !isCycle ? (window.darkMode ? "#191919" : "#FFFFFF") : T.textSub,
-                transition: "all .15s ease"
-              }
-            },
-            "🌐 Semua"
+            "div",
+            { style: { display: "inline-flex", background: T.panel, padding: 2, borderRadius: 6, border: "1px solid " + T.border } },
+            React.createElement(
+              "button",
+              {
+                onClick: function () { setFilterMode("cycle"); },
+                style: {
+                  padding: "4px 10px", borderRadius: 4, fontSize: 11, fontWeight: 700, border: "none", cursor: "pointer",
+                  background: isCycle ? T.text : "transparent",
+                  color: isCycle ? (window.darkMode ? "#191919" : "#FFFFFF") : T.textSub,
+                  transition: "all .15s ease"
+                }
+              },
+              "⚡ Siklus Ini"
+            ),
+            React.createElement(
+              "button",
+              {
+                onClick: function () { setFilterMode("all"); },
+                style: {
+                  padding: "4px 10px", borderRadius: 4, fontSize: 11, fontWeight: 700, border: "none", cursor: "pointer",
+                  background: !isCycle ? T.text : "transparent",
+                  color: !isCycle ? (window.darkMode ? "#191919" : "#FFFFFF") : T.textSub,
+                  transition: "all .15s ease"
+                }
+              },
+              "Semua"
+            )
           )
         )
-      ),
+      )
+    ),
 
-      // Balance & Notion Action Buttons Row
+    // 2. NOTION BALANCE CALLOUT CARD (Compact & Focused)
+    React.createElement(
+      "div",
+      {
+        style: {
+          background: T.panel,
+          border: "1px solid " + T.border,
+          borderRadius: 8,
+          padding: "20px 24px",
+          marginBottom: 20
+        }
+      },
       React.createElement(
         "div",
-        { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16, marginBottom: 22 } },
+        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 } },
         React.createElement(
           "div",
           null,
           React.createElement("div", { style: { fontSize: 11, color: T.textSub, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.8 } }, "Sisa Saldo Bersih"),
           React.createElement(
             "div",
-            { style: { fontSize: 40, fontWeight: 900, letterSpacing: -1.2, color: T.text, marginTop: 4, display: "flex", alignItems: "baseline", gap: 8 } },
+            { style: { fontSize: 32, fontWeight: 900, letterSpacing: -1, color: T.text, marginTop: 2, display: "flex", alignItems: "baseline", gap: 6 } },
             (saldo < 0 ? "-" : "") + fmt(Math.abs(saldo)),
-            React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: T.textSub, background: T.panel, padding: "2px 8px", borderRadius: 6, border: "1px solid " + T.border } }, "IDR")
+            React.createElement("span", { style: { fontSize: 11, fontWeight: 800, color: T.textSub } }, "IDR")
           ),
-          React.createElement("div", { style: { fontSize: 12, color: T.textSub, marginTop: 4 } }, "Pemasukan dikurangi seluruh pengeluaran siklus berjalan.")
+          React.createElement(
+            "div",
+            { style: { display: "flex", alignItems: "center", gap: 10, fontSize: 12, marginTop: 6, flexWrap: "wrap", fontWeight: 700 } },
+            React.createElement("span", { style: { color: "#059669" } }, "↑ +" + fmt(tInc)),
+            React.createElement("span", { style: { color: T.textSub } }, "•"),
+            React.createElement("span", { style: { color: "#DC2626" } }, "↓ -" + fmt(tExp) + " (" + pct + "%)"),
+            saldoTab > 0 && React.createElement(React.Fragment, null,
+              React.createElement("span", { style: { color: T.textSub } }, "•"),
+              React.createElement("span", { style: { color: T.teal } }, "💎 Tabungan " + fmt(saldoTab))
+            )
+          )
         ),
-
-        // Notion Direct Action Buttons (Fast & High Usability)
+        // Direct Action Buttons
         React.createElement(
           "div",
           { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
@@ -2713,7 +2743,7 @@ function DashboardView(p) {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
-                padding: "10px 18px",
+                padding: "9px 16px",
                 borderRadius: 6,
                 background: T.text,
                 color: window.darkMode ? "#191919" : "#FFFFFF",
@@ -2724,7 +2754,7 @@ function DashboardView(p) {
                 transition: "all .15s ease"
               }
             },
-            React.createElement("span", { style: { fontSize: 14 } }, "💸"),
+            React.createElement("span", null, "💸"),
             "+ Catat Keluar"
           ),
           React.createElement(
@@ -2736,18 +2766,18 @@ function DashboardView(p) {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
-                padding: "10px 16px",
+                padding: "9px 14px",
                 borderRadius: 6,
-                background: T.panel,
+                background: T.card,
                 color: T.text,
                 border: "1px solid " + T.border,
                 fontSize: 12,
-                fontWeight: 800,
+                fontWeight: 700,
                 cursor: "pointer",
                 transition: "all .15s ease"
               }
             },
-            React.createElement("span", { style: { fontSize: 14 } }, "💵"),
+            React.createElement("span", null, "💵"),
             "+ Masuk"
           ),
           React.createElement(
@@ -2759,9 +2789,9 @@ function DashboardView(p) {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 5,
-                padding: "10px 14px",
+                padding: "9px 12px",
                 borderRadius: 6,
-                background: T.panel,
+                background: T.card,
                 color: T.text,
                 border: "1px solid " + T.border,
                 fontSize: 12,
@@ -2769,86 +2799,24 @@ function DashboardView(p) {
                 cursor: "pointer"
               }
             },
-            React.createElement("span", { style: { fontSize: 13 } }, "🏛️"),
+            React.createElement("span", null, "🏛️"),
             "Nabung"
           )
-        )
-      ),
-
-      // Integrated 3-Metric Breakdown Strip
-      React.createElement(
-        "div",
-        {
-          style: {
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: 12,
-            paddingTop: 18,
-            borderTop: "1px solid " + T.border
-          }
-        },
-        React.createElement(
-          "div",
-          { style: { padding: "10px 14px", background: T.panel, border: "1px solid " + T.border, borderRadius: 6 } },
-          React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontWeight: 800, textTransform: "uppercase" } }, "Pemasukan Siklus"),
-          React.createElement("div", { style: { fontSize: 17, fontWeight: 900, color: "#059669", marginTop: 2 } }, "+ " + fmt(tInc))
-        ),
-        React.createElement(
-          "div",
-          { style: { padding: "10px 14px", background: T.panel, border: "1px solid " + T.border, borderRadius: 6 } },
-          React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontWeight: 800, textTransform: "uppercase" } }, "Pengeluaran Siklus (" + pct + "%)"),
-          React.createElement("div", { style: { fontSize: 17, fontWeight: 900, color: "#DC2626", marginTop: 2 } }, "- " + fmt(tExp))
-        ),
-        React.createElement(
-          "div",
-          { style: { padding: "10px 14px", background: T.panel, border: "1px solid " + T.border, borderRadius: 6 } },
-          React.createElement("div", { style: { fontSize: 10, color: T.textSub, fontWeight: 800, textTransform: "uppercase" } }, "Total Tabungan (KROM)"),
-          React.createElement("div", { style: { fontSize: 17, fontWeight: 900, color: T.teal, marginTop: 2 } }, fmt(saldoTab))
-        )
-      ),
-
-      // Minimal Budget Progress Bar
-      React.createElement(
-        "div",
-        { style: { marginTop: 14 } },
-        React.createElement(
-          "div",
-          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: T.textSub, fontWeight: 700, marginBottom: 6 } },
-          React.createElement("span", null, "Bujet Siklus Terpakai: ", React.createElement("strong", { style: { color: T.text } }, pct + "%")),
-          React.createElement("span", null, "Sisa Kas: ", React.createElement("strong", { style: { color: saldo >= 0 ? "#059669" : "#DC2626" } }, fmt(Math.max(0, saldo))))
-        ),
-        React.createElement(
-          "div",
-          { style: { height: 6, background: T.panel, borderRadius: 2, overflow: "hidden" } },
-          React.createElement("div", {
-            style: {
-              height: "100%",
-              width: pct + "%",
-              borderRadius: 2,
-              background: pct > 85 ? "#EF4444" : pct > 60 ? "#F59E0B" : "linear-gradient(90deg, #10B981, #0284C7)",
-              transition: "width .4s ease"
-            }
-          })
         )
       )
     ),
 
-    // 2. MAIN DOCUMENT FLOW (Notion Single Column)
+    // 3. MAIN DOCUMENT FLOW (Notion Single Column)
     React.createElement(
       "div",
       { style: { display: "flex", flexDirection: "column", gap: 20 } },
 
-      // LEFT COLUMN: TAGIHAN MENDATANG & TRANSAKSI TERKINI
+      // WIDGET TAGIHAN MENDATANG
       React.createElement(
         "div",
-        { style: { display: "flex", flexDirection: "column", gap: 24 } },
-
-        // WIDGET TAGIHAN MENDATANG
-        React.createElement(
-          "div",
-          { id: "tagihan-widget-section" },
-          React.createElement(TagihanMendatangWidget, { onSaveExpense: p.onSaveExpense, showToast: p.showToast })
-        ),
+        { id: "tagihan-widget-section" },
+        React.createElement(TagihanMendatangWidget, { onSaveExpense: p.onSaveExpense, showToast: p.showToast })
+      ),
 
         // TRANSAKSI TERKINI STREAM
         React.createElement(
@@ -2940,8 +2908,7 @@ function DashboardView(p) {
                   );
                 })
               )
-        )
-      ),
+        ),
 
       // BOTTOM ROW: SMART INSIGHTS & SAVINGS BREAKDOWN (Notion 2-Column Property Row)
       React.createElement(
@@ -3138,7 +3105,7 @@ function PemasukanView(p) {
 
   return React.createElement(
     "div",
-    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
+    { style: { padding: "24px 28px 40px", maxWidth: 880, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
 
     // 1. TOP STAT CARDS + PRIMARY ACTION
     React.createElement(
@@ -3628,7 +3595,7 @@ function PengeluaranView(p) {
 
   return React.createElement(
     "div",
-    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
+    { style: { padding: "24px 28px 40px", maxWidth: 880, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
 
     // 1. TOP 3 STAT CARDS
     React.createElement(
@@ -4185,7 +4152,7 @@ function AnalisisBulananView(p) {
 
   return React.createElement(
     "div",
-    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
+    { style: { padding: "24px 28px 40px", maxWidth: 880, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
 
     // 1. TOP HEADER & PAYDAY PICKER
     React.createElement(
@@ -4736,7 +4703,7 @@ function KalenderPengeluaranView(p) {
 
   return React.createElement(
     "div",
-    { style: { padding: "24px 28px 40px", maxWidth: 1280, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
+    { style: { padding: "24px 28px 40px", maxWidth: 880, margin: "0 auto", width: "100%", boxSizing: "border-box" } },
 
     // 1. TOP STAT & NAVIGATION BAR
     React.createElement(
@@ -5245,7 +5212,7 @@ function TopNavbar(p) {
       "div",
       {
         style: {
-          maxWidth: 1280,
+          maxWidth: 880,
           margin: "0 auto",
           padding: "0 16px",
           display: "flex",
@@ -5437,9 +5404,9 @@ function TopNavbar(p) {
                 flex: 1,
                 padding: "10px 0",
                 border: "none",
-                borderBottom: active ? ("2.5px solid " + T.teal) : "2.5px solid transparent",
+                borderBottom: active ? ("2px solid " + T.text) : "2px solid transparent",
                 background: "transparent",
-                color: active ? T.teal : T.textSub,
+                color: active ? T.text : T.textSub,
                 fontSize: 12,
                 fontWeight: active ? 800 : 600,
                 cursor: "pointer",
