@@ -362,6 +362,66 @@ button {
 }
 
 /* Notion Calendar Grid */
+.notion-calendar-layout {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 16px !important;
+  width: 100% !important;
+  margin-bottom: 24px !important;
+}
+.notion-calendar-main {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 336px) !important;
+}
+.notion-calendar-sidebar {
+  width: 320px !important;
+  flex-shrink: 0 !important;
+  background: #F7F6F3 !important;
+  border: 1px solid #EDECE9 !important;
+  border-radius: 8px !important;
+  padding: 14px 16px !important;
+  box-sizing: border-box !important;
+  position: sticky !important;
+  top: 16px !important;
+}
+.notion-calendar-sidebar-item {
+  background: #FFFFFF !important;
+  border: 1px solid #EDECE9 !important;
+  border-radius: 6px !important;
+  padding: 8px 10px !important;
+  transition: all 0.15s ease !important;
+}
+.notion-calendar-sidebar-item:hover {
+  background: #FAF9F8 !important;
+}
+.dark-mode .notion-calendar-sidebar {
+  background: #202020 !important;
+  border-color: #2E2E2E !important;
+  color: #EDEDED !important;
+}
+.dark-mode .notion-calendar-sidebar-item {
+  background: #282828 !important;
+  border-color: #383838 !important;
+  color: #EDEDED !important;
+}
+.dark-mode .notion-calendar-sidebar-item:hover {
+  background: #303030 !important;
+}
+@media (max-width: 860px) {
+  .notion-calendar-layout {
+    flex-direction: column !important;
+  }
+  .notion-calendar-main {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  .notion-calendar-sidebar {
+    width: 100% !important;
+    position: static !important;
+  }
+}
 .notion-calendar-table {
   width: 100%;
   border-collapse: collapse;
@@ -375,8 +435,8 @@ button {
   background: #F7F7F5;
   color: #787774;
   font-weight: 500;
-  font-size: 12px;
-  padding: 8px 4px;
+  font-size: 11px;
+  padding: 6px 2px;
   text-align: center;
   border-bottom: 1px solid #EDECE9;
   border-right: 1px solid #EDECE9;
@@ -388,8 +448,8 @@ button {
   border-bottom: 1px solid #EDECE9;
   border-right: 1px solid #EDECE9;
   vertical-align: top;
-  height: 72px;
-  padding: 4px;
+  height: 58px;
+  padding: 2px 3px;
   position: relative;
   transition: background 0.1s ease;
 }
@@ -406,8 +466,14 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #787774;
+  border-radius: 50%;
+  margin-bottom: 2px;
+}
   font-size: 12px;
   font-weight: 500;
   color: #787774;
