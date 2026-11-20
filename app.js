@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    Keuangan Ku — Main React Application (Pure JS / UMD / React 18)
    ========================================================================== */
 
@@ -2841,7 +2841,7 @@ function PengeluaranView(p) {
                     "td",
                     { style: { fontWeight: 500 } },
                     item.keperluan,
-                    item.catatan && React.createElement("span", { style: { fontSize: 11, color: "#787774", marginLeft: 6 } }, "Â· " + item.catatan),
+                    item.catatan && React.createElement("span", { style: { fontSize: 11, color: "#787774", marginLeft: 6 } }, "• " + item.catatan),
                     item.memo_detail && React.createElement(
                       "button",
                       {
