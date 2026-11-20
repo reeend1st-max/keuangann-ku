@@ -3724,11 +3724,11 @@ function KalenderPengeluaranView(p) {
     // 4. Side-by-Side Calendar & Activity Panel Layout
     React.createElement(
       "div",
-      { style: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 20, alignItems: "start", marginBottom: 24 } },
+      { className: "notion-calendar-layout" },
       // Left / Main: Compact Calendar Grid
       React.createElement(
         "div",
-        { style: { minWidth: 0, overflowX: "auto" } },
+        { className: "notion-calendar-main" },
         React.createElement(
           "table",
           { className: "notion-calendar-table" },
@@ -3825,21 +3825,10 @@ function KalenderPengeluaranView(p) {
           })
         )
       ),
-      // Right / Side: Selected Day Activity Panel
+      // Right / Side: Selected Day Activity Panel (Always on the right side)
       React.createElement(
         "div",
-        {
-          style: {
-            width: "100%",
-            background: "#F7F6F3",
-            border: "1px solid #EDECE9",
-            borderRadius: 6,
-            padding: 18,
-            boxSizing: "border-box",
-            position: "sticky",
-            top: 20
-          }
-        },
+        { className: "notion-calendar-sidebar" },
         React.createElement(
           "div",
           { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
@@ -3860,7 +3849,7 @@ function KalenderPengeluaranView(p) {
                 selectedDateBills.map(function (b) {
                   return React.createElement(
                     "div",
-                    { key: b.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12, padding: "6px 8px", background: "#FFFFFF", borderRadius: 4, border: "1px solid #EDECE9" } },
+                    { key: b.id, className: "notion-calendar-sidebar-item", style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
                     React.createElement("span", null, "Tagihan: ", React.createElement("strong", null, b.nama)),
                     React.createElement("span", { className: "notion-tag notion-tag-yellow" }, fmt(b.nominal))
                   );
@@ -3868,7 +3857,7 @@ function KalenderPengeluaranView(p) {
                 selectedDateExpenses.map(function (e) {
                   return React.createElement(
                     "div",
-                    { key: e.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12, padding: "6px 8px", background: "#FFFFFF", borderRadius: 4, border: "1px solid #EDECE9" } },
+                    { key: e.id, className: "notion-calendar-sidebar-item", style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
                     React.createElement("div", { style: { display: "flex", flexDirection: "column" } },
                       React.createElement("span", { style: { fontWeight: 600 } }, e.keperluan),
                       React.createElement("span", { style: { color: "#787774", fontSize: 11 } }, e.kategori + (e.catatan ? (" - " + e.catatan) : ""))
@@ -3879,7 +3868,7 @@ function KalenderPengeluaranView(p) {
                 selectedDateIncomes.map(function (i) {
                   return React.createElement(
                     "div",
-                    { key: i.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12, padding: "6px 8px", background: "#FFFFFF", borderRadius: 4, border: "1px solid #EDECE9" } },
+                    { key: i.id, className: "notion-calendar-sidebar-item", style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
                     React.createElement("div", { style: { display: "flex", flexDirection: "column" } },
                       React.createElement("span", { style: { fontWeight: 600 } }, i.sumber),
                       React.createElement("span", { style: { color: "#787774", fontSize: 11 } }, i.metode + (i.catatan ? (" - " + i.catatan) : ""))
