@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 * {
   margin: 0;
@@ -388,8 +388,8 @@ button {
   border-bottom: 1px solid #EDECE9;
   border-right: 1px solid #EDECE9;
   vertical-align: top;
-  height: 90px;
-  padding: 6px;
+  height: 72px;
+  padding: 4px;
   position: relative;
   transition: background 0.1s ease;
 }

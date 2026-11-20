@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    Keuangan Ku — Main React Application (Pure JS / UMD / React 18)
    ========================================================================== */
 
@@ -3728,14 +3728,14 @@ function KalenderPengeluaranView(p) {
       )
     ),
 
-    // 4. Two-Column Calendar & Side Activity Panel Layout
+    // 4. Side-by-Side Calendar & Activity Panel Layout
     React.createElement(
       "div",
-      { style: { display: "flex", gap: 20, alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap" } },
-      // Left / Main: Calendar Grid
+      { style: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) 340px", gap: 20, alignItems: "start", marginBottom: 24 } },
+      // Left / Main: Compact Calendar Grid
       React.createElement(
         "div",
-        { style: { flex: "1 1 600px", minWidth: 0, overflowX: "auto" } },
+        { style: { minWidth: 0, overflowX: "auto" } },
         React.createElement(
           "table",
           { className: "notion-calendar-table" },
@@ -3832,17 +3832,19 @@ function KalenderPengeluaranView(p) {
           })
         )
       ),
-      // Right / Side: Selected Day Activity Panel (Always visible at side when date selected or prompt)
+      // Right / Side: Selected Day Activity Panel
       React.createElement(
         "div",
         {
           style: {
-            flex: "0 0 300px",
+            width: "100%",
             background: "#F7F6F3",
             border: "1px solid #EDECE9",
             borderRadius: 6,
-            padding: 16,
-            boxSizing: "border-box"
+            padding: 18,
+            boxSizing: "border-box",
+            position: "sticky",
+            top: 20
           }
         },
         React.createElement(
