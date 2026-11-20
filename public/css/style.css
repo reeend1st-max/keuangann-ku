@@ -116,3 +116,52 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
 body.dark-mode .notion-row:hover {
   background-color: #252525;
 }
+
+/* Notion Workspace Layout (Opsi 1) */
+.notion-workspace-container {
+  display: flex !important;
+  flex-direction: row !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
+.notion-sidebar-root {
+  display: flex !important;
+  flex-shrink: 0 !important;
+}
+
+.notion-mobile-header {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .notion-workspace-container {
+    flex-direction: column !important;
+  }
+  .notion-mobile-header {
+    display: flex !important;
+  }
+  .notion-sidebar-root {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 270px !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
+    transition: transform 0.22s ease-in-out !important;
+  }
+  .notion-sidebar-root.sidebar-closed {
+    transform: translateX(-100%) !important;
+  }
+  .notion-sidebar-root.sidebar-open {
+    transform: translateX(0) !important;
+  }
+  .notion-sidebar-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0,0,0,0.45) !important;
+    z-index: 999 !important;
+  }
+}
+
