@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    Keuangan Ku — Main React Application (Pure JS / UMD / React 18)
    ========================================================================== */
 
@@ -1473,6 +1473,115 @@ function IncomeForm(p) {
 }
 
 // ── Saving Form Modal (Setoran & Penarikan Tabungan) ───────────────────────
+// â”€â”€ Transfer Antar Rekening Tabungan Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function TransferModal(p) {
+  if (!p.open) return null;
+
+  var ALL_LOCS = ["KROM", "JAGO", "BIBIT", "BCA", "SEABANK", "Lainnya"];
+  var _from = useState("BCA"), fromLoc = _from[0], setFromLoc = _from[1];
+  var _to = useState("KROM"), toLoc = _to[0], setToLoc = _to[1];
+  var _nom = useState(""), nominal = _nom[0], setNominal = _nom[1];
+  var _dt = useState(todayStr()), tanggal = _dt[0], setTanggal = _dt[1];
+  var _cat = useState(""), catatan = _cat[0], setCatatan = _cat[1];
+  var _err = useState(""), err = _err[0], setErr = _err[1];
+
+  function handleTransfer() {
+    var num = parseRupiahInput(nominal);
+    if (!num || num <= 0) return setErr("Masukkan nominal transfer yang valid!");
+    if (fromLoc === toLoc) return setErr("Rekening asal dan tujuan tidak boleh sama!");
+    if (!tanggal.trim()) return setErr("Masukkan tanggal transfer!");
+
+    var timeNow = Date.now();
+    var noteStr = catatan.trim() ? (" (" + catatan.trim() + ")") : "";
+
+    // 1. Catat penarikan dari rekening asal
+    var itemOut = {
+      id: "trf_out_" + timeNow,
+      tipe: "penarikan",
+      lokasi: fromLoc,
+      nominal: num,
+      tanggal: tanggal.trim(),
+      catatan: "Transfer ke " + toLoc + noteStr
+    };
+
+    // 2. Catat setoran ke rekening tujuan
+    var itemIn = {
+      id: "trf_in_" + timeNow,
+      tipe: "setoran",
+      lokasi: toLoc,
+      nominal: num,
+      tanggal: tanggal.trim(),
+      catatan: "Transfer dari " + fromLoc + noteStr
+    };
+
+    if (p.onTransfer) {
+      p.onTransfer(itemOut, itemIn);
+    }
+    p.onClose();
+  }
+
+  return React.createElement(
+    Modal,
+    { title: "ðŸ”„ Transfer Antar Rekening Tabungan", open: p.open, onClose: p.onClose, width: 440 },
+    React.createElement(
+      "div",
+      { style: { display: "flex", flexDirection: "column", gap: 14 } },
+      React.createElement(
+        "div",
+        { style: { display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 10, alignItems: "center" } },
+        React.createElement(
+          "div",
+          null,
+          React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase", display: "block", marginBottom: 4 } }, "Dari Rekening"),
+          React.createElement(
+            "select",
+            {
+              value: fromLoc,
+              onChange: function (e) { setFromLoc(e.target.value); },
+              style: { width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid " + T.border, background: T.panel, color: T.text, fontSize: 13, fontWeight: 600, outline: "none" }
+            },
+            ALL_LOCS.map(function (l) { return React.createElement("option", { key: l, value: l }, l); })
+          )
+        ),
+        React.createElement("div", { style: { fontSize: 18, color: T.teal, paddingTop: 18, fontWeight: 900 } }, "âž”"),
+        React.createElement(
+          "div",
+          null,
+          React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase", display: "block", marginBottom: 4 } }, "Ke Rekening"),
+          React.createElement(
+            "select",
+            {
+              value: toLoc,
+              onChange: function (e) { setToLoc(e.target.value); },
+              style: { width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid " + T.border, background: T.panel, color: T.text, fontSize: 13, fontWeight: 600, outline: "none" }
+            },
+            ALL_LOCS.map(function (l) { return React.createElement("option", { key: l, value: l }, l); })
+          )
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 5 } },
+        React.createElement("label", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase" } }, "Nominal Transfer (Rp)"),
+        React.createElement("input", {
+          value: nominal,
+          onChange: function (e) { setNominal(formatRupiahInput(e.target.value)); },
+          placeholder: "0",
+          style: { width: "100%", background: T.panel, border: "1.5px solid " + T.border, borderRadius: 8, padding: "9px 12px", fontSize: 18, fontWeight: 800, color: T.teal, outline: "none", boxSizing: "border-box" }
+        })
+      ),
+      React.createElement(DDatePicker, { label: "Tanggal Transfer", value: tanggal, onChange: setTanggal }),
+      React.createElement(DInput, { label: "Catatan (Opsional)", value: catatan, onChange: setCatatan, placeholder: "Contoh: Pindah alokasi dividen..." }),
+      err && React.createElement("div", { style: { color: T.coral, fontSize: 12, fontWeight: 600 } }, "âš ï¸ ", err),
+      React.createElement(
+        "div",
+        { style: { display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 14, borderTop: "1px solid " + T.border } },
+        React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
+        React.createElement(Btn, { color: T.teal, onClick: handleTransfer }, "ðŸ”„ Pindahkan Saldo")
+      )
+    )
+  );
+}
 function SavingForm(p) {
   if (!p.open) return null;
 
@@ -1708,6 +1817,11 @@ function TabunganView(p) {
             "button",
             { className: "notion-action-btn", style: { border: "1px solid #EDECE9" }, onClick: function () { p.onAdd("penarikan"); } },
             "- Tarik"
+          ),
+          React.createElement(
+            "button",
+            { className: "notion-action-btn", style: { border: "1px solid #EDECE9", color: "#2383E2" }, onClick: p.onOpenTransfer },
+            "ðŸ”„ Transfer"
           )
         )
       ),
@@ -3843,8 +3957,25 @@ function NotionSidebar(p) {
         React.createElement(SmartWalletLogo, { size: 22 }),
         React.createElement(
           "div",
-          null,
-          React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: "#37352F", lineHeight: 1.2 } }, "KeuanganKu")
+          { style: { flex: 1, minWidth: 0 } },
+          React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: "#37352F", lineHeight: 1.2 } }, "KeuanganKu"),
+          React.createElement(
+            "div",
+            { style: { display: "inline-flex", alignItems: "center", gap: 5, marginTop: 2 } },
+            React.createElement("span", {
+              style: {
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: p.syncStatus === "syncing" ? "#F59E0B" : p.syncStatus === "error" ? "#EF4444" : "#10B981",
+                boxShadow: p.syncStatus === "syncing" ? "0 0 6px rgba(245, 158, 11, 0.6)" : "0 0 6px rgba(16, 185, 129, 0.6)",
+                display: "inline-block"
+              }
+            }),
+            React.createElement("span", { style: { fontSize: 10, color: "#787774", fontWeight: 500 } },
+              p.syncStatus === "syncing" ? "Menyinkronkan..." : p.syncStatus === "error" ? "Offline" : "Tersambung Cloud"
+            )
+          )
         )
       ),
 
@@ -4647,6 +4778,8 @@ function App() {
   var _sef = useState(false), showExpForm = _sef[0], setSEF = _sef[1];
   var _sif = useState(false), showIncForm = _sif[0], setSIF = _sif[1];
   var _ssf = useState(false), showSavForm = _ssf[0], setSSF = _ssf[1];
+  var _stf = useState(false), showTransferModal = _stf[0], setSTF = _stf[1];
+  var _syncSt = useState("synced"), syncStatus = _syncSt[0], setSyncStatus = _syncSt[1];
   var _eex = useState(null), editingExp = _eex[0], setEditExp = _eex[1];
   var _ein = useState(null), editingInc = _ein[0], setEditInc = _ein[1];
   var _esv = useState(null), editingSav = _esv[0], setEditSav = _esv[1];
@@ -4776,6 +4909,22 @@ function App() {
     setEditInc(null);
   }, []);
 
+  var handleTransferSavings = useCallback(function (itemOut, itemIn) {
+    setSyncStatus("syncing");
+    window.Api.saveSaving(itemOut).then(function (savedOut) {
+      window.Api.saveSaving(itemIn).then(function (savedIn) {
+        setSavings(function (p) { return [savedIn, savedOut].concat(p); });
+        setSyncStatus("synced");
+        tk.show("Sukses mentransfer dana antar rekening tabungan!", "success");
+      }).catch(function () {
+        setSyncStatus("error");
+        tk.show("Gagal mencatat setoran transfer.", "error");
+      });
+    }).catch(function () {
+      setSyncStatus("error");
+      tk.show("Gagal memproses transfer.", "error");
+    });
+  }, [tk]);
   var saveSaving = useCallback(function (item) {
     window.Api.saveSaving(item).then(function (saved) {
       setSavings(function (p) { return p.some(function (s) { return s.id === saved.id; }) ? p.map(function (s) { return s.id === saved.id ? saved : s; }) : [].concat(p, [saved]); });
@@ -4851,7 +5000,8 @@ function App() {
           updatePaydayDate(res);
         }
       },
-      onOpenRepeat: function () { setShowRepeatModal(true); }
+      onOpenRepeat: function () { setShowRepeatModal(true); },
+      syncStatus: syncStatus
     }),
     // Workspace Document Main Area
     React.createElement(
@@ -4873,6 +5023,7 @@ function App() {
           paydayDate: paydayDate,
           onUpdatePayday: updatePaydayDate,
           onOpenRepeat: function () { setShowRepeatModal(true); },
+      syncStatus: syncStatus,
           onSaveExpense: saveExpense,
           showToast: tk.show,
           onAddIncome: function () { setEditInc(null); setSIF(true); },
@@ -4882,7 +5033,7 @@ function App() {
         if (view === "pemasukan") return React.createElement(PemasukanView, { key: "view-inc", income: income, paydayDate: paydayDate, onAdd: function () { setEditInc(null); setSIF(true); }, onEdit: function (item) { setEditInc(item); setSIF(true); }, onDelete: function (id) { setDT({ type: "income", id: id }); } });
         if (view === "pengeluaran") return React.createElement(PengeluaranView, { key: "view-exp", expenses: expenses, paydayDate: paydayDate, onAdd: function () { setEditExp(null); setSEF(true); }, onEdit: function (item) { setEditExp(item); setSEF(true); }, onDelete: function (id, item) { var lbl = item ? (item.keperluan + " (" + fmt(item.nominal) + ")") : ""; setDT({ type: "expense", id: id, label: lbl }); }, onOpenRepeat: function () { setShowRepeatModal(true); } });
         if (view === "kalender-harian") return React.createElement(KalenderPengeluaranView, { key: "view-kph", expenses: expenses, income: income, savings: savings, paydayDate: paydayDate, onEdit: function (item) { setEditExp(item); setSEF(true); }, onSave: saveExpense });
-        if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, paydayDate: paydayDate, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); } });
+        if (view === "tabungan") return React.createElement(TabunganView, { key: "view-sav", savings: savings, paydayDate: paydayDate, onAdd: function (tipe) { setDST(tipe || "setoran"); setEditSav(null); setSSF(true); }, onEdit: function (item) { setEditSav(item); setSSF(true); }, onDelete: function (id) { setDT({ type: "saving", id: id }); }, onOpenTransfer: function () { setSTF(true); } });
         if (view === "analisis-bulanan") return React.createElement(AnalisisBulananView, { key: "view-amb", expenses: expenses, income: income, paydayDate: paydayDate, onUpdatePayday: updatePaydayDate });
         if (view === "analisis-tahunan") return React.createElement(AnalisisTahunanView, { key: "view-amt", expenses: expenses, income: income, paydayDate: paydayDate });
         if (view === "zakat") return React.createElement(ZakatView, { key: "view-zkt", expenses: expenses, income: income, savings: savings, paydayDate: paydayDate, onSaveExpense: saveExpense, showToast: tk.show });
@@ -4893,6 +5044,7 @@ function App() {
     React.createElement(ExpenseForm, { key: "modal-exp", open: showExpForm, onClose: function () { setSEF(false); setEditExp(null); }, onSave: saveExpense, initial: editingExp, showToast: tk.show }),
     React.createElement(IncomeForm, { key: "modal-inc", open: showIncForm, onClose: function () { setSIF(false); setEditInc(null); }, onSave: saveIncome, initial: editingInc, showToast: tk.show }),
     React.createElement(SavingForm, { key: "modal-sav", open: showSavForm, onClose: function () { setSSF(false); setEditSav(null); }, onSave: saveSaving, initial: editingSav, defaultTipe: defaultSavTipe, showToast: tk.show }),
+    React.createElement(TransferModal, { key: "modal-trf", open: showTransferModal, onClose: function () { setSTF(false); }, onTransfer: handleTransferSavings }),
     React.createElement(RepeatOrderModal, { key: "modal-rpt", open: showRepeatModal, onClose: function () { setShowRepeatModal(false); }, onSaveExpense: saveExpense, onOpenAddExpense: function () { setEditExp(null); setSEF(true); } }),
     React.createElement(ConfirmModal, { key: "modal-del", open: !!deleteTarget, label: deleteTarget ? deleteTarget.label : "", message: "Yakin ingin menghapus transaksi ini? Data tidak bisa dikembalikan.", onConfirm: confirmDelete, onCancel: function () { setDT(null); } }),
     React.createElement(NameOnboardingModal, { key: "modal-name", open: user && (!user.name || !user.name.trim()), onSave: function (u) { setUser(u); tk.show("Nama akun berhasil disimpan!"); } }),
