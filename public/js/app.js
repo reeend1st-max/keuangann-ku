@@ -1668,7 +1668,7 @@ function TabunganView(p) {
               React.createElement(
                 "div",
                 { style: { display: "flex", alignItems: "center", gap: 6, fontWeight: 600, fontSize: 13 } },
-                React.createElement("span", null, LOC_ICONS[acc.name] || "\uD83D\uDD0D"),
+                // React.createElement("span", null, ""),
                 React.createElement("span", null, acc.name)
               ),
               React.createElement("span", { style: { fontSize: 11, color: "#787774" } }, pct + "%")
@@ -2452,6 +2452,16 @@ function PemasukanView(p) {
   var _search = useState(""), search = _search[0], setSearch = _search[1];
   var _fMet = useState("Semua"), fMet = _fMet[0], setFMet = _fMet[1];
   var _fCycle = useState("cycle"), fCycle = _fCycle[0], setFCycle = _fCycle[1];
+  var _selCycle = useState(curPeriod.cycleKey), selCycle = _selCycle[0], setSelCycle = _selCycle[1];
+
+  // Kumpulkan daftar siklus untuk dropdown filter
+  var cycleMap = {};
+  cycleMap[curPeriod.cycleKey] = curPeriod;
+  (p.income || []).forEach(function (tx) {
+    var pr = getFinancialPeriod(tx.tanggal || tx.date, paydayDate);
+    cycleMap[pr.cycleKey] = pr;
+  });
+  var sortedCycles = Object.keys(cycleMap).sort(function (a, b) { return b.localeCompare(a); });
 
   var allIncome = p.income || [];
   var totalAll = allIncome.reduce(function (s, i) { return s + (i.nominal || 0); }, 0);
@@ -2464,7 +2474,7 @@ function PemasukanView(p) {
   var filtered = allIncome.filter(function (item) {
     var itemPeriod = getFinancialPeriod(item.tanggal || item.date, paydayDate);
     if (fCycle === "cycle") {
-      if (itemPeriod.cycleKey !== curPeriod.cycleKey) return false;
+      if (itemPeriod.cycleKey !== selCycle) return false;
     }
     if (fMet !== "Semua" && item.metode !== fMet) return false;
     if (search) {
@@ -2535,6 +2545,18 @@ function PemasukanView(p) {
             onClick: function () { setFCycle("all"); }
           },
           "Semua"
+        ),
+        fCycle === "cycle" && React.createElement(
+          "select",
+          {
+            value: selCycle,
+            onChange: function (e) { setSelCycle(e.target.value); },
+            style: { fontSize: 12, padding: "5px 10px", border: "1px solid #EDECE9", borderRadius: 4, outline: "none", marginLeft: 4, background: "#FFFFFF", cursor: "pointer" }
+          },
+          sortedCycles.map(function (k) {
+            var info = cycleMap[k];
+            return React.createElement("option", { key: k, value: k }, info ? info.label : k);
+          })
         ),
         React.createElement("input", {
           value: search,
@@ -2651,7 +2673,16 @@ function PengeluaranView(p) {
   var _fc = useState("Semua"), fCat = _fc[0], sFCat = _fc[1];
   var _fs = useState(""), search = _fs[0], sSearch = _fs[1];
   var _fCycle = useState("cycle"), fCycle = _fCycle[0], setFCycle = _fCycle[1];
+  var _selCycle = useState(curPeriod.cycleKey), selCycle = _selCycle[0], setSelCycle = _selCycle[1];
   var _mmi = useState(null), memoModalItem = _mmi[0], setMemoModalItem = _mmi[1];
+
+  var cycleMap = {};
+  cycleMap[curPeriod.cycleKey] = curPeriod;
+  (p.expenses || []).forEach(function (tx) {
+    var pr = getFinancialPeriod(tx.tanggal || tx.date, paydayDate);
+    cycleMap[pr.cycleKey] = pr;
+  });
+  var sortedCycles = Object.keys(cycleMap).sort(function (a, b) { return b.localeCompare(a); });
 
   var all = p.expenses || [];
   var total = all.reduce(function (s, e) { return s + (e.nominal || 0); }, 0);
@@ -2676,7 +2707,7 @@ function PengeluaranView(p) {
   var filtered = [].concat(all).filter(function (e) {
     var itemPeriod = getFinancialPeriod(e.tanggal || e.date, paydayDate);
     if (fCycle === "cycle") {
-      if (itemPeriod.cycleKey !== curPeriod.cycleKey) return false;
+      if (itemPeriod.cycleKey !== selCycle) return false;
     }
     if (fCat !== "Semua" && e.kategori !== fCat) return false;
     if (search) {
@@ -2771,6 +2802,18 @@ function PengeluaranView(p) {
             onClick: function () { setFCycle("all"); }
           },
           "Semua"
+        ),
+        fCycle === "cycle" && React.createElement(
+          "select",
+          {
+            value: selCycle,
+            onChange: function (e) { setSelCycle(e.target.value); },
+            style: { fontSize: 12, padding: "5px 10px", border: "1px solid #EDECE9", borderRadius: 4, outline: "none", marginLeft: 4, background: "#FFFFFF", cursor: "pointer" }
+          },
+          sortedCycles.map(function (k) {
+            var info = cycleMap[k];
+            return React.createElement("option", { key: k, value: k }, info ? info.label : k);
+          })
         ),
         React.createElement(
           "select",
@@ -2933,6 +2976,15 @@ function AnalisisBulananView(p) {
     cycleMap[pr.cycleKey] = pr;
   });
 
+  var curYearNum = new Date().getFullYear();
+  for (var yF = 0; yF <= 10; yF++) {
+    var targetY = curYearNum + yF;
+    for (var mF = 1; mF <= 12; mF++) {
+      var dTest = new Date(targetY, mF - 1, paydayDate > 1 ? paydayDate : 1);
+      var pGen = getFinancialPeriod(dTest, paydayDate);
+      cycleMap[pGen.cycleKey] = pGen;
+    }
+  }
   var sortedKeys = Object.keys(cycleMap).sort(function (a, b) {
     return b.localeCompare(a);
   });
@@ -3183,13 +3235,15 @@ function AnalisisTahunanView(p) {
   var _sy = useState(curP.cycleYear);
   var selYear = _sy[0], setSelYear = _sy[1];
 
-  var yearSet = {};
-  yearSet[curP.cycleYear] = true;
-  (p.income || []).concat(p.expenses || []).forEach(function (tx) {
-    var pr = getFinancialPeriod(tx.tanggal || tx.date, paydayDate);
-    yearSet[pr.cycleYear] = true;
-  });
-  var availYears = Object.keys(yearSet).map(Number).sort(function (a, b) { return b - a; });
+  var thisCalYear = new Date().getFullYear();
+  var availYears = [];
+  for (var yOffset = 0; yOffset <= 10; yOffset++) {
+    availYears.push(thisCalYear + yOffset);
+  }
+  for (var yPast = 1; yPast <= 3; yPast++) {
+    availYears.push(thisCalYear - yPast);
+  }
+  availYears.sort(function (a, b) { return a - b; });
 
   var yInc = (p.income || []).filter(function (i) {
     return getFinancialPeriod(i.tanggal || i.date, paydayDate).cycleYear === selYear;
@@ -3560,13 +3614,17 @@ function KalenderPengeluaranView(p) {
       )
     ),
 
-    // 4. Notion Calendar Grid Table
+    // 4. Two-Column Calendar & Side Activity Panel Layout
     React.createElement(
       "div",
-      { style: { overflowX: "auto", marginBottom: 24 } },
+      { style: { display: "flex", gap: 20, alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap" } },
+      // Left / Main: Calendar Grid
       React.createElement(
-        "table",
-        { className: "notion-calendar-table" },
+        "div",
+        { style: { flex: "1 1 600px", minWidth: 0, overflowX: "auto" } },
+        React.createElement(
+          "table",
+          { className: "notion-calendar-table" },
         React.createElement(
           "thead",
           null,
@@ -3626,28 +3684,32 @@ function KalenderPengeluaranView(p) {
                       "\uD83D\uDCCB " + b.nama
                     );
                   }),
-                  // Expense chip (red)
+                  // Expense chip (red) with transaction name/note
                   dayExp.map(function (e) {
+                    var noteLabel = e.keperluan ? (" " + e.keperluan) : "";
                     return React.createElement(
                       "span",
                       {
                         key: "exp-" + e.id,
                         className: "notion-tag notion-tag-red",
+                        title: e.keperluan + ": -" + fmt(e.nominal),
                         style: { fontSize: 10, padding: "1px 5px", marginBottom: 2, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }
                       },
-                      "-" + fmt(e.nominal)
+                      "-" + fmt(e.nominal) + noteLabel
                     );
                   }),
-                  // Income chip (green)
+                  // Income chip (green) with transaction source/note
                   dayInc.map(function (i) {
+                    var noteLabel = i.sumber ? (" " + i.sumber) : "";
                     return React.createElement(
                       "span",
                       {
                         key: "inc-" + i.id,
                         className: "notion-tag notion-tag-green",
+                        title: i.sumber + ": +" + fmt(i.nominal),
                         style: { fontSize: 10, padding: "1px 5px", marginBottom: 2, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }
                       },
-                      "+" + fmt(i.nominal)
+                      "+" + fmt(i.nominal) + noteLabel
                     );
                   })
                 );
@@ -3655,53 +3717,70 @@ function KalenderPengeluaranView(p) {
             );
           })
         )
-      )
-    ),
-
-    // 5. Selected Day Detail Callout
-    selDateStr && React.createElement(
-      "div",
-      { className: "notion-callout" },
+      ),
+      // Right / Side: Selected Day Activity Panel (Always visible at side when date selected or prompt)
       React.createElement(
         "div",
-        { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } },
-        React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#37352F" } }, "Aktivitas pada " + selDateStr),
+        {
+          style: {
+            flex: "0 0 300px",
+            background: "#F7F6F3",
+            border: "1px solid #EDECE9",
+            borderRadius: 6,
+            padding: 16,
+            boxSizing: "border-box"
+          }
+        },
         React.createElement(
-          "button",
-          { className: "notion-action-btn", style: { padding: "2px 6px", fontSize: 11 }, onClick: function () { setSelDateStr(null); } },
-          "Tutup X"
-        )
-      ),
-      (selectedDateBills.length === 0 && selectedDateExpenses.length === 0 && selectedDateIncomes.length === 0)
-        ? React.createElement("div", { style: { color: "#787774", fontSize: 12 } }, "Tidak ada aktivitas pada tanggal ini.")
-        : React.createElement(
-            "div",
-            { style: { display: "flex", flexDirection: "column", gap: 6 } },
-            selectedDateBills.map(function (b) {
-              return React.createElement(
-                "div",
-                { key: b.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
-                React.createElement("span", null, "\uD83D\uDCCB Tagihan: ", React.createElement("strong", null, b.nama)),
-                React.createElement("span", { className: "notion-tag notion-tag-yellow" }, fmt(b.nominal))
-              );
-            }),
-            selectedDateExpenses.map(function (e) {
-              return React.createElement(
-                "div",
-                { key: e.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
-                React.createElement("span", null, "\uD83D\uDCB8 ", e.keperluan, React.createElement("span", { style: { color: "#787774", marginLeft: 4 } }, "(" + e.kategori + ")")),
-                React.createElement("span", { style: { color: "#5D1715", fontWeight: 600 } }, "-" + fmt(e.nominal))
-              );
-            }),
-            selectedDateIncomes.map(function (i) {
-              return React.createElement(
-                "div",
-                { key: i.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12 } },
-                React.createElement("span", null, "\uD83D\uDCB5 ", i.sumber),
-                React.createElement("span", { style: { color: "#1C3829", fontWeight: 600 } }, "+" + fmt(i.nominal))
-              );
-            })
+          "div",
+          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
+          React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "#37352F" } }, selDateStr ? ("Aktivitas " + selDateStr) : "Pilih Tanggal"),
+          selDateStr && React.createElement(
+            "button",
+            { className: "notion-action-btn", style: { padding: "2px 6px", fontSize: 11 }, onClick: function () { setSelDateStr(null); } },
+            "Tutup X"
           )
+        ),
+        !selDateStr
+          ? React.createElement("div", { style: { color: "#787774", fontSize: 12, lineHeight: 1.5 } }, "Klik salah satu kotak tanggal di kalender sebelah kiri untuk melihat rincian pengeluaran dan pemasukan pada tanggal tersebut.")
+          : (selectedDateBills.length === 0 && selectedDateExpenses.length === 0 && selectedDateIncomes.length === 0)
+            ? React.createElement("div", { style: { color: "#787774", fontSize: 12 } }, "Tidak ada aktivitas transaksi pada tanggal ini.")
+            : React.createElement(
+                "div",
+                { style: { display: "flex", flexDirection: "column", gap: 8, maxHeight: 420, overflowY: "auto" } },
+                selectedDateBills.map(function (b) {
+                  return React.createElement(
+                    "div",
+                    { key: b.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12, padding: "6px 8px", background: "#FFFFFF", borderRadius: 4, border: "1px solid #EDECE9" } },
+                    React.createElement("span", null, "Tagihan: ", React.createElement("strong", null, b.nama)),
+                    React.createElement("span", { className: "notion-tag notion-tag-yellow" }, fmt(b.nominal))
+                  );
+                }),
+                selectedDateExpenses.map(function (e) {
+                  return React.createElement(
+                    "div",
+                    { key: e.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12, padding: "6px 8px", background: "#FFFFFF", borderRadius: 4, border: "1px solid #EDECE9" } },
+                    React.createElement("div", { style: { display: "flex", flexDirection: "column" } },
+                      React.createElement("span", { style: { fontWeight: 600 } }, e.keperluan),
+                      React.createElement("span", { style: { color: "#787774", fontSize: 11 } }, e.kategori + (e.catatan ? (" â€¢ " + e.catatan) : ""))
+                    ),
+                    React.createElement("span", { style: { color: "#5D1715", fontWeight: 700, whiteSpace: "nowrap" } }, "-" + fmt(e.nominal))
+                  );
+                }),
+                selectedDateIncomes.map(function (i) {
+                  return React.createElement(
+                    "div",
+                    { key: i.id, style: { display: "flex", justifyContent: "space-between", fontSize: 12, padding: "6px 8px", background: "#FFFFFF", borderRadius: 4, border: "1px solid #EDECE9" } },
+                    React.createElement("div", { style: { display: "flex", flexDirection: "column" } },
+                      React.createElement("span", { style: { fontWeight: 600 } }, i.sumber),
+                      React.createElement("span", { style: { color: "#787774", fontSize: 11 } }, i.metode + (i.catatan ? (" • " + i.catatan) : ""))
+                    ),
+                    React.createElement("span", { style: { color: "#1C3829", fontWeight: 700, whiteSpace: "nowrap" } }, "+" + fmt(i.nominal))
+                  );
+                })
+              )
+          )
+      )
     )
   );
 }
@@ -3711,14 +3790,14 @@ function KalenderPengeluaranView(p) {
 // ── Notion Workspace Sidebar (Opsi 1: Notion Workspace Asli) ────────────────
 function NotionSidebar(p) {
   var navItems = [
-    { id: "dashboard", icon: "🏠", label: "Ringkasan" },
-    { id: "pemasukan", icon: "💵", label: "Pemasukan" },
-    { id: "pengeluaran", icon: "💸", label: "Pengeluaran" },
-    { id: "kalender-harian", icon: "📅", label: "Kalender" },
-    { id: "tabungan", icon: "💎", label: "Tabungan" },
-    { id: "analisis-bulanan", icon: "📈", label: "Analisis Bulanan" },
-    { id: "analisis-tahunan", icon: "📊", label: "Analisis Tahunan" },
-    { id: "zakat", icon: "🤲", label: "Kalkulator Zakat" },
+    { id: "dashboard", label: "Ringkasan" },
+    { id: "pemasukan", label: "Pemasukan" },
+    { id: "pengeluaran", label: "Pengeluaran" },
+    { id: "kalender-harian", label: "Kalender" },
+    { id: "tabungan", label: "Tabungan" },
+    { id: "analisis-bulanan", label: "Analisis Bulanan" },
+    { id: "analisis-tahunan", label: "Analisis Tahunan" },
+    { id: "zakat", label: "Kalkulator Zakat" },
   ];
 
   var initial = (p.user && p.user.name && p.user.name.trim()) ? p.user.name.trim().charAt(0).toUpperCase() : "U";
@@ -3800,8 +3879,7 @@ function NotionSidebar(p) {
                 transition: "background .12s ease"
               }
             },
-            React.createElement("span", { style: { width: 16, height: 16, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14 } }, item.icon),
-            React.createElement("span", { style: { flex: 1 } }, item.label)
+            React.createElement("span", { style: { flex: 1, padding: "2px 0" } }, item.label)
           );
         })
       )
@@ -3811,49 +3889,49 @@ function NotionSidebar(p) {
     React.createElement(
       "div",
       { style: { borderTop: "1px solid #EDECE9", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6, background: "#F7F7F5" } },
-      // Controls Row
+      // Controls Panel (Clean Notion Setting Rows)
       React.createElement(
         "div",
-        { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4 } },
+        { style: { display: "flex", flexDirection: "column", gap: 2 } },
         React.createElement(
           "button",
           {
             className: "notion-action-btn",
             onClick: p.onToggleTheme,
-            title: p.isDark ? "Mode Terang" : "Mode Gelap",
-            style: { padding: "4px 6px", fontSize: 12 }
+            style: { width: "100%", justifyContent: "space-between", padding: "6px 8px", fontSize: 12 }
           },
-          p.isDark ? "🌙 Gelap" : "☀️ Terang"
+          React.createElement("span", null, "Tema Tampilan"),
+          React.createElement("span", { style: { fontWeight: 600 } }, p.isDark ? "🌙 Gelap" : "☀️ Terang")
         ),
         React.createElement(
           "button",
           {
             className: "notion-action-btn",
             onClick: p.onTogglePrivacy,
-            title: p.privacyMode ? "Privasi Aktif" : "Privasi Nonaktif",
-            style: { padding: "4px 6px", fontSize: 12 }
+            style: { width: "100%", justifyContent: "space-between", padding: "6px 8px", fontSize: 12 }
           },
-          p.privacyMode ? "🙈 Sensor" : "👁️ Buka"
+          React.createElement("span", null, "Sensor Saldo"),
+          React.createElement("span", { style: { fontWeight: 600 } }, p.privacyMode ? "🙈 Sensor" : "👁️ Buka")
         ),
         React.createElement(
           "button",
           {
             className: "notion-action-btn",
             onClick: p.onPromptPayday,
-            title: "Ubah Tanggal Gajian",
-            style: { padding: "4px 6px", fontSize: 12 }
+            style: { width: "100%", justifyContent: "space-between", padding: "6px 8px", fontSize: 12 }
           },
-          "Tgl " + p.paydayDate
+          React.createElement("span", null, "Tanggal Gajian"),
+          React.createElement("span", { style: { fontWeight: 600 } }, "Tgl " + p.paydayDate)
         ),
         React.createElement(
           "button",
           {
             className: "notion-action-btn",
             onClick: p.onOpenRepeat,
-            title: "Repeat Order",
-            style: { padding: "4px 6px", fontSize: 12 }
+            style: { width: "100%", justifyContent: "space-between", padding: "6px 8px", fontSize: 12 }
           },
-          "🔁"
+          React.createElement("span", null, "Repeat Order"),
+          React.createElement("span", { style: { fontWeight: 600 } }, "🔁 Buka")
         )
       ),
 

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 * {
   margin: 0;
@@ -462,4 +462,178 @@ button {
   .notion-page-canvas {
     padding: 24px 16px 64px !important;
   }
+}
+
+
+/* Dark Mode Overrides for Notion Classic */
+body.dark-mode,
+.dark-mode {
+  background: #191919 !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-workspace-container {
+  background: #191919 !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-sidebar-root {
+  background: #202020 !important;
+  border-right-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-sidebar-root > div:last-child {
+  background: #202020 !important;
+  border-top-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-sidebar-root div[style*="border-top"] {
+  border-top-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-sidebar-root button[style*="background: #EBEBEA"],
+.dark-mode .notion-sidebar-root button[style*="background:#EBEBEA"] {
+  background: #2F2F2F !important;
+  color: #FFFFFF !important;
+}
+
+.dark-mode .notion-doc-scroll {
+  background: #191919 !important;
+}
+
+.dark-mode .notion-page-canvas {
+  background: transparent !important;
+}
+
+.dark-mode .notion-h1,
+.dark-mode .notion-h2 {
+  color: #EDEDED !important;
+  border-bottom-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-prop-label {
+  color: #9B9B9B !important;
+}
+
+.dark-mode .notion-prop-row {
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-callout {
+  background: #222222 !important;
+  border-color: #2E2E2E !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-table-container {
+  background: #202020 !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-table th {
+  background: #252525 !important;
+  color: #9B9B9B !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-table td {
+  border-color: #2E2E2E !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-table tr:hover td {
+  background: #2A2A2A !important;
+}
+
+.dark-mode .notion-tab-btn {
+  color: #9B9B9B !important;
+}
+
+.dark-mode .notion-tab-btn:hover {
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-tab-btn.active {
+  color: #EDEDED !important;
+  border-bottom-color: #EDEDED !important;
+}
+
+.dark-mode .notion-action-btn {
+  color: #9B9B9B !important;
+}
+
+.dark-mode .notion-action-btn:hover {
+  background: #2E2E2E !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode select,
+.dark-mode input[type="text"],
+.dark-mode input[type="number"],
+.dark-mode textarea {
+  background: #252525 !important;
+  color: #EDEDED !important;
+  border-color: #383838 !important;
+}
+
+.dark-mode select option {
+  background: #252525 !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-calendar-table {
+  background: #202020 !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-calendar-table th {
+  background: #252525 !important;
+  color: #9B9B9B !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-calendar-table td {
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-calendar-table td:hover {
+  background: #282828 !important;
+}
+
+.dark-mode .notion-calendar-date-badge {
+  color: #9B9B9B !important;
+}
+
+.dark-mode .notion-gallery-card {
+  background: #202020 !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-gallery-card:hover {
+  background: #252525 !important;
+}
+
+.dark-mode .notion-tag-gray {
+  background: #333333 !important;
+  color: #CCCCCC !important;
+}
+
+.dark-mode .notion-tag-green {
+  background: rgba(52, 211, 153, 0.15) !important;
+  color: #34D399 !important;
+}
+
+.dark-mode .notion-tag-red {
+  background: rgba(248, 113, 113, 0.15) !important;
+  color: #F87171 !important;
+}
+
+.dark-mode .notion-tag-blue {
+  background: rgba(56, 189, 248, 0.15) !important;
+  color: #38BDF8 !important;
+}
+
+.dark-mode .notion-tag-yellow {
+  background: rgba(251, 191, 36, 0.15) !important;
+  color: #FBBF24 !important;
 }
