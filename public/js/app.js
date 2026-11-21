@@ -313,13 +313,13 @@ function getFinancialPeriod(transactionDate, paydayDate) {
       cycleKey: cKey,
       cycleYear: tYear,
       cycleMonth: tMonth,
-      cycleName: mName + "" + tYear,
+      cycleName: mName + " " + tYear,
       monthName: mName,
       startDate: new Date(tYear, tMonth - 1, 1),
       endDate: new Date(tYear, tMonth - 1, maxD, 23, 59, 59),
       startDateStr: "01/" + String(tMonth).padStart(2, "0") + "/" + tYear,
       endDateStr: String(maxD).padStart(2, "0") + "/" + String(tMonth).padStart(2, "0") + "/" + tYear,
-      label: "Siklus " + mName + "" + tYear + " (1 - " + maxD + "" + mName.slice(0, 3) + ")"
+      label: "Siklus " + mName + " " + tYear + " (1 - " + maxD + " " + mName.slice(0, 3) + ")"
     };
   }
 
@@ -377,13 +377,13 @@ function getFinancialPeriod(transactionDate, paydayDate) {
     cycleKey: cycleKey,
     cycleYear: cycleYear,
     cycleMonth: cycleMonth,
-    cycleName: cMonthName + "" + cycleYear,
+    cycleName: cMonthName + " " + cycleYear,
     monthName: cMonthName,
     startDate: new Date(startYear, startMonth - 1, startDay),
     endDate: new Date(endYear, endMonth - 1, endDay, 23, 59, 59),
     startDateStr: startStr,
     endDateStr: endStr,
-    label: "Siklus " + cMonthName + "" + cycleYear + " (" + startDay + "" + sMonthName + " - " + endDay + "" + eMonthName + ")"
+    label: "Siklus " + cMonthName + " " + cycleYear + " (" + startDay + " " + sMonthName + " - " + endDay + " " + eMonthName + ")"
   };
 }
 
@@ -3096,8 +3096,37 @@ function AnalisisBulananView(p) {
     return b.localeCompare(a);
   });
 
+  var yearOptions = [];
+  for (var yOpt = curYearNum - 2; yOpt <= curYearNum + 10; yOpt++) {
+    yearOptions.push(yOpt);
+  }
+
+  var _selYear = useState(curP.cycleYear || curYearNum);
+  var selYear = _selYear[0], setSelYear = _selYear[1];
+
   var _selCycle = useState(curP.cycleKey);
   var selCycle = _selCycle[0], setSelCycle = _selCycle[1];
+
+  var yearCycles = sortedKeys.filter(function (k) {
+    var info = cycleMap[k];
+    return info && info.cycleYear === selYear;
+  });
+  if (yearCycles.length === 0) {
+    yearCycles = sortedKeys.filter(function (k) { return k.startsWith(String(selYear)); });
+  }
+
+  function handleYearChange(newYear) {
+    setSelYear(newYear);
+    var matching = sortedKeys.filter(function (k) {
+      var info = cycleMap[k];
+      return info && info.cycleYear === newYear;
+    });
+    if (matching.length > 0) {
+      var currentMonth = (cycleMap[selCycle] ? cycleMap[selCycle].cycleMonth : 1);
+      var sameMonthCycle = matching.find(function (k) { return cycleMap[k] && cycleMap[k].cycleMonth === currentMonth; });
+      setSelCycle(sameMonthCycle || matching[matching.length - 1]);
+    }
+  }
 
   var selP = cycleMap[selCycle] || curP;
   var mInc = (p.income || []).filter(function (i) {
@@ -3146,10 +3175,28 @@ function AnalisisBulananView(p) {
       React.createElement(
         "div",
         { className: "notion-prop-row" },
-        React.createElement("span", { className: "notion-prop-label" }, "Siklus"),
+        React.createElement("span", { className: "notion-prop-label" }, "Tahun & Siklus"),
         React.createElement(
           "span",
-          { className: "notion-prop-value" },
+          { className: "notion-prop-value", style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" } },
+          React.createElement(
+            "select",
+            {
+              value: selYear,
+              onChange: function (e) { handleYearChange(parseInt(e.target.value, 10)); },
+              style: {
+                padding: "4px 10px", borderRadius: 4,
+                border: "1px solid #E3E2E0", fontSize: 14,
+                fontWeight: 600,
+                color: "#37352F", background: "#FFFFFF",
+                cursor: "pointer", outline: "none",
+                fontFamily: "Inter, system-ui, sans-serif"
+              }
+            },
+            yearOptions.map(function (yr) {
+              return React.createElement("option", { key: yr, value: yr }, "Tahun " + yr);
+            })
+          ),
           React.createElement(
             "select",
             {
@@ -3163,7 +3210,7 @@ function AnalisisBulananView(p) {
                 fontFamily: "Inter, system-ui, sans-serif"
               }
             },
-            sortedKeys.map(function (k) {
+            yearCycles.map(function (k) {
               var info = cycleMap[k];
               return React.createElement("option", { key: k, value: k }, info ? info.label : k);
             })
@@ -3676,7 +3723,7 @@ function KalenderPengeluaranView(p) {
         React.createElement(
           "div",
           { className: "notion-prop-value" },
-          React.createElement("span", { className: "notion-tag notion-tag-gray" }, monthsList[selMonth - 1] + "" + selYear)
+          React.createElement("span", { className: "notion-tag notion-tag-gray" }, monthsList[selMonth - 1] + " " + selYear)
         )
       ),
       React.createElement(
@@ -3698,7 +3745,7 @@ function KalenderPengeluaranView(p) {
       React.createElement(
         "div",
         { style: { fontSize: 16, fontWeight: 700, color: "#37352F" } },
-        monthsList[selMonth - 1] + "" + selYear
+        monthsList[selMonth - 1] + " " + selYear
       ),
       React.createElement(
         "div",
@@ -3802,7 +3849,7 @@ function KalenderPengeluaranView(p) {
                         title: e.keperluan + ": -" + fmt(e.nominal),
                         style: { fontSize: 10, padding: "1px 5px", marginBottom: 2, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }
                       },
-                      "-" + fmt(e.nominal) + noteLabel
+                      "-" + fmt(e.nominal) + (noteLabel ? (" " + noteLabel) : "")
                     );
                   }),
                   // Income chip (green) with transaction source/note
@@ -3816,7 +3863,7 @@ function KalenderPengeluaranView(p) {
                         title: i.sumber + ": +" + fmt(i.nominal),
                         style: { fontSize: 10, padding: "1px 5px", marginBottom: 2, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }
                       },
-                      "+" + fmt(i.nominal) + noteLabel
+                      "+" + fmt(i.nominal) + (noteLabel ? (" " + noteLabel) : "")
                     );
                   })
                 );
@@ -4016,7 +4063,7 @@ function NotionSidebar(p) {
             style: { width: "100%", justifyContent: "space-between", padding: "6px 8px", fontSize: 12 }
           },
           React.createElement("span", null, "Tema Tampilan"),
-          React.createElement("span", { style: { fontWeight: 600 } }, p.isDark ? " Gelap" : "  Terang")
+          React.createElement("span", { style: { fontWeight: 600 } }, p.isDark ? "Gelap" : "Terang")
         ),
         React.createElement(
           "button",
@@ -4807,7 +4854,7 @@ function App() {
     var next = !isDark;
     setIsDark(next);
     applyTheme(next);
-    tk.show(next ? " Mode Malam aktif" : "  Mode Terang aktif", "info");
+    tk.show(next ? "Mode Gelap aktif" : "Mode Terang aktif", "info");
   }, [isDark, tk]);
 
   useEffect(function () {
