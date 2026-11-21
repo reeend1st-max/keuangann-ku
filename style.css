@@ -703,3 +703,205 @@ body.dark-mode,
   background: rgba(251, 191, 36, 0.15) !important;
   color: #FBBF24 !important;
 }
+
+
+/* ==========================================================================
+   ENHANCED NOTION DARK MODE SPECIFICATIONS (V5590)
+   Ensures all elements, cards, text, and inputs render flawlessly in Dark Mode
+   ========================================================================== */
+body.dark-mode {
+  background-color: #191919 !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-workspace-container {
+  background-color: #191919 !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-sidebar-root {
+  background: #202020 !important;
+  border-right-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-sidebar-root > div {
+  background: #202020 !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-sidebar-root button {
+  color: #9B9B9B !important;
+}
+
+.dark-mode .notion-sidebar-root button:hover {
+  background: #282828 !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-sidebar-root button[style*="background"] {
+  background: #2E2E2E !important;
+  color: #FFFFFF !important;
+}
+
+.dark-mode .notion-h1,
+.dark-mode .notion-h2,
+.dark-mode .notion-h3 {
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-prop-label {
+  color: #9B9B9B !important;
+}
+
+.dark-mode .notion-prop-row {
+  border-bottom-color: #2E2E2E !important;
+}
+
+.dark-mode select,
+.dark-mode input,
+.dark-mode textarea {
+  background-color: #252525 !important;
+  border-color: #383838 !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode select option {
+  background-color: #252525 !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-callout {
+  background: #222222 !important;
+  border-color: #2E2E2E !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-table-container,
+.dark-mode .notion-table {
+  background: #202020 !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-table th {
+  background: #252525 !important;
+  color: #9B9B9B !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-table td {
+  border-color: #2E2E2E !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-table tr:hover td {
+  background: #282828 !important;
+}
+
+.dark-mode .notion-card,
+.dark-mode .notion-gallery-card {
+  background: #202020 !important;
+  border-color: #2E2E2E !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-card:hover,
+.dark-mode .notion-gallery-card:hover {
+  background: #262626 !important;
+}
+
+.dark-mode div[style*="border: 1px solid #EDECE9"],
+.dark-mode div[style*="border:1px solid #EDECE9"],
+.dark-mode div[style*="border: 1px solid #E3E2E0"],
+.dark-mode div[style*="border:1px solid #E3E2E0"] {
+  border-color: #2E2E2E !important;
+  background: #202020 !important;
+}
+
+/* Ensure bright contrast for all text in dark mode */
+.dark-mode [style*="color: #37352F"],
+.dark-mode [style*="color:#37352F"],
+.dark-mode [style*="color: #111827"],
+.dark-mode [style*="color:#111827"] {
+  color: #EDEDED !important;
+}
+
+.dark-mode [style*="color: #787774"],
+.dark-mode [style*="color:#787774"],
+.dark-mode [style*="color: #6B7280"] {
+  color: #A3A3A3 !important;
+}
+
+.dark-mode [style*="color: #1C3829"],
+.dark-mode [style*="color:#1C3829"] {
+  color: #34D399 !important;
+}
+
+.dark-mode [style*="color: #5D1715"],
+.dark-mode [style*="color:#5D1715"] {
+  color: #F87171 !important;
+}
+
+.dark-mode [style*="color: #183347"],
+.dark-mode [style*="color:#183347"] {
+  color: #38BDF8 !important;
+}
+
+.dark-mode [style*="background: #FFFFFF"],
+.dark-mode [style*="background:#FFFFFF"],
+.dark-mode [style*="background: #FAF9F8"],
+.dark-mode [style*="background:#FAF9F8"],
+.dark-mode [style*="background: #F7F7F5"],
+.dark-mode [style*="background:#F7F7F5"],
+.dark-mode [style*="background: #F7F6F3"],
+.dark-mode [style*="background:#F7F6F3"] {
+  background: #202020 !important;
+}
+
+.dark-mode .notion-calendar-table {
+  background: #202020 !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-calendar-table th {
+  background: #252525 !important;
+  color: #9B9B9B !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-calendar-table td {
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-calendar-table td:hover {
+  background: #282828 !important;
+}
+
+.dark-mode .notion-calendar-sidebar {
+  background: #202020 !important;
+  border-color: #2E2E2E !important;
+}
+
+.dark-mode .notion-calendar-sidebar-item {
+  background: #262626 !important;
+  border-color: #333333 !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-calendar-sidebar-item:hover {
+  background: #2D2D2D !important;
+}
+
+.dark-mode .notion-action-btn {
+  background: #252525 !important;
+  border-color: #383838 !important;
+  color: #EDEDED !important;
+}
+
+.dark-mode .notion-tab-btn {
+  color: #9B9B9B !important;
+}
+
+.dark-mode .notion-tab-btn.active {
+  color: #EDEDED !important;
+  border-bottom-color: #EDEDED !important;
+}
