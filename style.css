@@ -361,27 +361,29 @@ button {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* Notion Calendar Grid */
+/* Notion Calendar Grid (Guaranteed Side-by-Side Layout) */
 .notion-calendar-layout {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: flex-start !important;
-  gap: 16px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 340px !important;
+  gap: 20px !important;
+  align-items: start !important;
   width: 100% !important;
   margin-bottom: 24px !important;
 }
 .notion-calendar-main {
-  flex: 1 1 0% !important;
   min-width: 0 !important;
-  max-width: calc(100% - 336px) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
 }
 .notion-calendar-sidebar {
-  width: 320px !important;
+  width: 100% !important;
+  max-width: 340px !important;
   flex-shrink: 0 !important;
   background: #F7F6F3 !important;
   border: 1px solid #EDECE9 !important;
   border-radius: 8px !important;
-  padding: 14px 16px !important;
+  padding: 16px !important;
   box-sizing: border-box !important;
   position: sticky !important;
   top: 16px !important;
@@ -409,16 +411,12 @@ button {
 .dark-mode .notion-calendar-sidebar-item:hover {
   background: #303030 !important;
 }
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .notion-calendar-layout {
-    flex-direction: column !important;
-  }
-  .notion-calendar-main {
-    max-width: 100% !important;
-    width: 100% !important;
+    grid-template-columns: 1fr !important;
   }
   .notion-calendar-sidebar {
-    width: 100% !important;
+    max-width: 100% !important;
     position: static !important;
   }
 }
