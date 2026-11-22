@@ -242,7 +242,7 @@ function saveBills(bills) {
   try { localStorage.setItem("keuangan_upcoming_bills", JSON.stringify(bills)); } catch(e) {}
   if (window.Api && window.Api.saveBills) {
     window.Api.saveBills(bills);
-  }
+  }`r`n  try { window.dispatchEvent(new Event("bills_updated")); } catch(e) {}
 }
 
 var MONTH_NAMES = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
@@ -2110,12 +2110,42 @@ function BayarTagihanModal(p) {
 }
 
 // -- Tagihan Mendatang - Widget untuk Dashboard --------------------------------
+function getInstallmentDueDate(inst) {
+  var now = new Date();
+  var curY = now.getFullYear();
+  var curM = now.getMonth();
+  var curMonthKey = curY + "-" + String(curM + 1).padStart(2, "0");
+
+  var targetDay = parseInt(inst.tanggal_jatuh_tempo, 10) || 1;
+  var dueM = curM;
+  var dueY = curY;
+
+  if (inst.last_paid_month === curMonthKey) {
+    dueM += 1;
+    if (dueM > 11) {
+      dueM = 0;
+      dueY += 1;
+    }
+  }
+
+  var maxDays = new Date(dueY, dueM + 1, 0).getDate();
+  var actualDay = Math.min(Math.max(1, targetDay), maxDays);
+
+  return String(actualDay).padStart(2, "0") + "/" + String(dueM + 1).padStart(2, "0") + "/" + dueY;
+}
+
 function TagihanMendatangWidget(p) {
   var _bills = useState(function () { return getBills(); }), bills = _bills[0], setBills = _bills[1];
+  var _insts = useState(function () { return getInstallments(); }), insts = _insts[0], setInsts = _insts[1];
   var _showForm = useState(false), showForm = _showForm[0], setShowForm = _showForm[1];
   var _editBill = useState(null), editBill = _editBill[0], setEditBill = _editBill[1];
   var _bayarBill = useState(null), bayarBill = _bayarBill[0], setBayarBill = _bayarBill[1];
   var _delBill = useState(null), delBill = _delBill[0], setDelBill = _delBill[1];
+
+  function reload() {
+    setBills(getBills());
+    setInsts(getInstallments());
+  }
 
   useEffect(function () {
     if (window.Api && window.Api.getBills) {
@@ -2125,11 +2155,27 @@ function TagihanMendatangWidget(p) {
         }
       }).catch(function () {});
     }
-  }, []);
+    if (window.Api && window.Api.getInstallments) {
+      window.Api.getInstallments().then(function (cloudInsts) {
+        if (Array.isArray(cloudInsts)) {
+          setInsts(cloudInsts);
+        }
+      }).catch(function () {});
+    }
 
-  function reload() {
-    setBills(getBills());
-  }
+    function handleSync() {
+      setBills(getBills());
+      setInsts(getInstallments());
+    }
+    window.addEventListener("bills_updated", handleSync);
+    window.addEventListener("installments_updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return function () {
+      window.removeEventListener("bills_updated", handleSync);
+      window.removeEventListener("installments_updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, []);
 
   function handleSaveBill(bill) {
     var existing = getBills();
@@ -2157,69 +2203,139 @@ function TagihanMendatangWidget(p) {
     var bill = bayarBill;
     if (!bill) return;
 
-    // Buat pengeluaran dari tagihan ini
-    var parts = tanggal.split("/");
-    var d = parseInt(parts[0]) || 1;
-    var m = (parseInt(parts[1]) || 1) - 1;
-    var y = parseInt(parts[2]) || new Date().getFullYear();
+    var parts = (tanggal || todayStr()).split("/");
+    var d = parseInt(parts[0], 10) || 1;
+    var m = (parseInt(parts[1], 10) || 1) - 1;
+    var y = parseInt(parts[2], 10) || new Date().getFullYear();
+
     var expItem = {
       id: uid(),
       month_id: mkKey(y, m + 1),
       year: y,
       month: m,
-      tanggal: tanggal,
-      keperluan: bill.nama,
-      kategori: bill.kategori || "Tagihan",
+      tanggal: tanggal || todayStr(),
+      keperluan: bill.is_installment
+        ? ("Cicilan " + bill.nama + " (" + (bill.penyedia || "") + " bln " + bill.blnKe + "/" + bill.tenor + ")")
+        : bill.nama,
+      kategori: bill.kategori || (bill.is_installment ? "Cicilan / Pinjaman" : "Tagihan"),
       nominal: nom,
-      bayar: metode,
+      bayar: metode || "Transfer",
       nw: "Need",
-      catatan: bill.catatan || "",
-      memo_detail: "",
+      catatan: bill.catatan || (bill.is_installment ? ("Pembayaran angsuran ke-" + bill.blnKe + " dari " + bill.tenor + " bulan") : ""),
+      memo_detail: ""
     };
     if (p.onSaveExpense) p.onSaveExpense(expItem);
 
-    // Setelah bayar: jika berulang, buat tagihan berikutnya; jika tidak, hapus
-    var existingBills = getBills();
-    var updatedBills;
-    if (bill.repeat === "monthly" || bill.repeat === "yearly") {
-      // Hitung tanggal jatuh tempo berikutnya
-      var tParts = bill.tanggal.split("/");
-      var tD = parseInt(tParts[0], 10);
-      var tM = parseInt(tParts[1], 10);
-      var tY = parseInt(tParts[2], 10);
-      if (bill.repeat === "monthly") {
-        tM += 1;
-        if (tM > 12) { tM = 1; tY += 1; }
-      } else {
-        tY += 1;
+    if (bill.is_installment && bill.raw_installment) {
+      var instItem = bill.raw_installment;
+      var cur = instItem.cicilan_berjalan || 0;
+      var nextCount = cur + 1;
+      var isLunas = nextCount >= instItem.tenor_bulan;
+      var now = new Date();
+      var curMonthKey = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+
+      var updatedJadwal = (instItem.jadwal_per_bulan || []).map(function (j) {
+        return j.bulan === nextCount ? { bulan: j.bulan, nominal: nom } : j;
+      });
+
+      var existingInst = getInstallments();
+      var updatedInst = existingInst.map(function (x) {
+        if (x.id === instItem.id) {
+          return Object.assign({}, x, {
+            cicilan_berjalan: nextCount,
+            jadwal_per_bulan: updatedJadwal.length > 0 ? updatedJadwal : x.jadwal_per_bulan,
+            status: isLunas ? "lunas" : "aktif",
+            last_paid_at: Date.now(),
+            last_paid_month: curMonthKey,
+            updated_at: Date.now()
+          });
+        }
+        return x;
+      });
+      saveInstallments(updatedInst);
+      setInsts(updatedInst);
+      if (p.showToast) {
+        p.showToast(isLunas ? ("Selamat! Cicilan " + bill.nama + " telah LUNAS & dicatat ke pengeluaran!") : ("Tagihan " + bill.nama + " bln ke-" + bill.blnKe + " (" + fmt(nom) + ") lunas! Otomatis lanjut ke bln berikutnya."), "success");
       }
-      var newTgl = String(tD).padStart(2, "0") + "/" + String(tM).padStart(2, "0") + "/" + tY;
-      var newBill = Object.assign({}, bill, { id: uid(), tanggal: newTgl, status: "pending" });
-      updatedBills = existingBills.filter(function (b) { return b.id !== bill.id; }).concat([newBill]);
-      if (p.showToast) p.showToast(" Tagihan " + bill.nama + " lunas! Tagihan berikutnya: " + newTgl, "success");
     } else {
-      updatedBills = existingBills.filter(function (b) { return b.id !== bill.id; });
-      if (p.showToast) p.showToast(" Tagihan " + bill.nama + " lunas & dicatat ke pengeluaran!", "success");
+      var existingBills = getBills();
+      var updatedBills;
+      if (bill.repeat === "monthly" || bill.repeat === "yearly") {
+        var tParts = bill.tanggal.split("/");
+        var tD = parseInt(tParts[0], 10);
+        var tM = parseInt(tParts[1], 10);
+        var tY = parseInt(tParts[2], 10);
+        if (bill.repeat === "monthly") {
+          tM += 1;
+          if (tM > 12) { tM = 1; tY += 1; }
+        } else {
+          tY += 1;
+        }
+        var newTgl = String(tD).padStart(2, "0") + "/" + String(tM).padStart(2, "0") + "/" + tY;
+        var nextCount = (bill.cicilan_berjalan || 0) + 1;
+        var nextNominal = bill.nominal_per_bulan || bill.nominal || 0;
+        if (bill.jadwal_per_bulan && Array.isArray(bill.jadwal_per_bulan)) {
+          var scheduleEntry = bill.jadwal_per_bulan.find(function (j) { return j.bulan === nextCount; });
+          if (scheduleEntry && scheduleEntry.nominal) nextNominal = scheduleEntry.nominal;
+        }
+        var newBill = Object.assign({}, bill, {
+          id: uid(),
+          tanggal: newTgl,
+          status: "pending",
+          cicilan_berjalan: nextCount,
+          nominal: nextNominal,
+          nominal_per_bulan: nextNominal
+        });
+        updatedBills = existingBills.filter(function (b) { return b.id !== bill.id; }).concat([newBill]);
+        if (p.showToast) p.showToast("Tagihan " + bill.nama + " lunas! Tagihan berikutnya: " + newTgl, "success");
+      } else {
+        updatedBills = existingBills.filter(function (b) { return b.id !== bill.id; });
+        if (p.showToast) p.showToast("Tagihan " + bill.nama + " lunas & dicatat ke pengeluaran!", "success");
+      }
+      saveBills(updatedBills);
     }
-    saveBills(updatedBills);
     reload();
     setBayarBill(null);
   }
 
-  // Sort & kategorikan
-  var now = new Date();
-  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Gabungkan tagihan biasa dan cicilan aktif
+  var regularBills = (bills || []).filter(function (b) { return b.status !== "paid"; }).map(function (b) {
+    return Object.assign({}, b, { _days: daysUntilDue(b.tanggal), _type: "bill" });
+  });
 
-  var pendingBills = bills.filter(function (b) { return b.status !== "paid"; }).map(function (b) {
-    return Object.assign({}, b, { _days: daysUntilDue(b.tanggal) });
-  }).sort(function (a, b) { return (a._days === null ? 9999 : a._days) - (b._days === null ? 9999 : b._days); });
+  var installmentBills = (insts || []).filter(function (x) {
+    return x.status !== "lunas" && (x.cicilan_berjalan || 0) < (x.tenor_bulan || 0);
+  }).map(function (x) {
+    var nextBulan = (x.cicilan_berjalan || 0) + 1;
+    var nom = x.nominal_per_bulan || 0;
+    if (x.jadwal_per_bulan && Array.isArray(x.jadwal_per_bulan)) {
+      var found = x.jadwal_per_bulan.find(function (j) { return j.bulan === nextBulan; });
+      if (found && found.nominal) nom = found.nominal;
+    }
+    var tgl = getInstallmentDueDate(x);
+    return {
+      id: "inst_bill_" + x.id,
+      installment_id: x.id,
+      raw_installment: x,
+      is_installment: true,
+      nama: x.nama,
+      sub_label: (x.penyedia || "Cicilan") + " (Bln " + nextBulan + "/" + x.tenor_bulan + ")",
+      penyedia: x.penyedia,
+      blnKe: nextBulan,
+      tenor: x.tenor_bulan,
+      kategori: "Cicilan / Pinjaman",
+      nominal: nom,
+      tanggal: tgl,
+      _days: daysUntilDue(tgl),
+      _type: "installment"
+    };
+  });
 
-  var overdue = pendingBills.filter(function (b) { return b._days !== null && b._days < 0; });
-  var dueSoon = pendingBills.filter(function (b) { return b._days !== null && b._days >= 0 && b._days <= 3; });
-  var upcoming = pendingBills.filter(function (b) { return b._days !== null && b._days > 3; });
+  var pendingBills = regularBills.concat(installmentBills).sort(function (a, b) {
+    return (a._days === null ? 9999 : a._days) - (b._days === null ? 9999 : b._days);
+  });
 
   var totalPending = pendingBills.reduce(function (s, b) { return s + (b.nominal || 0); }, 0);
-  var overdueCount = overdue.length + dueSoon.length;
 
   return React.createElement(
     "div",
@@ -2269,22 +2385,28 @@ function TagihanMendatangWidget(p) {
               pendingBills.map(function (b) {
                 var days = b._days;
                 var statusText = days === null ? "-" : days < 0 ? ("Telat " + Math.abs(days) + " hari") : days === 0 ? "Hari ini" : (days + " hari lagi");
+                var tagClass = days === null ? "notion-tag-gray" : days < 0 ? "notion-tag-red" : days <= 3 ? "notion-tag-yellow" : "notion-tag-gray";
                 return React.createElement(
                   "tr",
                   { key: b.id },
                   React.createElement(
                     "td",
                     { style: { fontWeight: 500 } },
-                    b.nama,
-                    b.repeat === "monthly" && React.createElement("span", { style: { fontSize: 11, color: "#787774", marginLeft: 6 } }, ""),
-                    b.repeat === "yearly" && React.createElement("span", { style: { fontSize: 11, color: "#787774", marginLeft: 6 } }, "")
+                    React.createElement(
+                      "div",
+                      { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" } },
+                      React.createElement("span", { style: { fontWeight: 600 } }, b.nama),
+                      b.is_installment
+                        ? React.createElement("span", { className: "notion-tag notion-tag-blue", style: { fontSize: 10, padding: "1px 6px" } }, b.sub_label || "Cicilan")
+                        : (b.repeat ? React.createElement("span", { className: "notion-tag notion-tag-gray", style: { fontSize: 10, padding: "1px 6px" } }, b.repeat === "monthly" ? "Bulanan" : "Tahunan") : null)
+                    )
                   ),
-                  React.createElement("td", { style: { fontWeight: 600 } }, fmt(b.nominal)),
-                  React.createElement("td", null, b.tanggal || "-"),
+                  React.createElement("td", { style: { fontWeight: 600, color: "#37352F" } }, fmt(b.nominal)),
+                  React.createElement("td", { style: { color: "#787774" } }, b.tanggal || "-"),
                   React.createElement(
                     "td",
                     null,
-                    React.createElement("span", { className: "notion-tag notion-tag-yellow" }, statusText)
+                    React.createElement("span", { className: "notion-tag " + tagClass }, statusText)
                   ),
                   React.createElement(
                     "td",
@@ -2297,23 +2419,32 @@ function TagihanMendatangWidget(p) {
                       },
                       "Bayar"
                     ),
-                    React.createElement(
+                    !b.is_installment && React.createElement(
                       "button",
                       {
                         className: "notion-action-btn",
                         style: { padding: "2px 6px", fontSize: 12, marginLeft: 6 },
                         onClick: function () { setEditBill(b); setShowForm(true); }
                       },
-                      ""
+                      "Edit"
                     ),
-                    React.createElement(
+                    !b.is_installment && React.createElement(
                       "button",
                       {
                         className: "notion-action-btn",
-                        style: { padding: "2px 6px", fontSize: 12, color: "#E03E3E" },
+                        style: { padding: "2px 6px", fontSize: 12, color: "#E03E3E", marginLeft: 4 },
                         onClick: function () { setDelBill(b); }
                       },
                       "X"
+                    ),
+                    b.is_installment && p.onNavigate && React.createElement(
+                      "button",
+                      {
+                        className: "notion-action-btn",
+                        style: { padding: "2px 6px", fontSize: 11, marginLeft: 6, color: "#787774" },
+                        onClick: function () { p.onNavigate("cicilan"); }
+                      },
+                      "Rincian ->"
                     )
                   )
                 );
@@ -3980,7 +4111,7 @@ function saveInstallments(list) {
   } catch (e) {}
   if (window.Api && window.Api.saveInstallments) {
     window.Api.saveInstallments(list);
-  }
+  }`r`n  try { window.dispatchEvent(new Event("installments_updated")); } catch(e) {}
 }
 
 // Modal Form Tambah / Edit Cicilan & Paylater (Custom Tenor & Skema Bertahap per Bulan)
@@ -4382,12 +4513,15 @@ function CicilanView(p) {
       return j.bulan === nextCount ? { bulan: j.bulan, nominal: numPaid } : j;
     });
 
+    var curMonthKey = (new Date().getFullYear()) + "-" + String(new Date().getMonth() + 1).padStart(2, "0");
     var updated = list.map(function (x) {
       if (x.id === item.id) {
         return Object.assign({}, x, {
           cicilan_berjalan: nextCount,
           jadwal_per_bulan: updatedJadwal.length > 0 ? updatedJadwal : x.jadwal_per_bulan,
           status: isLunas ? "lunas" : "aktif",
+          last_paid_at: Date.now(),
+          last_paid_month: curMonthKey,
           updated_at: Date.now()
         });
       }
@@ -5940,6 +6074,7 @@ function App() {
         { style: { flex: 1, overflowY: "auto", overflowX: "hidden", display: "flex", flexDirection: "column" } },
       (function () {
         if (view === "dashboard") return React.createElement(DashboardView, {
+          onNavigate: setView,
           key: "view-dash",
           expenses: expenses,
           income: income,
