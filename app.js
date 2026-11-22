@@ -3890,8 +3890,9 @@ function KalenderPengeluaranView(p) {
             );
           })
         )
-      ),
-      // Right / Side: Selected Day Activity Panel (Always on the right side)
+      )
+    ),
+    // Right / Side: Selected Day Activity Panel (Direct Sibling in Flex Row)
       React.createElement(
         "div",
         {
@@ -3960,7 +3961,6 @@ function KalenderPengeluaranView(p) {
               )
           )
       )
-    )
   );
 }
 
