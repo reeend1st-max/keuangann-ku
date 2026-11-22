@@ -3768,14 +3768,31 @@ function KalenderPengeluaranView(p) {
       )
     ),
 
-    // 4. Side-by-Side Calendar & Activity Panel Layout
+    // 4. Side-by-Side Calendar & Activity Panel Layout (Grid side-by-side)
     React.createElement(
       "div",
-      { className: "notion-calendar-layout" },
+      {
+        className: "notion-calendar-layout",
+        style: {
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) 340px",
+          gap: 20,
+          alignItems: "start",
+          width: "100%",
+          marginBottom: 24
+        }
+      },
       // Left / Main: Compact Calendar Grid
       React.createElement(
         "div",
-        { className: "notion-calendar-main" },
+        {
+          className: "notion-calendar-main",
+          style: {
+            minWidth: 0,
+            width: "100%",
+            overflowX: "auto"
+          }
+        },
         React.createElement(
           "table",
           { className: "notion-calendar-table" },
@@ -3875,7 +3892,20 @@ function KalenderPengeluaranView(p) {
       // Right / Side: Selected Day Activity Panel (Always on the right side)
       React.createElement(
         "div",
-        { className: "notion-calendar-sidebar" },
+        {
+          className: "notion-calendar-sidebar",
+          style: {
+            width: "100%",
+            maxWidth: 340,
+            background: "#F7F6F3",
+            border: "1px solid #EDECE9",
+            borderRadius: 8,
+            padding: "16px",
+            boxSizing: "border-box",
+            position: "sticky",
+            top: 16
+          }
+        },
         React.createElement(
           "div",
           { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
@@ -3892,7 +3922,7 @@ function KalenderPengeluaranView(p) {
             ? React.createElement("div", { style: { color: "#787774", fontSize: 12 } }, "Tidak ada aktivitas transaksi pada tanggal ini.")
             : React.createElement(
                 "div",
-                { style: { display: "flex", flexDirection: "column", gap: 8, maxHeight: 420, overflowY: "auto" } },
+                { style: { display: "flex", flexDirection: "column", gap: 8, maxHeight: "calc(100vh - 240px)", minHeight: 180, overflowY: "auto", paddingRight: 4 } },
                 selectedDateBills.map(function (b) {
                   return React.createElement(
                     "div",
