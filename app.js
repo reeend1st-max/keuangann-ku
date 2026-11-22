@@ -3890,9 +3890,8 @@ function KalenderPengeluaranView(p) {
             );
           })
         )
-      )
-    ),
-    // Right / Side: Selected Day Activity Panel (Direct Sibling in Flex Row)
+      ),
+      // Right / Side: Selected Day Activity Panel (Direct Sibling in Flex Row)
       React.createElement(
         "div",
         {
@@ -3961,6 +3960,7 @@ function KalenderPengeluaranView(p) {
               )
           )
       )
+    )
   );
 }
 
@@ -3983,7 +3983,7 @@ function saveInstallments(list) {
   }
 }
 
-// Modal Form Tambah / Edit Cicilan & Paylater
+// Modal Form Tambah / Edit Cicilan & Paylater (Custom Tenor & Skema Bertahap per Bulan)
 function CicilanModal(p) {
   if (!p.open) return null;
   var init = p.initial || {};
@@ -3999,34 +3999,112 @@ function CicilanModal(p) {
 
   var _nm = useState(init.nama || ""), nama = _nm[0], setNama = _nm[1];
   var _prv = useState(init.penyedia || "SPayLater"), penyedia = _prv[0], setPenyedia = _prv[1];
-  var _tot = useState(init.total_pinjaman ? formatRupiahInput(init.total_pinjaman) : ""), total = _tot[0], setTotal = _tot[1];
-  var _ang = useState(init.nominal_per_bulan ? formatRupiahInput(init.nominal_per_bulan) : ""), angsuran = _ang[0], setAngsuran = _ang[1];
   var _tnr = useState(init.tenor_bulan ? String(init.tenor_bulan) : "6"), tenor = _tnr[0], setTenor = _tnr[1];
   var _sdh = useState(init.cicilan_berjalan !== undefined ? String(init.cicilan_berjalan) : "0"), sudahBayar = _sdh[0], setSudahBayar = _sdh[1];
   var _tgl = useState(init.tanggal_jatuh_tempo ? String(init.tanggal_jatuh_tempo) : "25"), jatuhTempo = _tgl[0], setJatuhTempo = _tgl[1];
   var _cat = useState(init.catatan || ""), catatan = _cat[0], setCatatan = _cat[1];
   var _err = useState(""), err = _err[0], setErr = _err[1];
 
+  // Mode Skema: 'flat' (sama tiap bulan) atau 'custom' (beda-beda per bulan)
+  var _mode = useState(init.mode_skema || (init.jadwal_per_bulan && init.jadwal_per_bulan.length > 0 ? "custom" : "flat")), modeSkema = _mode[0], setModeSkema = _mode[1];
+  var _ang = useState(init.nominal_per_bulan ? formatRupiahInput(init.nominal_per_bulan) : ""), angsuranFlat = _ang[0], setAngsuranFlat = _ang[1];
+
+  // Jadwal rincian per bulan
+  var _sch = useState(function () {
+    var numT = parseInt(init.tenor_bulan, 10) || 6;
+    if (init.jadwal_per_bulan && Array.isArray(init.jadwal_per_bulan) && init.jadwal_per_bulan.length > 0) {
+      return init.jadwal_per_bulan.map(function (item) {
+        return { bulan: item.bulan, nominal: formatRupiahInput(item.nominal || 0) };
+      });
+    }
+    var list = [];
+    var defaultNom = init.nominal_per_bulan ? formatRupiahInput(init.nominal_per_bulan) : "";
+    for (var i = 1; i <= numT; i++) {
+      list.push({ bulan: i, nominal: defaultNom });
+    }
+    return list;
+  });
+  var schedule = _sch[0], setSchedule = _sch[1];
+
+  // Saat angka tenor diketik berubah, sesuaikan baris jadwal
+  function handleTenorChange(val) {
+    setTenor(val);
+    var tCount = parseInt(val, 10);
+    if (!isNaN(tCount) && tCount > 0 && tCount <= 120) {
+      var currentNom = angsuranFlat || (schedule[0] ? schedule[0].nominal : "");
+      var nextList = [];
+      for (var i = 1; i <= tCount; i++) {
+        var existing = schedule.find(function (s) { return s.bulan === i; });
+        nextList.push({ bulan: i, nominal: existing ? existing.nominal : currentNom });
+      }
+      setSchedule(nextList);
+    }
+  }
+
+  function handleScheduleNominalChange(bIdx, val) {
+    var formatted = formatRupiahInput(val);
+    var updated = schedule.map(function (s, idx) {
+      return idx === bIdx ? { bulan: s.bulan, nominal: formatted } : s;
+    });
+    setSchedule(updated);
+  }
+
+  function handleSamakanSemua(baseNom) {
+    var updated = schedule.map(function (s) {
+      return { bulan: s.bulan, nominal: baseNom };
+    });
+    setSchedule(updated);
+  }
+
+  // Hitung total harga otomatis
+  var numTenor = parseInt(tenor, 10) || 0;
+  var totalCalc = 0;
+  if (modeSkema === "flat") {
+    totalCalc = (parseRupiahInput(angsuranFlat) || 0) * numTenor;
+  } else {
+    totalCalc = schedule.reduce(function (sum, item) {
+      return sum + (parseRupiahInput(item.nominal) || 0);
+    }, 0);
+  }
+
   function handleSubmit() {
-    var numTotal = parseRupiahInput(total);
-    var numAngsuran = parseRupiahInput(angsuran);
-    var numTenor = parseInt(tenor, 10);
     var numSudah = parseInt(sudahBayar, 10) || 0;
     var numJatuhTempo = parseInt(jatuhTempo, 10) || 25;
 
     if (!nama.trim()) return setErr("Nama barang atau keperluan cicilan wajib diisi!");
-    if (!numAngsuran || numAngsuran <= 0) return setErr("Nominal angsuran per bulan wajib diisi!");
-    if (!numTenor || numTenor <= 0) return setErr("Total tenor bulan harus lebih dari 0!");
+    if (!numTenor || numTenor <= 0) return setErr("Ketik jumlah tenor bulan dengan benar (minimal 1 bulan)!");
     if (numSudah > numTenor) return setErr("Bulan yang sudah terbayar tidak boleh melebihi total tenor!");
 
-    var finalTotal = (numTotal && numTotal > 0) ? numTotal : (numAngsuran * numTenor);
+    var finalSchedule = [];
+    var avgNominal = 0;
+
+    if (modeSkema === "flat") {
+      var numAng = parseRupiahInput(angsuranFlat);
+      if (!numAng || numAng <= 0) return setErr("Nominal angsuran per bulan wajib diisi!");
+      avgNominal = numAng;
+      for (var i = 1; i <= numTenor; i++) {
+        finalSchedule.push({ bulan: i, nominal: numAng });
+      }
+    } else {
+      // Validasi setiap bulan pada custom schedule
+      for (var j = 0; j < schedule.length; j++) {
+        var n = parseRupiahInput(schedule[j].nominal);
+        if (!n || n <= 0) {
+          return setErr("Nominal angsuran Bulan ke-" + (j + 1) + " belum diisi dengan valid!");
+        }
+        finalSchedule.push({ bulan: j + 1, nominal: n });
+      }
+      avgNominal = finalSchedule.length > 0 ? (totalCalc / finalSchedule.length) : 0;
+    }
 
     var item = {
       id: init.id || ("inst_" + Date.now()),
       nama: nama.trim(),
       penyedia: penyedia,
-      total_pinjaman: finalTotal,
-      nominal_per_bulan: numAngsuran,
+      mode_skema: modeSkema,
+      total_pinjaman: totalCalc,
+      nominal_per_bulan: Math.round(avgNominal),
+      jadwal_per_bulan: finalSchedule,
       tenor_bulan: numTenor,
       cicilan_berjalan: numSudah,
       tanggal_jatuh_tempo: numJatuhTempo,
@@ -4045,7 +4123,7 @@ function CicilanModal(p) {
       title: init.id ? "Edit Cicilan & Paylater" : "Tambah Cicilan / Paylater Baru",
       open: p.open,
       onClose: p.onClose,
-      width: 480
+      width: 520
     },
     React.createElement(
       "div",
@@ -4073,40 +4151,24 @@ function CicilanModal(p) {
           })
         )
       ),
-      React.createElement(
-        "div",
-        { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } },
-        React.createElement(DInput, {
-          label: "Angsuran per Bulan (Rp)",
-          value: angsuran,
-          onChange: function (v) { setAngsuran(formatRupiahInput(v)); },
-          placeholder: "0"
-        }),
-        React.createElement(DInput, {
-          label: "Total Pokok / Harga (Opsional)",
-          value: total,
-          onChange: function (v) { setTotal(formatRupiahInput(v)); },
-          placeholder: "Otomatis dihitung"
-        })
-      ),
+
+      // Baris Input Tenor (Ketik Manual Bebas) & Sudah Bayar & Jatuh Tempo
       React.createElement(
         "div",
         { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } },
         React.createElement(
           "div",
           null,
-          React.createElement("label", { style: { fontSize: 11, color: T.textSub, fontWeight: 700, textTransform: "uppercase", display: "block", marginBottom: 4 } }, "Tenor (Bulan)"),
-          React.createElement(
-            "select",
-            {
-              value: tenor,
-              onChange: function (e) { setTenor(e.target.value); },
-              style: { width: "100%", padding: "8px 8px", borderRadius: 6, border: "1px solid " + T.border, background: T.panel, color: T.text, fontSize: 13, fontWeight: 600, outline: "none" }
-            },
-            [1, 2, 3, 4, 6, 9, 12, 15, 18, 24, 36].map(function (t) {
-              return React.createElement("option", { key: t, value: String(t) }, t + " Bulan");
-            })
-          )
+          React.createElement("label", { style: { fontSize: 11, color: T.teal, fontWeight: 800, textTransform: "uppercase", display: "block", marginBottom: 4 } }, "Tenor (Bulan)"),
+          React.createElement("input", {
+            type: "number",
+            min: "1",
+            max: "120",
+            value: tenor,
+            onChange: function (e) { handleTenorChange(e.target.value); },
+            placeholder: "Ketik angka tenor...",
+            style: { width: "100%", padding: "8px 10px", borderRadius: 6, border: "1.5px solid " + T.teal, background: T.panel, color: T.text, fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box" }
+          })
         ),
         React.createElement(
           "div",
@@ -4118,7 +4180,7 @@ function CicilanModal(p) {
             max: tenor,
             value: sudahBayar,
             onChange: function (e) { setSudahBayar(e.target.value); },
-            style: { width: "100%", padding: "8px 8px", borderRadius: 6, border: "1px solid " + T.border, background: T.panel, color: T.text, fontSize: 13, fontWeight: 600, outline: "none", boxSizing: "border-box" }
+            style: { width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid " + T.border, background: T.panel, color: T.text, fontSize: 13, fontWeight: 600, outline: "none", boxSizing: "border-box" }
           })
         ),
         React.createElement(
@@ -4138,18 +4200,106 @@ function CicilanModal(p) {
           )
         )
       ),
+
+      // Pilihan Skema Biaya Angsuran (Flat vs Custom Beda-beda tiap bulan)
+      React.createElement(
+        "div",
+        { style: { background: "#F7F6F3", borderRadius: 8, padding: 12, border: "1px solid #EDECE9" } },
+        React.createElement(
+          "div",
+          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } },
+          React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: "#37352F" } }, "Skema Biaya Angsuran:"),
+          React.createElement(
+            "div",
+            { style: { display: "flex", gap: 6 } },
+            React.createElement(
+              "button",
+              {
+                type: "button",
+                className: "notion-tab-btn " + (modeSkema === "flat" ? "active" : ""),
+                style: { fontSize: 11, padding: "3px 8px" },
+                onClick: function () { setModeSkema("flat"); }
+              },
+              "Sama Tiap Bulan"
+            ),
+            React.createElement(
+              "button",
+              {
+                type: "button",
+                className: "notion-tab-btn " + (modeSkema === "custom" ? "active" : ""),
+                style: { fontSize: 11, padding: "3px 8px" },
+                onClick: function () { setModeSkema("custom"); }
+              },
+              "Beda-beda per Bulan"
+            )
+          )
+        ),
+
+        modeSkema === "flat"
+          ? React.createElement(DInput, {
+              label: "Nominal Angsuran per Bulan (Rp)",
+              value: angsuranFlat,
+              onChange: function (v) { setAngsuranFlat(formatRupiahInput(v)); },
+              placeholder: "Contoh: 500.000"
+            })
+          : React.createElement(
+              "div",
+              null,
+              React.createElement(
+                "div",
+                { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
+                React.createElement("span", { style: { fontSize: 11, color: "#787774" } }, "Ketik manual nominal angsuran untuk masing-masing bulan:"),
+                schedule[0] && schedule[0].nominal && React.createElement(
+                  "button",
+                  {
+                    type: "button",
+                    className: "notion-action-btn",
+                    style: { fontSize: 10, padding: "2px 6px" },
+                    onClick: function () { handleSamakanSemua(schedule[0].nominal); }
+                  },
+                  "Samakan dgn Bln 1"
+                )
+              ),
+              React.createElement(
+                "div",
+                { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, maxHeight: 180, overflowY: "auto", paddingRight: 4 } },
+                schedule.map(function (s, bIdx) {
+                  return React.createElement(
+                    "div",
+                    { key: s.bulan, style: { display: "flex", alignItems: "center", gap: 6, background: "#FFFFFF", padding: "4px 8px", borderRadius: 4, border: "1px solid #EDECE9" } },
+                    React.createElement("span", { style: { fontSize: 11, fontWeight: 700, color: "#787774", minWidth: 46 } }, "Bln " + s.bulan + ":"),
+                    React.createElement("input", {
+                      value: s.nominal,
+                      onChange: function (e) { handleScheduleNominalChange(bIdx, e.target.value); },
+                      placeholder: "0",
+                      style: { width: "100%", border: "none", outline: "none", fontSize: 12, fontWeight: 600, color: "#37352F", background: "transparent" }
+                    })
+                  );
+                })
+              )
+            ),
+
+        // Total Akumulasi Otomatis
+        React.createElement(
+          "div",
+          { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 8, borderTop: "1px dashed #EDECE9", fontSize: 12 } },
+          React.createElement("span", { style: { color: "#787774" } }, "Total Keseluruhan Pinjaman:"),
+          React.createElement("span", { style: { fontWeight: 800, color: "#1C3829", fontSize: 14 } }, fmt(totalCalc))
+        )
+      ),
+
       React.createElement(DInput, {
         label: "Catatan (Opsional)",
         value: catatan,
         onChange: setCatatan,
-        placeholder: "Contoh: Bunga 0%, promo Harbolnas..."
+        placeholder: "Contoh: Ada biaya admin di bulan ke-1, bunga 0%..."
       }),
       err && React.createElement("div", { style: { color: T.coral, fontSize: 12, fontWeight: 600 } }, err),
       React.createElement(
         "div",
-        { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12, paddingTop: 14, borderTop: "1px solid " + T.border } },
+        { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10, paddingTop: 14, borderTop: "1px solid " + T.border } },
         React.createElement(Btn, { outline: true, color: T.textSub, onClick: p.onClose }, "Batal"),
-        React.createElement(Btn, { color: T.teal, onClick: handleSubmit }, init.id ? "Simpan Perubahan" : "+ Tambah Cicilan")
+        React.createElement(Btn, { color: T.teal, onClick: handleSubmit }, init.id ? "Simpan Perubahan" : "+ Simpan Cicilan")
       )
     )
   );
@@ -4164,6 +4314,11 @@ function CicilanView(p) {
   var _editItem = useState(null), editItem = _editItem[0], setEditItem = _editItem[1];
   var _tab = useState("aktif"), tab = _tab[0], setTab = _tab[1];
   var _delId = useState(null), delId = _delId[0], setDelId = _delId[1];
+  var _expandedId = useState(null), expandedId = _expandedId[0], setExpandedId = _expandedId[1];
+
+  // Modal konfirmasi pembayaran angsuran bulan ini (bisa custom nominal jika beda)
+  var _payConfirm = useState(null), payConfirm = _payConfirm[0], setPayConfirm = _payConfirm[1];
+  var _payNom = useState(""), payNom = _payNom[0], setPayNom = _payNom[1];
 
   useEffect(function () {
     if (window.Api && window.Api.getInstallments) {
@@ -4196,15 +4351,42 @@ function CicilanView(p) {
     if (p.showToast) p.showToast("Cicilan dihapus.", "info");
   }
 
-  function handleBayarAngsuran(item) {
+  // Mulai alur bayar angsuran: buka modal konfirmasi nominal
+  function openBayarModal(item) {
+    var nextBulan = (item.cicilan_berjalan || 0) + 1;
+    var defNominal = item.nominal_per_bulan || 0;
+
+    // Jika ada rincian jadwal custom, ambil nominal bulan berjalan tersebut
+    if (item.jadwal_per_bulan && Array.isArray(item.jadwal_per_bulan)) {
+      var foundBln = item.jadwal_per_bulan.find(function (j) { return j.bulan === nextBulan; });
+      if (foundBln && foundBln.nominal) defNominal = foundBln.nominal;
+    }
+
+    setPayNom(formatRupiahInput(defNominal));
+    setPayConfirm(item);
+  }
+
+  function executeBayarAngsuran() {
+    var item = payConfirm;
+    if (!item) return;
+
+    var numPaid = parseRupiahInput(payNom);
+    if (!numPaid || numPaid <= 0) return;
+
     var cur = item.cicilan_berjalan || 0;
     var nextCount = cur + 1;
     var isLunas = nextCount >= item.tenor_bulan;
+
+    // Perbarui nominal di jadwal jika user mengubah nominal saat bayar
+    var updatedJadwal = (item.jadwal_per_bulan || []).map(function (j) {
+      return j.bulan === nextCount ? { bulan: j.bulan, nominal: numPaid } : j;
+    });
 
     var updated = list.map(function (x) {
       if (x.id === item.id) {
         return Object.assign({}, x, {
           cicilan_berjalan: nextCount,
+          jadwal_per_bulan: updatedJadwal.length > 0 ? updatedJadwal : x.jadwal_per_bulan,
           status: isLunas ? "lunas" : "aktif",
           updated_at: Date.now()
         });
@@ -4214,22 +4396,23 @@ function CicilanView(p) {
 
     saveInstallments(updated);
     setList(updated);
+    setPayConfirm(null);
 
-    // Opsi: Catat otomatis ke pengeluaran
+    // Otomatis catat ke pengeluaran
     if (p.onSaveExpense) {
       var expItem = {
         id: uid(),
         tanggal: todayStr(),
         keperluan: "Cicilan " + item.nama + " (" + item.penyedia + " bln " + nextCount + "/" + item.tenor_bulan + ")",
         kategori: "Cicilan / Pinjaman",
-        nominal: item.nominal_per_bulan,
+        nominal: numPaid,
         bayar: "Transfer",
         nw: "Need",
         catatan: "Pembayaran angsuran ke-" + nextCount + " dari " + item.tenor_bulan + " bulan"
       };
       p.onSaveExpense(expItem);
       if (p.showToast) {
-        p.showToast(isLunas ? ("Selamat! Cicilan " + item.nama + " telah LUNAS & dicatat ke pengeluaran!") : ("Angsuran ke-" + nextCount + " dicatat ke pengeluaran!"), "success");
+        p.showToast(isLunas ? ("Selamat! Cicilan " + item.nama + " telah LUNAS & dicatat ke pengeluaran!") : ("Angsuran ke-" + nextCount + " (" + fmt(numPaid) + ") dicatat ke pengeluaran!"), "success");
       }
     } else {
       if (p.showToast) p.showToast("Angsuran bulan ini berhasil dicatat!", "success");
@@ -4256,9 +4439,24 @@ function CicilanView(p) {
   var activeList = list.filter(function (x) { return x.status !== "lunas"; });
   var lunasList = list.filter(function (x) { return x.status === "lunas"; });
 
-  var totalAngsuranBulanan = activeList.reduce(function (s, x) { return s + (x.nominal_per_bulan || 0); }, 0);
+  // Beban cicilan bulan ini (ambil tagihan bulan aktif masing-masing)
+  var totalAngsuranBulanan = activeList.reduce(function (s, x) {
+    var nextBulan = (x.cicilan_berjalan || 0) + 1;
+    if (x.jadwal_per_bulan && Array.isArray(x.jadwal_per_bulan)) {
+      var foundBln = x.jadwal_per_bulan.find(function (j) { return j.bulan === nextBulan; });
+      if (foundBln && foundBln.nominal) return s + foundBln.nominal;
+    }
+    return s + (x.nominal_per_bulan || 0);
+  }, 0);
+
+  // Total sisa hutang (jumlah sisa semua bulan yang belum dibayar)
   var totalSisaHutang = activeList.reduce(function (s, x) {
-    var sisaBulan = Math.max(0, (x.tenor_bulan || 1) - (x.cicilan_berjalan || 0));
+    var sudah = x.cicilan_berjalan || 0;
+    if (x.jadwal_per_bulan && Array.isArray(x.jadwal_per_bulan) && x.jadwal_per_bulan.length > 0) {
+      var sisaJadwal = x.jadwal_per_bulan.filter(function (j) { return j.bulan > sudah; });
+      return s + sisaJadwal.reduce(function (sub, j) { return sub + (j.nominal || 0); }, 0);
+    }
+    var sisaBulan = Math.max(0, (x.tenor_bulan || 1) - sudah);
     return s + (sisaBulan * (x.nominal_per_bulan || 0));
   }, 0);
 
@@ -4365,8 +4563,27 @@ function CicilanView(p) {
             var tenor = item.tenor_bulan || 1;
             var pct = Math.min(100, Math.round((sudah / tenor) * 100));
             var sisaBulan = Math.max(0, tenor - sudah);
-            var sisaNominal = sisaBulan * (item.nominal_per_bulan || 0);
             var isLunas = item.status === "lunas" || sudah >= tenor;
+            var nextBulan = sudah + 1;
+
+            // Cari nominal angsuran bulan ini
+            var tagihanBulanIni = item.nominal_per_bulan || 0;
+            var hasSchedule = item.jadwal_per_bulan && Array.isArray(item.jadwal_per_bulan) && item.jadwal_per_bulan.length > 0;
+            if (hasSchedule) {
+              var fBln = item.jadwal_per_bulan.find(function (j) { return j.bulan === nextBulan; });
+              if (fBln && fBln.nominal) tagihanBulanIni = fBln.nominal;
+            }
+
+            // Hitung sisa total nominal yang belum dibayar
+            var sisaNominal = 0;
+            if (hasSchedule) {
+              var remainingItems = item.jadwal_per_bulan.filter(function (j) { return j.bulan > sudah; });
+              sisaNominal = remainingItems.reduce(function (tot, j) { return tot + (j.nominal || 0); }, 0);
+            } else {
+              sisaNominal = sisaBulan * (item.nominal_per_bulan || 0);
+            }
+
+            var isExpanded = expandedId === item.id;
 
             return React.createElement(
               "div",
@@ -4379,9 +4596,18 @@ function CicilanView(p) {
                   "div",
                   { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 } },
                   React.createElement(
-                    "span",
-                    { className: "notion-tag notion-tag-blue", style: { fontSize: 11, fontWeight: 700 } },
-                    item.penyedia
+                    "div",
+                    { style: { display: "flex", gap: 6, alignItems: "center" } },
+                    React.createElement(
+                      "span",
+                      { className: "notion-tag notion-tag-blue", style: { fontSize: 11, fontWeight: 700 } },
+                      item.penyedia
+                    ),
+                    item.mode_skema === "custom" && React.createElement(
+                      "span",
+                      { className: "notion-tag notion-tag-gray", style: { fontSize: 10 } },
+                      "Bertahap"
+                    )
                   ),
                   isLunas
                     ? React.createElement("span", { className: "notion-tag notion-tag-green", style: { fontSize: 10, fontWeight: 700 } }, "LUNAS")
@@ -4391,17 +4617,18 @@ function CicilanView(p) {
                 React.createElement(
                   "div",
                   { style: { fontSize: 20, fontWeight: 800, color: isLunas ? "#1C3829" : "#5D1715", marginBottom: 12 } },
-                  fmt(item.nominal_per_bulan),
-                  React.createElement("span", { style: { fontSize: 12, fontWeight: 500, color: "#787774", marginLeft: 4 } }, "/ bulan")
+                  fmt(tagihanBulanIni),
+                  React.createElement("span", { style: { fontSize: 12, fontWeight: 500, color: "#787774", marginLeft: 4 } }, isLunas ? " (Lunas)" : (" / bln ke-" + nextBulan))
                 ),
+
                 // Progress Bar Tenor
                 React.createElement(
                   "div",
-                  { style: { marginBottom: 14 } },
+                  { style: { marginBottom: 12 } },
                   React.createElement(
                     "div",
                     { style: { display: "flex", justifyContent: "space-between", fontSize: 11, color: "#787774", marginBottom: 4 } },
-                    React.createElement("span", { style: { fontWeight: 600, color: "#37352F" } }, "Bulan ke-" + sudah + " dari " + tenor),
+                    React.createElement("span", { style: { fontWeight: 600, color: "#37352F" } }, "Bulan ke-" + sudah + " dari " + tenor + " bulan"),
                     React.createElement("span", null, pct + "% lunas")
                   ),
                   React.createElement(
@@ -4418,16 +4645,68 @@ function CicilanView(p) {
                     })
                   )
                 ),
+
                 // Info Rincian Sisa
                 React.createElement(
                   "div",
-                  { style: { background: "#F7F6F3", borderRadius: 6, padding: "8px 10px", fontSize: 11, display: "flex", justifyContent: "space-between", marginBottom: 14 } },
+                  { style: { background: "#F7F6F3", borderRadius: 6, padding: "8px 10px", fontSize: 11, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 } },
                   React.createElement("span", { style: { color: "#787774" } }, "Sisa Tagihan:"),
                   React.createElement("span", { style: { fontWeight: 700, color: isLunas ? "#1C3829" : "#37352F" } }, isLunas ? "Rp 0" : (fmt(sisaNominal) + " (" + sisaBulan + " bln lagi)"))
                 ),
+
+                // Tombol Accordion Rincian Jadwal per Bulan
+                hasSchedule && React.createElement(
+                  "div",
+                  { style: { marginBottom: 10 } },
+                  React.createElement(
+                    "button",
+                    {
+                      type: "button",
+                      className: "notion-action-btn",
+                      style: { width: "100%", justifyContent: "space-between", padding: "4px 8px", fontSize: 11 },
+                      onClick: function () { setExpandedId(isExpanded ? null : item.id); }
+                    },
+                    React.createElement("span", null, isExpanded ? "Sembunyikan Rincian per Bulan" : "Lihat Jadwal Tiap Bulan (" + tenor + " bln)"),
+                    React.createElement("span", null, isExpanded ? "\u25B2" : "\u25BC")
+                  ),
+                  isExpanded && React.createElement(
+                    "div",
+                    { style: { display: "flex", flexDirection: "column", gap: 4, marginTop: 6, background: "#FAFAFA", padding: 8, borderRadius: 6, border: "1px solid #EDECE9", maxHeight: 150, overflowY: "auto" } },
+                    item.jadwal_per_bulan.map(function (j) {
+                      var isPast = j.bulan <= sudah;
+                      var isCurrent = j.bulan === nextBulan && !isLunas;
+                      return React.createElement(
+                        "div",
+                        {
+                          key: j.bulan,
+                          style: {
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontSize: 11,
+                            padding: "3px 6px",
+                            borderRadius: 4,
+                            background: isCurrent ? "rgba(2, 132, 199, 0.08)" : "transparent",
+                            fontWeight: isCurrent ? 700 : 400
+                          }
+                        },
+                        React.createElement(
+                          "span",
+                          { style: { color: isPast ? "#10B981" : isCurrent ? "#0284C7" : "#787774" } },
+                          (isPast ? "\u2713 " : isCurrent ? "\u25B6 " : "") + "Bulan " + j.bulan + ":"
+                        ),
+                        React.createElement(
+                          "span",
+                          { style: { color: isPast ? "#787774" : isCurrent ? "#0284C7" : "#37352F" } },
+                          fmt(j.nominal)
+                        )
+                      );
+                    })
+                  )
+                ),
+
                 item.catatan && React.createElement(
                   "div",
-                  { style: { fontSize: 11, color: "#787774", fontStyle: "italic", marginBottom: 12 } },
+                  { style: { fontSize: 11, color: "#787774", fontStyle: "italic", marginBottom: 10 } },
                   item.catatan
                 )
               ),
@@ -4464,7 +4743,7 @@ function CicilanView(p) {
                       {
                         className: "notion-primary-btn",
                         style: { fontSize: 11, padding: "5px 10px" },
-                        onClick: function () { handleBayarAngsuran(item); }
+                        onClick: function () { openBayarModal(item); }
                       },
                       "Bayar Bulan Ini \u2713"
                     )
@@ -4482,13 +4761,56 @@ function CicilanView(p) {
           })
         ),
 
-    // Modal Form
+    // Modal Form Tambah / Edit
     React.createElement(CicilanModal, {
       open: showModal,
       initial: editItem,
       onClose: function () { setShowModal(false); setEditItem(null); },
       onSave: handleSave
     }),
+
+    // Modal Konfirmasi Bayar Bulan Ini (Bisa sesuaikan nominal)
+    payConfirm && React.createElement(
+      Modal,
+      {
+        title: "Bayar Angsuran Bulan Ini",
+        open: !!payConfirm,
+        onClose: function () { setPayConfirm(null); },
+        width: 420
+      },
+      React.createElement(
+        "div",
+        { style: { display: "flex", flexDirection: "column", gap: 14 } },
+        React.createElement(
+          "div",
+          { style: { fontSize: 13, color: "#37352F", lineHeight: 1.5 } },
+          "Konfirmasi pembayaran untuk ",
+          React.createElement("strong", null, payConfirm.nama),
+          " (",
+          payConfirm.penyedia,
+          ") - ",
+          React.createElement("strong", { style: { color: "#0284C7" } }, "Bulan ke-" + ((payConfirm.cicilan_berjalan || 0) + 1) + " dari " + payConfirm.tenor_bulan + " bulan")
+        ),
+        React.createElement(DInput, {
+          label: "Nominal yang Dibayar Bulan Ini (Rp)",
+          value: payNom,
+          onChange: function (v) { setPayNom(formatRupiahInput(v)); },
+          placeholder: "0",
+          autoFocus: true
+        }),
+        React.createElement(
+          "div",
+          { style: { fontSize: 11, color: "#787774", fontStyle: "italic" } },
+          "Ubah angka di atas jika tagihan bulan ini berbeda (ada biaya admin, denda, atau potongan promo). Pembayaran ini otomatis dicatat ke Pengeluaran."
+        ),
+        React.createElement(
+          "div",
+          { style: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8, paddingTop: 12, borderTop: "1px solid " + T.border } },
+          React.createElement(Btn, { outline: true, color: T.textSub, onClick: function () { setPayConfirm(null); } }, "Batal"),
+          React.createElement(Btn, { color: T.teal, onClick: executeBayarAngsuran }, "Konfirmasi & Catat Pengeluaran \u2713")
+        )
+      )
+    ),
 
     // Modal Konfirmasi Hapus
     delId && React.createElement(ConfirmModal, {
