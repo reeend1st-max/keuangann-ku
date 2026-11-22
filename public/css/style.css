@@ -911,3 +911,34 @@ body.dark-mode {
   color: #EDEDED !important;
   border-bottom-color: #EDEDED !important;
 }
+
+/* Cicilan & Paylater Card Styling */
+.notion-cicilan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.notion-cicilan-card {
+  background: #FFFFFF;
+  border: 1px solid #EDECE9;
+  border-radius: 8px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.15s ease;
+  position: relative;
+}
+.notion-cicilan-card:hover {
+  border-color: #D3D1CB;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+.dark-mode .notion-cicilan-card {
+  background: #202020 !important;
+  border-color: #2E2E2E !important;
+  color: #EDEDED !important;
+}
+.dark-mode .notion-cicilan-card:hover {
+  border-color: #383838 !important;
+}
