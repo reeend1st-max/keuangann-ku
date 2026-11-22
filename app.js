@@ -3768,29 +3768,31 @@ function KalenderPengeluaranView(p) {
       )
     ),
 
-    // 4. Side-by-Side Calendar & Activity Panel Layout (Grid side-by-side)
+    // 4. Side-by-Side Calendar & Activity Panel Layout (Guaranteed Side-by-Side Flex)
     React.createElement(
       "div",
       {
         className: "notion-calendar-layout",
         style: {
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) 340px",
-          gap: 20,
-          alignItems: "start",
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: 16,
           width: "100%",
+          boxSizing: "border-box",
           marginBottom: 24
         }
       },
-      // Left / Main: Compact Calendar Grid
+      // Left / Main: Compact Calendar Grid (Shrunk to give room to sidebar)
       React.createElement(
         "div",
         {
           className: "notion-calendar-main",
           style: {
+            flex: "1 1 0%",
             minWidth: 0,
-            width: "100%",
-            overflowX: "auto"
+            maxWidth: "calc(100% - 326px)",
+            boxSizing: "border-box"
           }
         },
         React.createElement(
@@ -3895,12 +3897,14 @@ function KalenderPengeluaranView(p) {
         {
           className: "notion-calendar-sidebar",
           style: {
-            width: "100%",
-            maxWidth: 340,
+            width: 310,
+            minWidth: 310,
+            maxWidth: 310,
+            flexShrink: 0,
             background: "#F7F6F3",
             border: "1px solid #EDECE9",
             borderRadius: 8,
-            padding: "16px",
+            padding: "14px 16px",
             boxSizing: "border-box",
             position: "sticky",
             top: 16
