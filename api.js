@@ -530,6 +530,48 @@
       return localCats;
     },
 
+        getInstallments: async function () {
+      var localData = [];
+      try {
+        var raw = localStorage.getItem("keuangan_installments");
+        if (raw) localData = JSON.parse(raw);
+      } catch (e) {}
+
+      try {
+        var sess = await this.getSession();
+        if (sess && sess.id) {
+          var res = await sb.auth.getUser();
+          var user = res.data && res.data.user;
+          var metaInst = user && user.user_metadata && user.user_metadata.installments;
+          if (Array.isArray(metaInst) && metaInst.length > 0) {
+            localStorage.setItem("keuangan_installments", JSON.stringify(metaInst));
+            return metaInst;
+          } else if (localData.length > 0) {
+            await sb.auth.updateUser({ data: { installments: localData } });
+          }
+        }
+      } catch (e) {
+        console.warn("Sync getInstallments cloud:", e);
+      }
+      return localData;
+    },
+
+    saveInstallments: async function (list) {
+      try {
+        localStorage.setItem("keuangan_installments", JSON.stringify(list));
+      } catch (e) {}
+
+      try {
+        var sess = await this.getSession();
+        if (sess && sess.id) {
+          await sb.auth.updateUser({ data: { installments: list } });
+        }
+      } catch (e) {
+        console.warn("Sync saveInstallments cloud:", e);
+      }
+      return list;
+    },
+
     saveCustomCategories: async function (cats) {
       try {
         localStorage.setItem("keuangan_custom_categories", JSON.stringify(cats));
