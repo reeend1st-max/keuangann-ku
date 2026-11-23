@@ -242,7 +242,8 @@ function saveBills(bills) {
   try { localStorage.setItem("keuangan_upcoming_bills", JSON.stringify(bills)); } catch(e) {}
   if (window.Api && window.Api.saveBills) {
     window.Api.saveBills(bills);
-  }`r`n  try { window.dispatchEvent(new Event("bills_updated")); } catch(e) {}
+  }
+  try { window.dispatchEvent(new Event("bills_updated")); } catch(e) {}
 }
 
 var MONTH_NAMES = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
@@ -4111,7 +4112,8 @@ function saveInstallments(list) {
   } catch (e) {}
   if (window.Api && window.Api.saveInstallments) {
     window.Api.saveInstallments(list);
-  }`r`n  try { window.dispatchEvent(new Event("installments_updated")); } catch(e) {}
+  }
+  try { window.dispatchEvent(new Event("installments_updated")); } catch(e) {}
 }
 
 // Modal Form Tambah / Edit Cicilan & Paylater (Custom Tenor & Skema Bertahap per Bulan)
